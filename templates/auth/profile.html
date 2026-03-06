@@ -1,0 +1,139 @@
+{% extends "base_gadget.html" %}
+{% load static %}
+
+{% block title %}Edit Profile - Hello Gads{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="container">
+        <div class="profile-container">
+            <div class="breadcrumb">
+                <a href="{% url 'auth:account' %}">← Back to Account</a>
+            </div>
+
+            <div class="profile-card">
+                <h1>Edit Profile</h1>
+                <form method="post" class="profile-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group {% if form.first_name.errors %}has-error{% endif %}">
+                        <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <span class="form-error">{{ form.first_name.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group {% if form.last_name.errors %}has-error{% endif %}">
+                        <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <span class="form-error">{{ form.last_name.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" class="form-input" value="{{ user.email }}" disabled>
+                        <small class="form-help">Email cannot be changed</small>
+                    </div>
+
+                    <div class="form-group {% if form.phone.errors %}has-error{% endif %}">
+                        <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <span class="form-error">{{ form.phone.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="{% url 'auth:account' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-page {
+    padding: var(--space-8) 0;
+    min-height: calc(100vh - 400px);
+}
+
+.profile-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-4);
+}
+
+.breadcrumb a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.profile-card {
+    background: white;
+    border-radius: 12px;
+    padding: var(--space-8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.profile-card h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: var(--space-6);
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    font-size: 14px;
+}
+
+.form-help {
+    margin-top: var(--space-1);
+    font-size: 13px;
+    color: var(--color-text-light);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+@media (max-width: 768px) {
+    .profile-card {
+        padding: 24px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script src="{% static 'js/address.js' %}"></script>
+{% endblock %}
+

@@ -1,0 +1,418 @@
+{% extends 'base_gadget.html' %}
+{% load static %}
+
+{% block title %}My Account - Hello Gads{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="account-page">
+    <div class="container">
+        <div class="account-header">
+            <h1>My Account</h1>
+            <p>Welcome back, {{ user.first_name|default:user.email }}!</p>
+        </div>
+
+        <div class="account-grid">
+            <!-- Profile Section -->
+            <div class="account-card">
+                <div class="card-header">
+                    <h2>Profile Information</h2>
+                    <a href="{% url 'auth:profile' %}" class="btn btn-small">Edit</a>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Name:</span>
+                        <span class="info-value">{{ user.get_full_name|default:"Not provided" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ user.email }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phone:</span>
+                        <span class="info-value">{{ user_phone|default:"Not provided" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Orders Section -->
+            <div class="account-card">
+                <div class="card-header">
+                    <h2>Recent Orders</h2>
+                    <a href="{% url 'store:order_history' %}" class="btn btn-small">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_orders %}
+                        <div class="orders-list">
+                            {% for order in recent_orders %}
+                            <a href="{% url 'store:order_detail' order.order_number %}" class="order-item-link">
+                                <div class="order-item">
+                                    <div class="order-info">
+                                        <span class="order-number">#{{ order.order_number }}</span>
+                                        <span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span>
+                                        {% if order.payment %}
+                                            <span class="payment-status status-{{ order.payment.status }}">Payment: {{ order.payment.get_status_display }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="order-meta">
+                                        <span class="order-date">{{ order.created_at|date:"M d, Y" }}</span>
+                                        <span class="order-total">₹{{ order.total }}</span>
+                                    </div>
+                                    <div class="order-progress">
+                                        <div class="order-progress-track">
+                                            <div class="order-progress-fill step-{{ order.status }}"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="empty-state">No orders yet. <a href="{% url 'store:product_list' %}">Start shopping!</a></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Addresses Section -->
+            <div class="account-card full-width">
+                <div class="card-header">
+                    <h2>Saved Addresses</h2>
+                    <a href="{% url 'auth:address_create' %}" class="btn btn-small">Add New</a>
+                </div>
+                <div class="card-body">
+                    {% if addresses %}
+                        <div class="addresses-grid">
+                            {% for address in addresses %}
+                            <div class="address-card {% if address.is_default %}default{% endif %}">
+                                {% if address.is_default %}
+                                    <span class="default-badge">Default</span>
+                                {% endif %}
+                                <div class="address-info">
+                                    <strong>{{ address.full_name }}</strong>
+                                    <p>{{ address.address_line }}</p>
+                                    <p>{{ address.city }}, {{ address.state }} - {{ address.pincode }}</p>
+                                    <p>Phone: {{ address.phone }}</p>
+                                </div>
+                                <div class="address-actions">
+                                    <a href="{% url 'auth:address_edit' address.pk %}" class="btn-link">Edit</a>
+                                    <form method="post" action="{% url 'auth:address_delete' address.pk %}" class="inline-form" onsubmit="return confirm('Are you sure you want to delete this address?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-link danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="empty-state">No addresses saved yet. <a href="{% url 'auth:address_create' %}">Add your first address</a></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="account-card full-width">
+                <div class="card-header">
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <a href="{% url 'store:order_history' %}" class="action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            <span>My Orders</span>
+                        </a>
+                        <a href="{% url 'auth:address_list' %}" class="action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            <span>Addresses</span>
+                        </a>
+                        <a href="{% url 'store:product_list' %}" class="action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                            <span>Continue Shopping</span>
+                        </a>
+                        <a href="{% url 'auth:logout' %}" class="action-btn danger">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.account-page {
+    padding: var(--space-8) 0;
+    min-height: calc(100vh - 400px);
+}
+
+.account-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.account-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.account-header p {
+    color: var(--color-text-light);
+}
+
+.account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+}
+
+.account-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.account-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5);
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.card-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: var(--space-5);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.order-item {
+    padding: 14px 16px;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    transition: all 0.3s ease;
+    background: #FAFAFA;
+}
+
+.order-item:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.order-info {
+    flex-direction: row;
+    gap: 10px;
+    min-width: 0;
+    align-items: center;
+}
+
+.order-number {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 12px;
+    min-width: 110px;
+    white-space: nowrap;
+}
+
+.order-status {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    width: fit-content;
+}
+
+.status-placed { background: #fff3cd; color: #856404; }
+.status-confirmed { background: #d1ecf1; color: #0c5460; }
+.status-shipped { background: #cfe2ff; color: #084298; }
+.status-delivered { background: #d1f4dd; color: #0f5132; }
+.status-cancelled { background: #f8d7da; color: #842029; }
+
+.order-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.order-date {
+    font-size: 11px;
+    color: #999;
+    min-width: 60px;
+    text-align: right;
+}
+
+.order-total {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-primary);
+    min-width: 75px;
+    text-align: right;
+}
+
+.addresses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-4);
+}
+
+.address-card {
+    position: relative;
+    border: 2px solid #E0E0E0;
+    border-radius: 8px;
+    padding: var(--space-4);
+}
+
+.address-card.default {
+    border-color: var(--color-primary);
+}
+
+.default-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--color-primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.address-info {
+    margin-bottom: var(--space-3);
+}
+
+.address-info p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: var(--color-text-light);
+}
+
+.address-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-4);
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 2px solid #E0E0E0;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    border-color: var(--color-primary);
+    background: #FFFFFF;
+}
+
+.action-btn.danger:hover {
+    border-color: #dc3545;
+    background: #fff5f5;
+    color: #dc3545;
+}
+
+.action-btn svg {
+    width: 32px;
+    height: 32px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.empty-state {
+    text-align: center;
+    color: #757575;
+    padding: 16px;
+}
+
+.empty-state a {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .account-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .addresses-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+{% endblock %}
+

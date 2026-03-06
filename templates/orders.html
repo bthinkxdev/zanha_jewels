@@ -1,0 +1,78 @@
+{% extends "base_gadget.html" %}
+{% load static %}
+{% block title %}Order History - Hello Gads{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">Your Orders</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                <li class="breadcrumb-item"><a href="{% url 'auth:account' %}">Account</a></li>
+                <li class="breadcrumb-item active">Orders</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+    <section class="section-pad">
+        <div class="container">
+            <div class="breadcrumb mb-4">
+                <a href="{% url 'auth:account' %}">← Back to Account</a>
+            </div>
+
+            {% if orders %}
+                <div class="order-history">
+                    {% for order in orders %}
+                        <div class="checkout-card order-card mb-4">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                                <div>
+                                    <strong style="font-size: 1rem;">{{ order.order_number }}</strong>
+                                    <div class="order-date text-muted" style="font-size: var(--text-sm); margin-top: 4px;">{{ order.created_at|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="order-total" style="font-weight: 700; font-size: 1.125rem;">₹{{ order.total }}</div>
+                            </div>
+                            <div class="order-status status-{{ order.status }} mb-2">
+                                Status: {{ order.get_status_display }}
+                            </div>
+                            {% if order.shipment %}
+                            <div class="order-status mb-2" style="font-size: var(--text-sm);">
+                                Shipment: {{ order.shipment.current_status|default:"Pending" }}
+                                {% if order.shipment.awb_code %}
+                                    · AWB: {{ order.shipment.awb_code }}
+                                {% endif %}
+                                {% if order.shipment.courier_name %}
+                                    · {{ order.shipment.courier_name }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% if order.payment %}
+                            <div class="payment-status status-{{ order.payment.status }} mb-2">
+                                Payment: {{ order.payment.get_status_display }}
+                            </div>
+                            {% endif %}
+                            <div class="order-items-list pt-2" style="border-top: 1px solid var(--clr-grey-2);">
+                                {% for item in order.items.all %}
+                                <div class="order-total-row">
+                                    <span>{{ item.product_name }} ({{ item.variant_snapshot }}) × {{ item.quantity }}</span>
+                                    <span style="font-weight: 600;">₹{{ item.line_total }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3 pt-2">
+                                <a href="{% url 'store:order_detail' order.order_number %}" class="btn btn-outline-dark btn-sm">View details</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <p class="mb-4" style="color: var(--clr-grey-5);">No orders yet.</p>
+                    <a href="{% url 'store:product_list' %}" class="btn btn-secondary">Start Shopping</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}
+

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - {{ order.order_number }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @page {
+            size: A4;
+            margin: 8mm;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.35;
+            color: #333;
+            background: white;
+        }
+        /* Single A4 - compact layout */
+        .invoice-container {
+            width: 210mm;
+            max-height: 297mm;
+            padding: 12mm;
+            background: white;
+            page-break-inside: avoid;
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #6D4C41;
+            margin-bottom: 12px;
+        }
+        .company-name { font-size: 18pt; font-weight: bold; color: #6D4C41; margin-bottom: 2px; }
+        .company-tagline { font-size: 9pt; color: #8D6E63; margin-bottom: 6px; }
+        .company-details { font-size: 9pt; color: #666; line-height: 1.5; }
+        .invoice-meta { text-align: right; }
+        .invoice-title { font-size: 16pt; font-weight: bold; color: #3E2723; margin-bottom: 4px; }
+        .invoice-number { font-size: 12pt; color: #6D4C41; font-weight: bold; margin-bottom: 2px; }
+        .invoice-date { font-size: 9pt; color: #666; }
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+        .bill-to, .ship-to {
+            flex: 1;
+            padding: 8px 10px;
+            background: #F5F5F3;
+            border-radius: 6px;
+        }
+        .section-title { font-size: 9pt; font-weight: bold; color: #6D4C41; margin-bottom: 6px; text-transform: uppercase; }
+        .customer-details { font-size: 9pt; line-height: 1.5; }
+        .customer-name { font-weight: bold; font-size: 10pt; color: #3E2723; margin-bottom: 4px; }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 9pt;
+        }
+        .items-table thead { background: #6D4C41; color: white; }
+        .items-table th {
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        .items-table th:last-child, .items-table td:last-child { text-align: right; }
+        .items-table tbody tr { border-bottom: 1px solid #E0E0DE; }
+        .items-table td { padding: 5px 8px; }
+        .item-name { font-weight: 600; color: #3E2723; }
+        .item-variant { font-size: 8pt; color: #8D6E63; }
+        .totals-section { margin-bottom: 10px; }
+        .totals-table { width: 240px; margin-left: auto; font-size: 9pt; }
+        .totals-table tr { display: flex; justify-content: space-between; padding: 4px 0; }
+        .totals-table .total-row {
+            border-top: 2px solid #6D4C41;
+            padding-top: 8px;
+            margin-top: 4px;
+            font-size: 11pt;
+            font-weight: bold;
+            color: #6D4C41;
+        }
+        .invoice-footer {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #E0E0DE;
+        }
+        .payment-info { margin-bottom: 8px; }
+        .payment-info-title { font-size: 9pt; font-weight: bold; color: #6D4C41; margin-bottom: 4px; }
+        .payment-details { font-size: 9pt; color: #666; }
+        .payment-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        .payment-badge.pending { background: #fff3cd; color: #856404; }
+        .payment-badge.paid { background: #d1f4dd; color: #0f5132; }
+        .order-status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 9pt;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .status-placed { background: #d1ecf1; color: #0c5460; }
+        .status-confirmed { background: #fff3cd; color: #856404; }
+        .status-shipped { background: #cfe2ff; color: #084298; }
+        .status-delivered { background: #d1f4dd; color: #0f5132; }
+        .status-cancelled { background: #f8d7da; color: #842029; }
+        .notes-section {
+            background: #F5F5F3;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+        .notes-title { font-size: 9pt; font-weight: bold; color: #6D4C41; margin-bottom: 4px; }
+        .notes-content { font-size: 8pt; color: #666; line-height: 1.4; }
+        .thank-you { text-align: center; font-size: 10pt; color: #6D4C41; font-weight: 600; margin-top: 8px; }
+        .contact-row { font-size: 9pt; margin-top: 2px; }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .invoice-container { margin: 0; box-shadow: none; }
+            .no-print { display: none !important; }
+            .invoice-container { max-height: none; }
+        }
+        @media screen {
+            body { background: #f0f0f0; padding: 16px; }
+            .invoice-container { box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin: 0 auto; }
+            .print-button-container { text-align: center; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+            .print-button {
+                background: #6D4C41;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 13px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            .print-button:hover { background: #5D4037; }
+            .print-button.pdf-btn { background: #c62828; }
+            .print-button.pdf-btn:hover { background: #b71c1c; }
+            .print-button.close-btn { background: #8D6E63; }
+            .print-button.close-btn:hover { background: #795548; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-button-container no-print">
+        <button class="print-button" onclick="window.print()">🖨️ Print Invoice</button>
+        <button class="print-button pdf-btn" id="downloadPdf">📥 Download PDF</button>
+        <button class="print-button close-btn" onclick="window.close()">✕ Close</button>
+    </div>
+
+    <div class="invoice-container" id="invoiceContent">
+        <div class="invoice-header">
+            <div class="company-info">
+                <div class="company-name">Hello Gads</div>
+                <div class="company-tagline">Premium Women's & Baby Clothing</div>
+                <div class="company-details">
+                    Email: {{ site_email|default:"achujozefsl0709@gmail.com" }}<br>
+                    <span class="contact-row">Phone: {{ site_phone|default:"+91 62384 39926" }}</span><br>
+                    <span class="contact-row">WhatsApp: <a href="https://wa.me/{{ site_whatsapp|default:'916238439926' }}" style="color:#25D366;">{{ site_phone|default:"+91 62384 39926" }}</a></span><br>
+                    Website: www.queenorange.com
+                </div>
+            </div>
+            <div class="invoice-meta">
+                <div class="invoice-title">INVOICE</div>
+                <div class="invoice-number">#{{ order.order_number }}</div>
+                <div class="invoice-date">
+                    Date: {{ order.created_at|date:"d M, Y" }}<br>
+                    Time: {{ order.created_at|date:"h:i A" }}
+                </div>
+                <div class="order-status-badge status-{{ order.status }}">{{ order.get_status_display }}</div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="bill-to">
+                <div class="section-title">Bill To</div>
+                <div class="customer-details">
+                    <div class="customer-name">{{ order.address.full_name }}</div>
+                    {% if order.address.email %}Email: {{ order.address.email }}<br>{% endif %}
+                    Phone: {{ order.address.phone }}
+                </div>
+            </div>
+            <div class="ship-to">
+                <div class="section-title">Ship To</div>
+                <div class="customer-details">
+                    <div class="customer-name">{{ order.address.full_name }}</div>
+                    {{ order.address.address_line }}<br>
+                    {{ order.address.city }}, {{ order.address.state }}<br>
+                    PIN: {{ order.address.pincode }}
+                </div>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Item Description</th>
+                    <th style="width: 12%; text-align: center;">Qty</th>
+                    <th style="width: 19%;">Unit Price</th>
+                    <th style="width: 19%;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>
+                        <div class="item-name">{{ item.product_name }}</div>
+                        <div class="item-variant">{{ item.variant_snapshot }}</div>
+                    </td>
+                    <td style="text-align: center;">{{ item.quantity }}</td>
+                    <td>₹{{ item.unit_price }}</td>
+                    <td>₹{{ item.line_total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Subtotal:</td>
+                    <td>₹{{ order.subtotal }}</td>
+                </tr>
+                {% if order.gst_total and order.gst_total > 0 %}
+                <tr>
+                    <td>GST:</td>
+                    <td>₹{{ order.gst_total }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td>Shipping:</td>
+                    <td>{% if order.shipping == 0 %}FREE{% else %}₹{{ order.shipping }}{% endif %}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>TOTAL:</td>
+                    <td>₹{{ order.total }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="invoice-footer">
+            <div class="payment-info">
+                <div class="payment-info-title">Payment</div>
+                <div class="payment-details">
+                    Method: <strong>{{ order.payment.get_method_display }}</strong> &nbsp;
+                    Status: <span class="payment-badge {% if order.payment.status == 'paid' %}paid{% else %}pending{% endif %}">{{ order.payment.get_status_display }}</span>
+                </div>
+            </div>
+            <div class="notes-section">
+                <div class="notes-title">Terms</div>
+                <div class="notes-content">Quality guarantee • Contact: {{ site_phone|default:"+91 62384 39926" }} / WhatsApp • Thank you for shopping with Hello Gads!</div>
+            </div>
+            <div class="thank-you">Thank you for your purchase! 🌟</div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('downloadPdf').addEventListener('click', function() {
+            var el = document.getElementById('invoiceContent');
+            var opt = {
+                margin: [8, 8, 8, 8],
+                filename: 'Invoice-{{ order.order_number }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            html2pdf().set(opt).from(el).save();
+        });
+    </script>
+</body>
+</html>

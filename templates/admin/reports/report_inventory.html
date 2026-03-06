@@ -1,0 +1,102 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Inventory Report{% endblock %}
+{% block page_title %}Inventory / Stock Report{% endblock %}
+
+{% block content %}
+<div class="report-page" data-report-type="inventory">
+    <div class="card report-card">
+        <div class="card-header report-card-header">
+            <h3 class="card-title">Inventory / Stock Report</h3>
+            <div class="report-export-buttons">
+                <a href="#" class="btn btn-sm btn-outline" id="reportExportCsv">CSV</a>
+                <a href="#" class="btn btn-sm btn-outline" id="reportExportXlsx" data-format="xlsx">Excel</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <button type="button" class="btn btn-secondary filter-trigger mb-2" id="reportFilterTrigger" aria-label="Open filters">
+                <i class="fas fa-filter"></i> Filters
+            </button>
+            <div class="filter-overlay" id="reportFilterOverlay" aria-hidden="true"></div>
+            <div class="filters-sheet report-filters-sheet" id="reportFiltersSheet">
+            <div class="filters-sheet-header">
+                <strong>Filter Inventory</strong>
+                <button type="button" class="btn btn-sm btn-secondary" id="reportFilterSheetClose" aria-label="Close">✕</button>
+            </div>
+            <form class="report-filters report-filters-inline" method="get" action="">
+                <div class="report-filter-row">
+                    <div class="report-filter-group">
+                        <label>Category</label>
+                        <select name="category" class="form-control">
+                            <option value="">All</option>
+                            {% for c in categories %}
+                            <option value="{{ c.id }}" {% if filters.category_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="report-filter-group">
+                        <label>Product</label>
+                        <select name="product" class="form-control">
+                            <option value="">All</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}" {% if filters.product_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="report-filter-group report-filter-actions">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Apply</button>
+                    </div>
+                </div>
+            </form>
+            </div>
+
+            <div class="table-responsive report-table-wrap">
+                <table class="table report-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Variant</th>
+                            <th>Stock</th>
+                            <th>SKU</th>
+                        </tr>
+                    </thead>
+                    {% include "admin/reports/partials/inventory_table.html" with variants=variants %}
+                </table>
+            </div>
+
+            {% if not variants %}
+            <div class="empty-state">
+                <i class="fas fa-warehouse"></i>
+                <p>No inventory data found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.ReportConfig = {
+        reportType: 'inventory',
+        exportCsvUrl: '{% url "admin_panel:report_export" "inventory" "csv" %}',
+        exportXlsxUrl: '{% url "admin_panel:report_export" "inventory" "xlsx" %}'
+    };
+    var formEl = document.querySelector('.report-filters-inline');
+    if (!formEl) return;
+    var params = new URLSearchParams(new FormData(formEl)).toString();
+    var csvBtn = document.getElementById('reportExportCsv');
+    var xlsxBtn = document.getElementById('reportExportXlsx');
+    if (csvBtn && window.ReportConfig.exportCsvUrl) {
+        csvBtn.href = window.ReportConfig.exportCsvUrl + (params ? '?' + params : '');
+    }
+    if (xlsxBtn && window.ReportConfig.exportXlsxUrl) {
+        xlsxBtn.href = window.ReportConfig.exportXlsxUrl + (params ? '?' + params : '');
+    }
+});
+</script>
+{% endblock %}

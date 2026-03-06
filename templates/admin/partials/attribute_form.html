@@ -1,0 +1,17 @@
+{# Single attribute row: name, display_order, delete; contains values list. Used by product_edit JS. #}
+<div class="attribute-row" data-attribute-id="{{ attr.id }}">
+    <div class="attribute-row-main">
+        <input type="text" class="form-control attribute-name" value="{{ attr.name }}" placeholder="Attribute name" data-initial="{{ attr.name }}">
+        <input type="number" class="form-control attribute-order" min="0" value="{{ attr.display_order }}" data-initial="{{ attr.display_order }}">
+        <button type="button" class="btn btn-sm btn-outline attribute-save" disabled title="Save">Save</button>
+        <button type="button" class="btn btn-sm btn-danger attribute-delete" title="Delete attribute"><i class="fas fa-trash"></i></button>
+    </div>
+    <div class="attribute-values-wrap">
+        <div class="nested-title">Values</div>
+        <ul class="attribute-values-list"></ul>
+        <div class="attribute-value-add">
+            <input type="text" class="form-control value-input" placeholder="New value">
+            <button type="button" class="btn btn-sm btn-primary value-add-btn">Add</button>
+        </div>
+    </div>
+</div>

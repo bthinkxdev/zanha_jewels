@@ -1,0 +1,12 @@
+<tbody>
+    {% for u in customers %}
+    <tr>
+        <td data-label="User">{{ u.username|default:"—" }}</td>
+        <td data-label="Email">{{ u.email|default:"—" }}</td>
+        <td data-label="Orders">{{ u.order_count|default:0 }}</td>
+        <td data-label="Total spent" class="report-amount">₹{{ u.total_spent|floatformat:0|default:"0" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="report-empty">No customer data found.</td></tr>
+    {% endfor %}
+</tbody>

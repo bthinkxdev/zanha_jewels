@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Terms & Conditions - Hello Gads{% endblock %}
+{% block meta_description %}Hello Gads Terms & Conditions.{% endblock %}
+{% block content %}
+    <section class="static-page">
+        <div class="container">
+            <div class="static-content">
+                <h1>Terms & Conditions</h1>
+
+                <p><em>Last Updated: January 2026</em></p>
+
+                <p>Welcome to Hello Gads. By accessing and using our website, you agree to comply with and be bound by the following terms and conditions. Please read them carefully before making any purchase.</p>
+
+                <h2>1. Acceptance of Terms</h2>
+                <p>By accessing or using the Hello Gads website, you agree to be bound by these Terms & Conditions, our Privacy Policy, and all applicable laws and regulations.</p>
+
+                <h2>2. Use of Website</h2>
+                <p>You may use our website for lawful purposes only.</p>
+
+                <h2>3. Product Information</h2>
+                <p>We strive to provide accurate product descriptions, images, and pricing.</p>
+
+                <h2>4. Pricing and Payment</h2>
+                <ul>
+                    <li>All prices are listed in Indian Rupees (INR)</li>
+                    <li>Prices are subject to change without notice</li>
+                    <li>We accept Cash on Delivery (COD) and other payment methods as displayed</li>
+                </ul>
+
+                <h2>5. Orders and Confirmation</h2>
+                <p>Order confirmation does not signify acceptance of your order.</p>
+
+                <h2>6. Shipping and Delivery</h2>
+                <ul>
+                    <li>We ship across India through trusted courier partners</li>
+                    <li>Flat delivery charge of ₹80 for all orders (regardless of order value)</li>
+                    <li>Delivery times are estimates and not guaranteed</li>
+                </ul>
+
+                <h2>7. Intellectual Property</h2>
+                <p>All content on this website is the property of Hello Gads.</p>
+
+                <h2>8. Limitation of Liability</h2>
+                <p>Hello Gads shall not be liable for any indirect, incidental, special, or consequential damages.</p>
+
+                <h2>9. Governing Law</h2>
+                <p>These Terms & Conditions are governed by the laws of India.</p>
+
+                <h2>10. Contact Information</h2>
+                <ul>
+                    <li><strong>Email:</strong> support@queenorange.com</li>
+                    <li><strong>Phone:</strong> <a href="tel:{{ site_phone|default:'+916238439926' }}">{{ site_phone|default:'+91 62384 39926' }}</a></li>
+                    <li><strong>WhatsApp:</strong> <a href="https://wa.me/{{ site_whatsapp|default:'916238439926' }}" target="_blank">{{ site_phone|default:'+91 62384 39926' }}</a></li>
+                    <li><strong>Address:</strong> 123, Fashion Street, M.G. Road, Bangalore - 560001</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+

@@ -1,0 +1,400 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Products{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Toggle on listing rows */
+    .toggle-wrap { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
+    .toggle-wrap .toggle-input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+    .toggle-track { position: relative; width: 40px; height: 22px; border-radius: 11px; background: #e2e8f0; border: 1px solid #cbd5e1; flex-shrink: 0; transition: background 0.2s, border-color 0.2s; }
+    .toggle-wrap.checked .toggle-track { background: #1976D2; border-color: #1565C0; }
+    .toggle-knob { position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.2s ease; }
+    .toggle-wrap.checked .toggle-knob { transform: translateX(18px); }
+    .toggle-label { font-weight: 500; color: #374151; font-size: 0.8125rem; }
+    .toggle-status { font-size: 0.7rem; color: #6b7280; min-width: 2em; }
+    .toggle-wrap.checked .toggle-status { color: #1976D2; font-weight: 500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="product-listing-card">
+
+    <!-- Header: Title + Count + Add Button -->
+    <div class="product-listing-header">
+        <div class="product-listing-title-group">
+            <h2 class="product-listing-title">Products</h2>
+            {% if is_paginated %}
+                <span class="product-count-badge">{{ page_obj.paginator.count }}</span>
+            {% elif products %}
+                <span class="product-count-badge">{{ products|length }}</span>
+            {% endif %}
+        </div>
+        <a href="{% url 'admin_panel:product_create' %}" class="btn btn-primary product-add-btn">
+            <i class="fas fa-plus"></i> Add Product
+        </a>
+    </div>
+
+    <!-- Desktop Filter Toolbar -->
+    <div class="product-listing-toolbar">
+        <form method="get" class="filters filters-inline product-listing-filters">
+            <div class="product-search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" class="form-control" placeholder="Search by name or ID…"
+                       value="{{ search_query }}">
+            </div>
+            <select name="category" class="form-control product-filter-select" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if filter_category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="form-control product-filter-select" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="active" {% if filter_status == "active" %}selected{% endif %}>Live</option>
+                <option value="inactive" {% if filter_status == "inactive" %}selected{% endif %}>Inactive</option>
+            </select>
+            <button type="submit" class="btn btn-secondary product-filter-btn">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            {% if search_query or filter_category or filter_status %}
+                <a href="{% url 'admin_panel:product_list' %}" class="btn btn-secondary product-filter-btn" title="Clear filters">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="product-listing-body">
+        <!-- Mobile: filter trigger button -->
+        <button type="button" class="btn btn-secondary filter-trigger mb-2" id="filterTrigger" aria-label="Open filters">
+            <i class="fas fa-filter"></i> Filters
+            {% if search_query or filter_category or filter_status %}<span class="product-count-badge" style="background:#1976D2;color:#fff;">!</span>{% endif %}
+        </button>
+
+        <!-- Mobile filter sheet -->
+        <div class="filter-overlay" id="filterOverlay" aria-hidden="true"></div>
+        <div class="filters-sheet" id="filtersSheet">
+            <div class="filters-sheet-header">
+                <strong>Filters</strong>
+                <button type="button" class="btn btn-sm btn-secondary" id="filterSheetClose" aria-label="Close">✕</button>
+            </div>
+            <form method="get" class="filters-sheet-body">
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text" name="search" class="form-control" placeholder="Search products…" value="{{ search_query }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-control">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if filter_category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="active" {% if filter_status == "active" %}selected{% endif %}>Live</option>
+                        <option value="inactive" {% if filter_status == "inactive" %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <div class="filters-sheet-footer">
+                    <button type="button" class="btn btn-secondary" id="filterClear">Clear</button>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+
+        {% if products %}
+            <!-- ── MOBILE CARDS ── -->
+            <div class="list-cards">
+                {% for product in products %}
+                    <div class="list-card">
+                        <div class="list-card-header" style="flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;">
+                                {% with card_images=product.get_card_image_urls %}
+                                    {% if card_images %}
+                                        <img src="{{ card_images.0 }}" alt="{{ product.name }}"
+                                             style="width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; flex-shrink: 0;">
+                                    {% else %}
+                                        <div style="width: 52px; height: 52px; background: var(--gray-100); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fas fa-image" style="color: var(--gray-400); font-size: 1.1rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="list-card-title" style="margin-bottom: 0.2rem; font-size: 0.9375rem;">{{ product.name|truncatechars:36 }}</div>
+                                    <div style="font-size: 0.8rem; color: var(--gray-500);">{{ product.category.name }}</div>
+                                </div>
+                            </div>
+                            <div class="list-card-status-cell" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem;">
+                                <label class="toggle-wrap product-active-toggle{% if product.is_active %} checked{% endif %}"
+                                       data-product-id="{{ product.pk }}"
+                                       data-url="{% url 'admin_panel:product_toggle_active' product.pk %}"
+                                       title="Toggle active">
+                                    <input type="checkbox" class="toggle-input" {% if product.is_active %}checked{% endif %}>
+                                    <span class="toggle-track"><span class="toggle-knob"></span></span>
+                                    <span class="toggle-label" style="font-size: 0.8rem;">Active</span>
+                                    <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_active %}On{% else %}Off{% endif %}</span>
+                                </label>
+                                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end;">
+                                    {% if product.is_featured %}<span class="badge badge-warning" style="font-size: 0.68rem; padding: 0.2rem 0.5rem;">Featured</span>{% endif %}
+                                    {% if product.is_bestseller %}<span class="badge badge-info" style="font-size: 0.68rem; padding: 0.2rem 0.5rem;">Bestseller</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-card-meta">
+                            {% if product.display_price is not None %}
+                                <span><strong style="color: #388e3c; font-size: 0.95rem;">₹{{ product.display_price }}</strong></span>
+                            {% else %}
+                                <span style="color: var(--gray-400);">No price set</span>
+                            {% endif %}
+                            {% if product.inventory_count > 0 %}
+                                <span><i class="fas fa-cubes" style="font-size: 0.75rem; color: var(--gray-400);"></i> {{ product.inventory_count }} in stock</span>
+                            {% else %}
+                                <span style="color: var(--danger);"><i class="fas fa-exclamation-triangle" style="font-size: 0.75rem;"></i> No stock</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-card-actions">
+                            {% if product.is_active %}
+                                <a href="{% url 'store:product_detail' product.slug %}" target="_blank" class="btn btn-secondary" title="View in store">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            {% else %}
+                                <button type="button" class="btn btn-secondary" disabled title="Product is inactive" style="opacity: 0.5;">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </button>
+                            {% endif %}
+                            <a href="{% url 'admin_panel:product_edit' product.pk %}" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-pen"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-ghost-danger delete-btn"
+                                    data-product-id="{{ product.pk }}"
+                                    data-product-name="{{ product.name }}"
+                                    data-delete-url="{% url 'admin_panel:product_delete' product.pk %}"
+                                    title="Delete product">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- ── DESKTOP TABLE ── -->
+            <div class="list-table product-listing-table-wrap">
+                <div class="product-listing-table">
+                    <div class="product-listing-thead">
+                        <div class="product-col product-col-img">Product</div>
+                        <div class="product-col product-col-price">Price</div>
+                        <div class="product-col product-col-stock">Inventory</div>
+                        <div class="product-col product-col-status">Status</div>
+                        <div class="product-col product-col-actions">Actions</div>
+                    </div>
+
+                    {% for product in products %}
+                    <div class="product-row">
+                        <!-- Product info -->
+                        <div class="product-col product-col-img">
+                            <div class="product-row-info">
+                                {% with card_images=product.get_card_image_urls %}
+                                    {% if card_images %}
+                                        <img src="{{ card_images.0 }}" alt="{{ product.name }}" class="product-thumb">
+                                    {% else %}
+                                        <div class="product-thumb product-thumb-placeholder">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                                <div class="product-details">
+                                    <a href="{% url 'admin_panel:product_edit' product.pk %}" class="product-name">{{ product.name }}</a>
+                                    <div class="product-meta">
+                                        <span class="product-id">ID: {{ product.pk }}</span>
+                                        <span class="product-category">{{ product.category.name }}</span>
+                                    </div>
+                                    <div class="product-tags">
+                                        {% if product.is_featured %}<span class="product-tag product-tag-featured">Featured</span>{% endif %}
+                                        {% if product.is_bestseller %}<span class="product-tag product-tag-bestseller">Bestseller</span>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="product-col product-col-price">
+                            {% if product.display_price is not None %}
+                                <span class="product-price">₹{{ product.display_price }}</span>
+                            {% else %}
+                                <span class="product-price" style="color: var(--gray-400); font-weight: 400;">—</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Inventory -->
+                        <div class="product-col product-col-stock">
+                            {% if product.inventory_count > 0 %}
+                                <span class="product-stock product-stock-ok">{{ product.inventory_count }} units</span>
+                            {% else %}
+                                <span class="product-stock product-stock-none">Out of stock</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Active toggle -->
+                        <div class="product-col product-col-status">
+                            <label class="toggle-wrap product-active-toggle{% if product.is_active %} checked{% endif %}"
+                                   data-product-id="{{ product.pk }}"
+                                   data-url="{% url 'admin_panel:product_toggle_active' product.pk %}"
+                                   title="Toggle active">
+                                <input type="checkbox" class="toggle-input" {% if product.is_active %}checked{% endif %}>
+                                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                                <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_active %}On{% else %}Off{% endif %}</span>
+                            </label>
+                        </div>
+
+                        <!-- Icon Actions -->
+                        <div class="product-col product-col-actions">
+                            <div class="tbl-actions">
+                                <a href="{% url 'admin_panel:product_edit' product.pk %}"
+                                   class="btn btn-sm btn-secondary btn-icon"
+                                   title="Edit product">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                {% if product.is_active %}
+                                    <a href="{% url 'store:product_detail' product.slug %}"
+                                       target="_blank"
+                                       class="btn btn-sm btn-secondary btn-icon"
+                                       title="View in store">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-sm btn-secondary btn-icon" disabled title="Inactive — not visible in store" style="opacity: 0.45; cursor: not-allowed;">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </button>
+                                {% endif %}
+                                <button type="button"
+                                        class="btn btn-sm btn-ghost-danger delete-btn"
+                                        data-product-id="{{ product.pk }}"
+                                        data-product-name="{{ product.name }}"
+                                        data-delete-url="{% url 'admin_panel:product_delete' product.pk %}"
+                                        title="Delete product">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_category %}&category={{ filter_category }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">« First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_category %}&category={{ filter_category }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">‹ Prev</a>
+                    {% endif %}
+                    <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_category %}&category={{ filter_category }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Next ›</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_category %}&category={{ filter_category }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Last »</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty state -->
+            <div class="product-listing-empty">
+                <div class="product-listing-empty-icon"><i class="fas fa-box-open"></i></div>
+                <p class="product-listing-empty-title">No products found</p>
+                <p class="product-listing-empty-desc">
+                    {% if search_query or filter_category or filter_status %}
+                        No products match your current filters.
+                        <a href="{% url 'admin_panel:product_list' %}" style="color: var(--primary);">Clear filters</a>
+                    {% else %}
+                        Add your first product to start selling.
+                    {% endif %}
+                </p>
+                {% if not search_query and not filter_category and not filter_status %}
+                    <a href="{% url 'admin_panel:product_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Product
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="product-delete-modal" class="admin-modal" role="dialog"
+     aria-labelledby="product-delete-title" aria-modal="true" style="display: none;">
+    <div class="admin-modal-backdrop" id="product-delete-backdrop"></div>
+    <div class="admin-modal-content">
+        <h3 id="product-delete-title" class="admin-modal-title">Delete product</h3>
+        <p id="product-delete-message" class="admin-modal-message"></p>
+        <form id="product-delete-form" method="post" action="">
+            {% csrf_token %}
+            <div class="admin-modal-actions">
+                <button type="button" class="btn btn-secondary" id="product-delete-cancel">Cancel</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/product_list.js' %}"></script>
+<script src="{% static 'js/admin_product_delete.js' %}"></script>
+<script>
+(function () {
+    var csrf = document.querySelector('[name=csrfmiddlewaretoken]') &&
+               document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    function syncToggleWrap(wrap) {
+        var inp = wrap.querySelector('.toggle-input');
+        var status = wrap.querySelector('.toggle-status');
+        if (inp && status) {
+            wrap.classList.toggle('checked', inp.checked);
+            status.textContent = inp.checked
+                ? (status.getAttribute('data-on') || 'On')
+                : (status.getAttribute('data-off') || 'Off');
+        }
+    }
+
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('toggle-input')) return;
+        var wrap = e.target.closest('.toggle-wrap');
+        if (!wrap || !wrap.classList.contains('product-active-toggle')) return;
+        syncToggleWrap(wrap);
+        var url = wrap.getAttribute('data-url');
+        if (!url || !csrf) return;
+        var isActive = e.target.checked;
+        var prevChecked = !isActive;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify({ is_active: isActive }),
+            credentials: 'same-origin'
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (!res.success) {
+                wrap.querySelector('.toggle-input').checked = prevChecked;
+                syncToggleWrap(wrap);
+                if (typeof showAdminToast === 'function')
+                    showAdminToast(res.errors && res.errors.__all__ ? res.errors.__all__[0] : 'Could not update.', 'error');
+            } else {
+                if (typeof showAdminToast === 'function')
+                    showAdminToast(res.is_active ? 'Product is now live.' : 'Product set to inactive.');
+                window.location.reload();
+            }
+        }).catch(function () {
+            wrap.querySelector('.toggle-input').checked = prevChecked;
+            syncToggleWrap(wrap);
+            if (typeof showAdminToast === 'function') showAdminToast('Network error.', 'error');
+        });
+    });
+
+    document.querySelectorAll('.product-active-toggle').forEach(syncToggleWrap);
+})();
+</script>
+{% endblock %}

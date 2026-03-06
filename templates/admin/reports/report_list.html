@@ -1,0 +1,29 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="reports-hub">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Business Reports</h3>
+            <p class="card-subtitle">Filter by date range, status, payment, and more. Export to CSV or Excel.</p>
+        </div>
+        <div class="card-body">
+            <div class="report-grid">
+                {% for report in report_types %}
+                <a href="{% url report.url %}" class="report-tile">
+                    <div class="report-card-icon">
+                        <i class="fas {{ report.icon }}"></i>
+                    </div>
+                    <h4 class="report-card-title">{{ report.name }}</h4>
+                    <p class="report-card-desc">View and export data</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

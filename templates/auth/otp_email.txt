@@ -1,0 +1,23 @@
+{{ site_name }}
+Your One-Time Login Code
+
+Hello!
+
+You requested a login code to access your account. Use the code below to complete your login:
+
+========================================
+YOUR ONE-TIME PASSWORD: {{ otp }}
+========================================
+
+⏰ IMPORTANT: This code will expire in {{ expiry_minutes }} minutes.
+
+🔒 SECURITY NOTICE:
+• Never share this code with anyone
+• We will never ask for your code via phone or email
+• If you didn't request this code, please ignore this email
+
+If you have any questions or need assistance, please contact our support team at {{ support_email }}.
+
+Best regards,
+{{ site_name }} Team
+

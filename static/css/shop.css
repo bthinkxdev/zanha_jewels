@@ -1,0 +1,284 @@
+/* ============================================================
+   SHOP PAGE — shop.css
+   Makes .product-card look identical to the bestseller card style
+   ============================================================ */
+
+/* ── Grid Toggle Buttons ── */
+.grid-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.grid-toggle-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--clr-grey-2);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--clr-grey-4, #999);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.grid-toggle-btn:hover {
+    border-color: var(--clr-navy, #1a2235);
+    color: var(--clr-navy, #1a2235);
+}
+.grid-toggle-btn.active {
+    background: var(--clr-navy, #1a2235);
+    border-color: var(--clr-navy, #1a2235);
+    color: #fff;
+}
+.grid-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* ══════════════════════════════════════════════
+   DEFAULT GRID — 5 columns
+   ══════════════════════════════════════════════ */
+#shopProductGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 24px 20px;
+    transition: all 0.3s ease;
+}
+@media (max-width: 1199px) { #shopProductGrid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 991px)  { #shopProductGrid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+@media (max-width: 575px)  { #shopProductGrid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+/* ══════════════════════════════════════════════
+   COMPACT GRID
+   ══════════════════════════════════════════════ */
+#shopProductGrid.grid-compact {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px;
+}
+@media (max-width: 1199px) { #shopProductGrid.grid-compact { grid-template-columns: repeat(6, 1fr); } }
+@media (max-width: 991px)  { #shopProductGrid.grid-compact { grid-template-columns: repeat(5, 1fr); gap: 8px; } }
+@media (max-width: 767px)  { #shopProductGrid.grid-compact { grid-template-columns: repeat(4, 1fr); gap: 6px; } }
+@media (max-width: 575px)  { #shopProductGrid.grid-compact { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
+
+/* ══════════════════════════════════════════════
+   PRODUCT CARD — styled like thauya-product-card
+   ══════════════════════════════════════════════ */
+#shopProductGrid .product-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    position: relative;
+    height: auto;
+}
+#shopProductGrid .product-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── Image wrap — matches .tpc-gallery ── */
+#shopProductGrid .product-card .product-img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--clr-grey-1, #f0ece6);
+}
+#shopProductGrid .product-card .product-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: none;
+}
+#shopProductGrid .product-card:hover .product-img-wrap img {
+    transform: none;
+}
+
+/* ── Badges ── */
+#shopProductGrid .product-card .product-badge {
+    position: absolute;
+    top: 10px; left: 10px;
+    z-index: 2;
+    font-size: 0.68rem;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 100px;
+    backdrop-filter: blur(4px);
+}
+#shopProductGrid .product-card .badge-sale {
+    background: rgba(0,0,0,0.13);
+    color: #fff;
+}
+#shopProductGrid .product-card .badge-new {
+    background: var(--clr-navy, #1a2235);
+    color: var(--clr-cream, #f5efe6);
+}
+
+/* ── Wishlist — matches .tpc-wishlist ── */
+#shopProductGrid .product-card .product-wishlist {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background: rgba(255,255,255,0.85) !important;
+    color: var(--clr-navy, #1a2235) !important;
+    font-size: 0.8rem;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: var(--transition);
+}
+#shopProductGrid .product-card .product-wishlist:hover,
+#shopProductGrid .product-card .product-wishlist.in-wishlist {
+    background: #fff !important;
+    color: #e05 !important;
+}
+
+/* ── View detail overlay ── */
+#shopProductGrid .product-card .product-quick-add {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--clr-navy, #1a2235);
+    color: var(--clr-cream, #f5efe6);
+    text-align: center;
+    padding: 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    text-decoration: none;
+    display: block;
+    z-index: 3;
+    border-radius: 0 0 10px 10px;
+}
+#shopProductGrid .product-card:hover .product-quick-add {
+    transform: translateY(0);
+}
+
+/* ── Card body — matches .tpc-body ── */
+#shopProductGrid .product-card .product-body {
+    padding: 10px 2px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: unset;
+}
+
+/* Category */
+#shopProductGrid .product-card .product-category {
+    font-size: 0.68rem;
+    color: var(--clr-grey-5, #6e6860);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+    text-align: center;
+}
+
+/* Name */
+#shopProductGrid .product-card .product-name {
+    font-family: var(--font-body, 'Muli', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--clr-navy, #1a2235);
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Price */
+#shopProductGrid .product-card .product-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 0;
+    padding-top: 0;
+}
+#shopProductGrid .product-card .price-current {
+    font-family: var(--font-body, 'Muli', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--clr-navy, #1a2235);
+}
+#shopProductGrid .product-card .price-old {
+    font-size: 0.75rem;
+    color: var(--clr-grey-4, #9e9890);
+    text-decoration: line-through;
+}
+
+/* Add to cart — matches .tpc-add-btn */
+#shopProductGrid .product-card .product-cta,
+#shopProductGrid .product-card .product-add-form button.product-cta {
+    margin-top: 8px;
+    width: 100%;
+    background: var(--clr-navy, #1a2235) !important;
+    color: var(--clr-cream, #f5efe6) !important;
+    border: none !important;
+    border-radius: var(--radius-md, 6px);
+    padding: 10px;
+    font-family: var(--font-body, 'Muli', sans-serif);
+    font-size: var(--text-sm, 0.8125rem);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+}
+#shopProductGrid .product-card .product-cta:hover,
+#shopProductGrid .product-card .product-add-form button.product-cta:hover {
+    background: var(--clr-navy-light, #2e3d56) !important;
+}
+#shopProductGrid .product-card .product-add-form {
+    margin: 0; padding: 0;
+}
+
+/* ══════════════════════════════════════════════
+   COMPACT MODE
+   ══════════════════════════════════════════════ */
+#shopProductGrid.grid-compact .product-card .product-body { padding: 6px 2px 0; }
+#shopProductGrid.grid-compact .product-card .product-name { font-size: 0.7rem; }
+#shopProductGrid.grid-compact .product-card .price-current { font-size: 0.72rem; }
+#shopProductGrid.grid-compact .product-card .product-cta,
+#shopProductGrid.grid-compact .product-card .product-add-form button.product-cta {
+    font-size: 0.62rem;
+    padding: 6px 4px;
+    min-height: 28px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+#shopProductGrid.grid-compact .product-card .product-category { display: none; }
+#shopProductGrid.grid-compact .product-card .product-wishlist { display: none !important; }
+#shopProductGrid.grid-compact .product-card .product-quick-add { display: none; }
+
+/* Empty state */
+#shopProductGrid .col-12.text-center { grid-column: 1 / -1; }

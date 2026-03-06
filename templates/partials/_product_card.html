@@ -1,0 +1,64 @@
+{% load static %}{% load product_filters %}
+{% with v=product.primary_variant %}
+{% if v %}
+<div class="thauya-product-card">
+
+    {% with imgs=v.images.all %}
+    <div class="tpc-gallery js-product-card-slider"
+         data-card-images='[{% for img in imgs %}"{{ img.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}]'>
+
+        <a href="{% url 'store:product_detail' product.slug %}?variant={{ v.id }}" class="tpc-img-link">
+            {% if imgs %}
+                <img src="{{ imgs.0.image.url }}" alt="{{ product.name }}"
+                     class="tpc-img card-slider-img" loading="eager">
+            {% else %}
+                <img src="{% static 'img/product-1.png' %}" alt="{{ product.name }}"
+                     class="tpc-img card-slider-img" loading="lazy">
+            {% endif %}
+        </a>
+
+        {% comment %} {% if product.is_bestseller %}
+            <span class="tpc-badge">Best Seller</span>
+        {% elif product.is_deal_of_day %}
+            <span class="tpc-badge">Deal of the Day</span>
+        {% elif product.is_featured %}
+            <span class="tpc-badge">Featured</span>
+        {% endif %} {% endcomment %}
+
+        {% comment %} <button type="button"
+                class="tpc-wishlist js-wishlist-toggle {% if v.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+                data-variant-id="{{ v.id }}" title="Wishlist">
+            <i class="far fa-heart"></i>
+        </button> {% endcomment %}
+
+    </div>
+    {% endwith %}
+
+    <div class="tpc-body">
+        <a href="{% url 'store:product_detail' product.slug %}?variant={{ v.id }}" class="tpc-name-link">
+            <p class="tpc-name">{{ product.name }}</p>
+        </a>
+        <p class="tpc-price">₹{{ product.lowest_price|default:v.price|floatformat:0 }}</p>
+
+        {% comment %} {% if product.total_reviews %}
+        <div class="tpc-rating">
+            <span class="tpc-stars">★</span>
+            <span class="tpc-rating-val">{{ product.average_rating|floatformat:1 }}</span>
+            <span class="tpc-rating-count">({{ product.total_reviews }})</span>
+        </div>
+        {% endif %} {% endcomment %}
+
+        <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="variant_id" value="{{ v.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="tpc-add-btn">
+                <i class="fas fa-shopping-bag me-1"></i> Add to cart
+            </button>
+        </form>
+    </div>
+
+</div>
+{% endif %}
+{% endwith %}

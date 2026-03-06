@@ -1,0 +1,132 @@
+{% extends "base_gadget.html" %}
+{% load static %}
+{% block title %}Cart — Hello Gads{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">Shopping Cart</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                <li class="breadcrumb-item"><a href="{% url 'store:home' %}">Home</a></li>
+                <li class="breadcrumb-item active">Cart</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-pad">
+    <div class="container">
+        {% if items %}
+        <div class="row g-5">
+            <div class="col-lg-8 wow fadeInLeft" data-wow-delay="0.1s">
+                <div class="cart-table-wrap">
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td data-label="Product">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <a href="{% url 'store:product_detail' item.product.slug %}">
+                                            {% if item.selected_variant and item.selected_variant.images.all %}
+                                            <img class="cart-product-img" src="{{ item.selected_variant.images.first.image.url }}" alt="{{ item.product.name }}">
+                                            {% elif item.size_variant and item.size_variant.color_variant.images.all %}
+                                            <img class="cart-product-img" src="{{ item.size_variant.color_variant.images.first.image.url }}" alt="{{ item.product.name }}">
+                                            {% else %}
+                                            <img class="cart-product-img" src="{% static 'img/product-1.png' %}" alt="{{ item.product.name }}">
+                                            {% endif %}
+                                        </a>
+                                        <div>
+                                            <div class="cart-product-name">{{ item.product.name }}</div>
+                                            <div class="cart-product-meta">{{ item.variant_display }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td data-label="Price"><span class="cart-price">₹{{ item.unit_price }}</span></td>
+                                <td data-label="Quantity">
+                                    <form method="post" action="{% url 'store:cart_update' %}" class="cart-qty-form d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                                        <div class="qty-selector quantity d-inline-flex">
+                                            <button type="button" class="btn-minus"><i class="fas fa-minus"></i></button>
+                                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99" style="width:44px;text-align:center;">
+                                            <button type="button" class="btn-plus"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td data-label="Total"><span class="cart-price">₹{{ item.line_total }}</span></td>
+                                <td>
+                                    <form method="post" action="{% url 'store:cart_remove' item.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="cart-remove-btn border-0 bg-transparent" title="Remove"><i class="fas fa-times"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between flex-wrap gap-3 mt-4">
+                    <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4"><i class="fas fa-arrow-left me-2"></i> Continue Shopping</a>
+                </div>
+            </div>
+            <div class="col-lg-4 wow fadeInRight" data-wow-delay="0.2s">
+                <div class="cart-summary">
+                    <h4>Order Summary</h4>
+                    <div class="cart-summary-row">
+                        <span>Subtotal</span>
+                        <span>₹{{ totals.subtotal }}</span>
+                    </div>
+                    {% if totals.gst_total and totals.gst_total > 0 %}
+                    <div class="cart-summary-row">
+                        <span>GST Total</span>
+                        <span>₹{{ totals.gst_total }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="cart-summary-row">
+                        <span>Shipping</span>
+                        <span>{% if totals.shipping == 0 %}Free{% else %}₹{{ totals.shipping }}{% endif %}</span>
+                    </div>
+                    <div class="cart-summary-total">
+                        <span class="label">Grand Total</span>
+                        <span class="amount">₹{{ totals.total }}</span>
+                    </div>
+                    <a href="{% url 'store:checkout' %}" class="btn btn-dark w-100 mt-3" style="min-height:52px;font-weight:700;">
+                        Proceed to Checkout <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <p class="text-muted mb-4">Your cart is empty.</p>
+            <a href="{% url 'store:product_list' %}" class="btn btn-dark px-4">Continue Shopping</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+    document.querySelectorAll('.cart-qty-form').forEach(function(form){
+        var input = form.querySelector('input[name="quantity"]');
+        var minus = form.querySelector('.btn-minus');
+        var plus = form.querySelector('.btn-plus');
+        if(!input) return;
+        function submit(){ var v = parseInt(input.value,10); if(v>=1&&v<=99) form.submit(); }
+        if(minus){ minus.addEventListener('click', function(){ input.value = Math.max(1, parseInt(input.value,10)-1); submit(); }); }
+        if(plus){ plus.addEventListener('click', function(){ input.value = Math.min(99, parseInt(input.value,10)+1); submit(); }); }
+    });
+})();
+</script>
+{% endblock %}

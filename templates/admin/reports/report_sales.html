@@ -1,0 +1,101 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Sales Report{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+
+{% block content %}
+<div class="report-page" data-report-type="sales">
+    <div class="card report-card">
+        <div class="card-header report-card-header">
+            <h3 class="card-title">Sales Report</h3>
+            <div class="report-export-buttons">
+                <a href="{% url 'admin_panel:report_export' 'sales' 'csv' %}" class="btn btn-sm btn-outline" id="reportExportCsv">CSV</a>
+                <a href="{% url 'admin_panel:report_export' 'sales' 'xlsx' %}" class="btn btn-sm btn-outline" id="reportExportXlsx" data-format="xlsx">Excel</a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% include "admin/reports/_report_filter_form.html" with date_presets=date_presets filters=filters status_choices=status_choices payment_choices=payment_choices categories=categories products=products sort=sort %}
+
+            <div class="report-summary" id="reportSummary">
+                <div class="stats-grid report-summary-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon primary"><i class="fas fa-shopping-bag"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total orders</div>
+                            <div class="stat-value" id="summaryTotalOrders">{{ summary.total_orders }}</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success"><i class="fas fa-rupee-sign"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total revenue</div>
+                            <div class="stat-value" id="summaryTotalRevenue">₹{{ summary.total_revenue|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning"><i class="fas fa-calculator"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">Avg order value</div>
+                            <div class="stat-value" id="summaryAvgOrder">₹{{ summary.avg_order_value|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon info"><i class="fas fa-star"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">Top product</div>
+                            <div class="stat-value stat-value-sm" id="summaryTopProduct">{{ summary.top_product_name|truncatewords:6 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive report-table-wrap">
+                <table class="table report-table">
+                    <thead>
+                        <tr>
+                            <th><a href="?" class="report-sort" data-sort="order_number">Order #</a></th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Items</th>
+                            <th><a href="?" class="report-sort" data-sort="-total">Total</a></th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th><a href="?" class="report-sort" data-sort="-created_at">Date</a></th>
+                        </tr>
+                    </thead>
+                    {% include "admin/reports/partials/orders_table.html" with orders=orders %}
+                </table>
+            </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="pagination report-pagination" id="reportPagination">
+                {% if page_obj.has_previous %}
+                <a href="?page=1{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">First</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Previous</a>
+                {% endif %}
+                <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Last</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.ReportConfig = {
+        reportType: 'sales',
+        apiUrl: '{% url "admin_panel:report_api" "sales" %}',
+        exportCsvUrl: '{% url "admin_panel:report_export" "sales" "csv" %}',
+        exportXlsxUrl: '{% url "admin_panel:report_export" "sales" "xlsx" %}'
+    };
+});
+</script>
+<script src="{% static 'js/admin-reports.js' %}"></script>
+{% endblock %}

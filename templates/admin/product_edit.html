@@ -1,0 +1,267 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}{{ form_title }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_product_edit.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="product-edit-wrapper has-pf-actions" id="product-edit-app"
+     data-product-id="{{ product.pk }}"
+     data-url-update-basic="{% url 'admin_panel:product_update_basic' product.pk %}"
+     data-url-attributes="{% url 'admin_panel:product_attributes_list' product.pk %}"
+     data-url-attribute-add="{% url 'admin_panel:product_attribute_add' product.pk %}"
+     data-url-attributes-reorder="{% url 'admin_panel:product_attributes_reorder' product.pk %}"
+     data-url-attribute-update="{% url 'admin_panel:attribute_update' 0 %}"
+     data-url-attribute-delete="{% url 'admin_panel:attribute_delete' 0 %}"
+     data-url-attribute-value-add="{% url 'admin_panel:attribute_value_add' 0 %}"
+     data-url-attribute-values-reorder="{% url 'admin_panel:attribute_values_reorder' 0 %}"
+     data-url-attribute-value-update="{% url 'admin_panel:attribute_value_update' 0 %}"
+     data-url-attribute-value-delete="{% url 'admin_panel:attribute_value_delete' 0 %}"
+     data-url-variants="{% url 'admin_panel:product_variants_list' product.pk %}"
+     data-url-variant-add="{% url 'admin_panel:variant_add' product.pk %}"
+     data-url-variant-update="{% url 'admin_panel:variant_update' 0 %}"
+     data-url-variant-delete="{% url 'admin_panel:variant_delete' 0 %}"
+     data-url-variant-upload-image="{% url 'admin_panel:variant_upload_image' 0 %}"
+     data-url-variant-image-delete="{% url 'admin_panel:variant_image_delete' 0 %}"
+     data-url-variant-image-set-primary="{% url 'admin_panel:variant_image_set_primary' 0 %}"
+     data-url-variant-image-reorder="{% url 'admin_panel:variant_image_reorder' %}">
+    {% csrf_token %}
+
+    <!-- ── STATUS STRIP ── -->
+    <div class="edit-status-strip">
+        <div class="edit-status-label">
+            <span class="edit-status-pre">Editing:</span>
+            <strong class="edit-status-name" title="{{ product.name }}">{{ product.name }}</strong>
+        </div>
+        <div class="edit-status-badges">
+            {% if product.is_active %}
+                <span class="badge badge-success">Live</span>
+            {% else %}
+                <span class="badge badge-secondary">Inactive</span>
+            {% endif %}
+            {% if product.is_featured %}
+                <span class="badge badge-warning">Featured</span>
+            {% endif %}
+            {% if product.is_bestseller %}
+                <span class="badge badge-info">Bestseller</span>
+            {% endif %}
+            {% if product.is_deal_of_day %}
+                <span class="badge badge-danger">Deal of Day</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── SECTION 1: Basic Details ── -->
+    <div class="edit-section">
+        <h4 class="section-heading"><span class="section-num">1</span> Basic details</h4>
+        <p class="section-hint">Category, name, description, brand and flags. Click <strong>Save</strong> after making changes.</p>
+        <div id="basic-edit-form">
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Category <span class="req">*</span></label>
+                    {{ basic_form.category }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="basic-brand">Brand</label>
+                    <input type="text" class="form-control" id="basic-brand"
+                           value="{{ product.brand|default:'' }}" placeholder="e.g. Nike, Apple, Samsung">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="basic-name">Product name <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="basic-name"
+                           value="{{ product.name }}" placeholder="Product name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="basic-slug">Slug</label>
+                    <input type="text" class="form-control" id="basic-slug"
+                           value="{{ product.slug }}" placeholder="product-slug">
+                    <span class="form-hint">Used in the product URL</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="basic-description">Description</label>
+                <textarea class="form-control" id="basic-description" rows="5">{{ product.description }}</textarea>
+            </div>
+
+            <!-- GST (India) -->
+            <div class="form-group" style="margin-top: 1rem;">
+                <label class="toggle-wrap{% if product.is_gst_applicable %} checked{% endif %}" for="basic-is_gst_applicable">
+                    <input type="checkbox" class="toggle-input" id="basic-is_gst_applicable" {% if product.is_gst_applicable %}checked{% endif %}>
+                    <span class="toggle-track"><span class="toggle-knob"></span></span>
+                    <span class="toggle-label">GST applicable</span>
+                    <span class="toggle-status" data-on="Yes" data-off="No">{% if product.is_gst_applicable %}Yes{% else %}No{% endif %}</span>
+                </label>
+                <div id="gst-fields-wrap" class="gst-fields-wrap" style="margin-top: 0.75rem; {% if not product.is_gst_applicable %}display: none;{% endif %}">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="basic-gst_percentage">GST % <span class="req">*</span></label>
+                            <input type="number" class="form-control" id="basic-gst_percentage" step="0.01" min="0" max="28" placeholder="0–28" value="{{ product.gst_percentage|default:'' }}">
+                            <span class="form-hint">0–28 (e.g. 18 for 18%)</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="basic-hsn_code">HSN code</label>
+                            <input type="text" class="form-control" id="basic-hsn_code" maxlength="20" placeholder="e.g. 8517" value="{{ product.hsn_code|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flags row -->
+            <div class="toggle-grid">
+                <label class="toggle-wrap{% if product.is_active %} checked{% endif %}" for="basic-is_active">
+                    <input type="checkbox" class="toggle-input" id="basic-is_active" {% if product.is_active %}checked{% endif %}>
+                    <span class="toggle-track"><span class="toggle-knob"></span></span>
+                    <span class="toggle-label">Active</span>
+                    <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_active %}On{% else %}Off{% endif %}</span>
+                </label>
+                <label class="toggle-wrap{% if product.is_featured %} checked{% endif %}" for="basic-is_featured">
+                    <input type="checkbox" class="toggle-input" id="basic-is_featured" {% if product.is_featured %}checked{% endif %}>
+                    <span class="toggle-track"><span class="toggle-knob"></span></span>
+                    <span class="toggle-label">Featured</span>
+                    <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_featured %}On{% else %}Off{% endif %}</span>
+                </label>
+                <label class="toggle-wrap{% if product.is_bestseller %} checked{% endif %}" for="basic-is_bestseller">
+                    <input type="checkbox" class="toggle-input" id="basic-is_bestseller" {% if product.is_bestseller %}checked{% endif %}>
+                    <span class="toggle-track"><span class="toggle-knob"></span></span>
+                    <span class="toggle-label">Bestseller</span>
+                    <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_bestseller %}On{% else %}Off{% endif %}</span>
+                </label>
+                <label class="toggle-wrap{% if product.is_deal_of_day %} checked{% endif %}" for="basic-is_deal_of_day">
+                    <input type="checkbox" class="toggle-input" id="basic-is_deal_of_day" {% if product.is_deal_of_day %}checked{% endif %}>
+                    <span class="toggle-track"><span class="toggle-knob"></span></span>
+                    <span class="toggle-label">Deal of day</span>
+                    <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_deal_of_day %}On{% else %}Off{% endif %}</span>
+                </label>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
+                <button type="button" id="basic-save-btn" class="btn btn-primary" disabled>
+                    <i class="fas fa-check"></i> Save changes
+                </button>
+                <span id="basic-save-feedback" class="save-feedback"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 2: Attributes ── -->
+    <div class="edit-section">
+        <h4 class="section-heading"><span class="section-num">2</span> Attributes</h4>
+        <p class="section-hint">Add attributes (e.g. Color, Storage, Size). Under each, add the available values. No duplicate names per product.</p>
+        <div id="attributes-container">
+            <p id="attributes-loading" class="loading-msg">Loading…</p>
+            <div id="attributes-list"></div>
+            <div class="attribute-add-row">
+                <input type="text" id="attr-new-name" class="form-control" placeholder="Attribute name (e.g. Color)">
+                <button type="button" id="attr-add-btn" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add attribute
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 3: Variants ── -->
+    <div class="edit-section">
+        <h4 class="section-heading"><span class="section-num">3</span> Variants</h4>
+        <p class="section-hint">Each variant is a combination of attribute values with its own price, stock, SKU and images. Add at least one attribute with values before adding variants.</p>
+        <div id="variants-container">
+            <p id="variants-loading" class="loading-msg">Loading…</p>
+            <div id="variants-list"></div>
+            <button type="button" id="variant-add-btn" class="btn btn-secondary">
+                <i class="fas fa-plus"></i> Add variant
+            </button>
+        </div>
+    </div>
+
+    <!-- ── ADD VARIANT MODAL ── -->
+    <div id="add-variant-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-dialog">
+            <h3 id="add-variant-modal-title">Add variant</h3>
+            <p class="section-hint">Select one value per attribute. Set price, stock, and SKU. At least one attribute value is required.</p>
+            <div id="add-variant-attribute-values"></div>
+            <div class="grid-2" style="margin-top: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Price (₹) <span class="req">*</span></label>
+                    <input type="number" id="add-variant-price" class="form-control" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stock</label>
+                    <input type="number" id="add-variant-stock" class="form-control" min="0" value="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">SKU</label>
+                <input type="text" id="add-variant-sku" class="form-control" placeholder="Optional — e.g. PROD-RED-L">
+            </div>
+            <p class="section-hint" style="margin-top: 0.875rem;">Shipping dimensions (for Shiprocket). Weight in kg, dimensions in cm.</p>
+            <div class="grid-2" style="margin-top: 0.25rem;">
+                <div class="form-group">
+                    <label class="form-label">Weight (kg)</label>
+                    <input type="number" id="add-variant-weight" class="form-control" step="0.001" min="0" value="0" placeholder="0.000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Length (cm)</label>
+                    <input type="number" id="add-variant-length" class="form-control" step="0.01" min="0" value="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Breadth (cm)</label>
+                    <input type="number" id="add-variant-breadth" class="form-control" step="0.01" min="0" value="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Height (cm)</label>
+                    <input type="number" id="add-variant-height" class="form-control" step="0.01" min="0" value="0" placeholder="0">
+                </div>
+            </div>
+            <label class="toggle-wrap checked" for="add-variant-is_active" style="margin-bottom: 0.75rem;">
+                <input type="checkbox" class="toggle-input" id="add-variant-is_active" checked>
+                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                <span class="toggle-label">Active</span>
+                <span class="toggle-status" data-on="On" data-off="Off">On</span>
+            </label>
+            <div class="form-group">
+                <label class="form-label">Optional: Add an image</label>
+                <input type="file" id="add-variant-image" class="form-control" accept="image/*">
+                <span class="form-hint">You can upload more images after saving by expanding the variant card.</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="add-variant-cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="add-variant-submit">Add variant</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── BOTTOM PAGE ACTIONS (desktop) + STICKY BACK BAR (mobile) ── -->
+    <div class="pf-actions">
+        <a href="{% url 'admin_panel:product_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to products
+        </a>
+        <div class="pf-primary-actions">
+            {% if product.is_active %}
+                <a href="{% url 'store:product_detail' product.slug %}" target="_blank" class="btn btn-secondary">
+                    <i class="fas fa-external-link-alt"></i> View in store
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="action-loader-edit" class="action-loader-overlay" aria-hidden="true">
+        <div style="text-align: center;">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Saving…</div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/product_edit.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{# Variant card: header (combo, price, stock, active), body (SKU, order, images). Rendered by JS from API. #}
+<div class="variant-card" data-variant-id="{{ variant.id }}">
+    <div class="variant-card-header" role="button" tabindex="0" aria-expanded="false">
+        <span class="variant-combo"></span>
+        <span class="variant-price"></span>
+        <span class="variant-stock"></span>
+        <label class="toggle-wrap variant-active-wrap">
+            <input type="checkbox" class="toggle-input variant-is-active">
+            <span class="toggle-track"><span class="toggle-knob"></span></span>
+            <span class="toggle-status" data-on="On" data-off="Off">Off</span>
+        </label>
+        <button type="button" class="btn btn-sm btn-danger variant-delete" title="Delete variant"><i class="fas fa-trash"></i></button>
+        <span class="variant-chevron"><i class="fas fa-chevron-down"></i></span>
+    </div>
+    <div class="variant-card-body">
+        <div class="variant-card-body-inner">
+            <div class="variant-fields-row">
+                <div class="variant-field"><label class="variant-field-label">Price (₹)</label><input type="number" class="form-control variant-price-inp" step="0.01" min="0"></div>
+                <div class="variant-field"><label class="variant-field-label">Stock</label><input type="number" class="form-control variant-stock-inp" min="0"></div>
+                <div class="variant-field"><label class="variant-field-label">SKU</label><input type="text" class="form-control variant-sku-inp" placeholder="Optional"></div>
+                <div class="variant-field"><label class="variant-field-label">Order</label><input type="number" class="form-control variant-order-inp" min="0"></div>
+                <button type="button" class="btn btn-primary btn-sm variant-save-btn">Save</button>
+            </div>
+            <div class="variant-fields-row variant-shipping-row">
+                <div class="variant-field"><label class="variant-field-label">Weight (kg)</label><input type="number" class="form-control variant-weight-inp" step="0.001" min="0" placeholder="0"></div>
+                <div class="variant-field"><label class="variant-field-label">Length (cm)</label><input type="number" class="form-control variant-length-inp" step="0.01" min="0" placeholder="0"></div>
+                <div class="variant-field"><label class="variant-field-label">Breadth (cm)</label><input type="number" class="form-control variant-breadth-inp" step="0.01" min="0" placeholder="0"></div>
+                <div class="variant-field"><label class="variant-field-label">Height (cm)</label><input type="number" class="form-control variant-height-inp" step="0.01" min="0" placeholder="0"></div>
+            </div>
+            <div class="nested-block variant-images-block">
+                <div class="nested-title">Images</div>
+                <div class="variant-images-list"></div>
+                <button type="button" class="btn btn-sm btn-secondary variant-add-image">Add image</button>
+            </div>
+        </div>
+    </div>
+</div>

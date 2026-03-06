@@ -1,0 +1,232 @@
+/* ============================================
+   BOTTOM NAV BAR — iOS design, all screens
+   Home (center), Shop, Cart, Wishlist, Account
+   ============================================ */
+
+:root {
+    --bottom-bar-height: 56px;
+    --bottom-bar-safe: env(safe-area-inset-bottom, 0px);
+    --bottom-bar-total: calc(var(--bottom-bar-height) + var(--bottom-bar-safe));
+    /* Black & white theme */
+    --bottom-bar-bg: #ffffff;
+    --bottom-bar-border: rgba(0, 0, 0, 0.12);
+    --bottom-bar-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --bottom-bar-z: 1000;
+    --bottom-bar-icon-size: 24px;
+    --bottom-bar-label-size: 10px;
+    --bottom-bar-accent: #000000;
+    --bottom-bar-inactive: rgba(0, 0, 0, 0.5);
+}
+
+/* Reserve space so content/footer isn’t hidden behind the bar */
+body.has-bottom-bar {
+    padding-bottom: var(--bottom-bar-total);
+}
+
+/* Bar container: fixed at bottom, never moves with scroll */
+.bottom-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--bottom-bar-z);
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    min-height: var(--bottom-bar-height);
+    padding-bottom: var(--bottom-bar-safe);
+    background: var(--bottom-bar-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid var(--bottom-bar-border);
+    box-shadow: var(--bottom-bar-shadow);
+    border-radius: 20px 20px 0 0;
+    -webkit-tap-highlight-color: transparent;
+    /* Keep bar in fixed position; prevent any scroll-based movement */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* Inner flex: 5 items, equal width, Home visually centered */
+.bottom-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 6px 8px 0;
+}
+
+/* Each item: column layout, min 44px touch target (iOS HIG) */
+.bottom-bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    padding: 6px 4px 8px;
+    color: var(--bottom-bar-inactive);
+    text-decoration: none;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    font-size: var(--bottom-bar-label-size);
+    font-weight: 500;
+    line-height: 1.2;
+    transition: color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-bar-item:hover {
+    color: rgba(0, 0, 0, 0.75);
+}
+
+.bottom-bar-item:active {
+    opacity: 0.7;
+}
+
+.bottom-bar-item.active {
+    color: var(--bottom-bar-accent);
+}
+
+/* Icon wrapper for consistent hit area */
+.bottom-bar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--bottom-bar-icon-size);
+    height: var(--bottom-bar-icon-size);
+    margin-bottom: 2px;
+}
+
+.bottom-bar-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.bottom-bar-item.active .bottom-bar-icon svg {
+    stroke: var(--bottom-bar-accent);
+}
+
+/* Label */
+.bottom-bar-label {
+    font-size: var(--bottom-bar-label-size);
+    letter-spacing: 0.01em;
+    color: inherit;
+}
+
+/* Badge (cart count, wishlist count) — black & white */
+.bottom-bar-badge {
+    position: absolute;
+    top: 2px;
+    right: 50%;
+    transform: translate(50%, -50%);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: #000000;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+}
+
+.bottom-bar-icon {
+    position: relative;
+}
+
+/* Responsive: slightly smaller on very small screens */
+@media (max-width: 360px) {
+    :root {
+        --bottom-bar-height: 52px;
+        --bottom-bar-icon-size: 22px;
+        --bottom-bar-label-size: 9px;
+    }
+    .bottom-bar-inner {
+        padding: 4px 4px 0;
+    }
+    .bottom-bar-item {
+        padding: 4px 2px 6px;
+    }
+}
+
+/* Tablet and up: bar can be a bit more compact or same */
+@media (min-width: 768px) {
+    .bottom-bar-inner {
+        max-width: 480px;
+        padding: 8px 12px 0;
+    }
+    .bottom-bar-item {
+        padding: 8px 6px 10px;
+    }
+}
+
+/* Gleam animation when item added to cart (triggered by JS) */
+@keyframes bottom-bar-cart-gleam {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    25% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+    75% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes bottom-bar-cart-badge-pop {
+    0% {
+        transform: translate(50%, -50%) scale(1);
+    }
+    40% {
+        transform: translate(50%, -50%) scale(1.35);
+    }
+    70% {
+        transform: translate(50%, -50%) scale(1.1);
+    }
+    100% {
+        transform: translate(50%, -50%) scale(1);
+    }
+}
+
+.bottom-bar-item.js-bottom-bar-cart .bottom-bar-icon {
+    transition: transform 0.2s ease;
+}
+
+.bottom-bar-item.js-bottom-bar-cart.cart-gleam .bottom-bar-icon {
+    animation: bottom-bar-cart-gleam 0.5s ease;
+}
+
+.bottom-bar-item.js-bottom-bar-cart.cart-gleam .bottom-bar-icon .js-cart-count {
+    animation: bottom-bar-cart-badge-pop 0.45s ease;
+}
+
+/* WhatsApp FAB should stay above the bottom bar */
+.whatsapp-fab {
+    z-index: 1001;
+}
+
+/* Optional: hide on large desktop if you prefer (uncomment to hide) */
+/* @media (min-width: 1025px) {
+    .bottom-bar { display: none; }
+    body.has-bottom-bar { padding-bottom: 0; }
+} */

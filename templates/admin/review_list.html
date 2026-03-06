@@ -1,0 +1,271 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Ratings & Reviews - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reviews-stars {
+        color: #f59e0b;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    .reviews-comment {
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-status.approved {
+        background: #E8F5E9;
+        color: #2E7D32;
+    }
+    .badge-status.unapproved {
+        background: #FFEBEE;
+        color: #C62828;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reviews-admin-page">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title mb-0">Ratings &amp; Reviews</h2>
+                <p class="card-subtitle" style="color: var(--gray-600); font-size: 0.9rem;">
+                    Moderate customer feedback across all products.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <form method="get" class="filters filters-inline reviews-filters mb-2">
+                <div class="search-box">
+                    <label class="form-label" for="id_q">Search (product, user)</label>
+                    <i class="fas fa-search"></i>
+                    <input type="text"
+                           id="id_q"
+                           name="q"
+                           class="form-control"
+                           value="{{ filter_q }}"
+                           placeholder="Search by product or user">
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" for="id_product">Product</label>
+                    <select id="id_product" name="product" class="form-control">
+                        <option value="">All products</option>
+                        {% for p in products %}
+                            <option value="{{ p.id }}" {% if filter_product|add:""|stringformat:"s" == p.id|stringformat:"s" %}selected{% endif %}>
+                                {{ p.name|truncatechars:40 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" for="id_rating">Rating</label>
+                    <select id="id_rating" name="rating" class="form-control">
+                        <option value="">All ratings</option>
+                        {% for r in "54321" %}
+                            <option value="{{ r }}" {% if filter_rating == r %}selected{% endif %}>{{ r }}★</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" for="id_status">Approval</label>
+                    <select id="id_status" name="status" class="form-control">
+                        <option value="">All</option>
+                        <option value="approved" {% if filter_status == "approved" %}selected{% endif %}>Approved</option>
+                        <option value="unapproved" {% if filter_status == "unapproved" %}selected{% endif %}>Unapproved</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" for="id_date_from">From date</label>
+                    <input type="date"
+                           id="id_date_from"
+                           name="date_from"
+                           class="form-control"
+                           value="{{ filter_date_from }}">
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" for="id_date_to">To date</label>
+                    <input type="date"
+                           id="id_date_to"
+                           name="date_to"
+                           class="form-control"
+                           value="{{ filter_date_to }}">
+                </div>
+
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </form>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="reviews-bulk-actions d-flex gap-2 align-center mb-2" style="flex-wrap: wrap;">
+                    <select name="action" required class="form-control reviews-action-select">
+                        <option value="">Bulk actions</option>
+                        <option value="approve">Approve</option>
+                        <option value="unapprove">Unapprove</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-sm reviews-apply-btn">
+                        Apply
+                    </button>
+                    <span class="reviews-count-text" style="color: var(--gray-500); font-size: 0.85rem;">
+                        {% if paginator.count %}
+                            {{ paginator.count }} review{{ paginator.count|pluralize }} found
+                        {% else %}
+                            No reviews found for current filters
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="table-responsive table-wrap-desktop reviews-table-wrap">
+                    <table class="table reviews-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32px;">
+                                    <input type="checkbox" id="select-all">
+                                </th>
+                                <th>Rating</th>
+                                <th>Product</th>
+                                <th>User</th>
+                                <th>Title &amp; Comment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews %}
+                                <tr>
+                                    <td data-label="Select">
+                                        <input type="checkbox" name="selected" value="{{ review.id }}">
+                                    </td>
+                                    <td data-label="Rating">
+                                        <div class="reviews-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td data-label="Product">
+                                        <a href="{% url 'admin_panel:product_edit' review.product_id %}" class="reviews-product">
+                                            {{ review.product.name|truncatechars:40 }}
+                                        </a>
+                                    </td>
+                                    <td data-label="User">
+                                        <div style="font-size: 0.85rem;">
+                                            {% if review.user %}
+                                                {{ review.user.username }}
+                                                {% if review.user.email %}
+                                                    <span style="color: var(--gray-500);">
+                                                        ({{ review.user.email }})
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span style="color: var(--gray-500);">User deleted</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if review.order %}
+                                            <div style="color: var(--gray-500); font-size: 0.75rem;">
+                                                Order #{{ review.order.order_number }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Review">
+                                        {% if review.title %}
+                                            <div><strong>{{ review.title|truncatechars:60 }}</strong></div>
+                                        {% endif %}
+                                        {% if review.comment %}
+                                            <div class="reviews-comment">
+                                                {{ review.comment|linebreaksbr }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Status">
+                                        {% if review.is_approved %}
+                                            <span class="badge-status approved">Approved</span>
+                                        {% else %}
+                                            <span class="badge-status unapproved">Unapproved</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Date">
+                                        <div>{{ review.created_at|date:"M j, Y" }}</div>
+                                        <div style="color: var(--gray-500); font-size: 0.8rem;">
+                                            {{ review.created_at|time:"H:i" }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <i class="fas fa-star-half-alt"></i>
+                                            <p>No reviews found for the selected filters.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+            {% if is_paginated %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if filter_q %}&q={{ filter_q }}{% endif %}{% if filter_product %}&product={{ filter_product }}{% endif %}{% if filter_rating %}&rating={{ filter_rating }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date_from %}&date_from={{ filter_date_from }}{% endif %}{% if filter_date_to %}&date_to={{ filter_date_to }}{% endif %}">
+                            First
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if filter_q %}&q={{ filter_q }}{% endif %}{% if filter_product %}&product={{ filter_product }}{% endif %}{% if filter_rating %}&rating={{ filter_rating }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date_from %}&date_from={{ filter_date_from }}{% endif %}{% if filter_date_to %}&date_to={{ filter_date_to }}{% endif %}">
+                            Previous
+                        </a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ paginator.num_pages }}
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if filter_q %}&q={{ filter_q }}{% endif %}{% if filter_product %}&product={{ filter_product }}{% endif %}{% if filter_rating %}&rating={{ filter_rating }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date_from %}&date_from={{ filter_date_from }}{% endif %}{% if filter_date_to %}&date_to={{ filter_date_to }}{% endif %}">
+                            Next
+                        </a>
+                        <a href="?page={{ paginator.num_pages }}{% if filter_q %}&q={{ filter_q }}{% endif %}{% if filter_product %}&product={{ filter_product }}{% endif %}{% if filter_rating %}&rating={{ filter_rating }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date_from %}&date_from={{ filter_date_from }}{% endif %}{% if filter_date_to %}&date_to={{ filter_date_to }}{% endif %}">
+                            Last
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Select / deselect all reviews
+    (function() {
+        var selectAll = document.getElementById("select-all");
+        if (!selectAll) return;
+        selectAll.addEventListener("change", function () {
+            var checkboxes = document.querySelectorAll('input[type="checkbox"][name="selected"]');
+            checkboxes.forEach(function (cb) {
+                cb.checked = selectAll.checked;
+            });
+        });
+    })();
+</script>
+{% endblock %}
+

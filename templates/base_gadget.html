@@ -1,0 +1,278 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Zanha Designs — Premium Jewellery{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Shop premium jewellery — necklaces, rings, earrings and more.{% endblock %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
+    <link href="{% static 'lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bottom-bar.css' %}" rel="stylesheet">
+    <link href="{% static 'css/page-loader-gadget.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="has-bottom-bar" data-wishlist-toggle-url="{% url 'store:wishlist_toggle' %}"
+      data-login-url="{% url 'auth:login' %}"
+      data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
+
+<!-- Page Loader -->
+<div id="page-loader-hello" class="page-loader-hello" role="status" aria-live="polite">
+    <span class="loader-brand">hello gads</span>
+    <div class="loader-bar-wrap">
+        <div class="loader-bar"></div>
+    </div>
+    <span class="visually-hidden">Loading…</span>
+</div>
+
+<!-- Topbar -->
+{% comment %} <div class="topbar-info">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-4 text-start">
+                <a href="{% url 'store:contact' %}">Contact Us</a>
+            </div>
+            <div class="col-lg-4 text-center">
+                <span>Free shipping on orders over ₹499</span>
+            </div>
+            <div class="col-lg-4 text-end">
+                {% if user.is_authenticated %}
+                <a href="{% url 'auth:account' %}"><i class="fas fa-user me-1"></i> My Account</a>
+                {% else %}
+                <a href="{% url 'auth:login' %}"><i class="fas fa-user me-1"></i> Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div> {% endcomment %}
+
+<!-- Combined Header -->
+<div class="logo-bar">
+    <div class="container">
+
+        <!-- Row 1: Brand | Nav links | Icons -->
+        <div class="row align-items-center py-2">
+            <div class="col-auto">
+                <a href="{% url 'store:home' %}" class="text-decoration-none">
+                    <span class="brand-text">zanha design</span>
+                </a>
+            </div>
+
+            <!-- Desktop nav links right next to logo -->
+            <div class="col d-none d-lg-flex align-items-center justify-content-center">
+                <nav class="d-flex">
+                    <a href="{% url 'store:home' %}"         class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+                    <a href="{% url 'store:product_list' %}" class="nav-link {% if active_page == 'collection' %}active{% endif %}">Shop</a>
+                    <a href="{% url 'store:cart' %}"         class="nav-link {% if active_page == 'cart' %}active{% endif %}">Cart</a>
+                    <a href="{% url 'store:checkout' %}"     class="nav-link {% if active_page == 'checkout' %}active{% endif %}">Checkout</a>
+                    <a href="{% url 'store:contact' %}"      class="nav-link {% if active_page == 'contact' %}active{% endif %}">Contact Us</a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'auth:account' %}"       class="nav-link {% if active_page == 'account' %}active{% endif %}">Account</a>
+                    {% endif %}
+                </nav>
+            </div>
+
+            <!-- Right: icons -->
+            <div class="col-auto ms-auto">
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Search icon -->
+                    <a href="{% url 'store:product_list' %}" class="header-icon-link" title="Search">
+                        <i class="fas fa-search"></i>
+                    </a>
+                    <!-- Wishlist -->
+                    <a href="{% url 'store:wishlist' %}" class="header-icon-link" title="Wishlist">
+                        <i class="fas fa-heart"></i>
+                    </a>
+                    <!-- Cart -->
+                    <a href="{% url 'store:cart' %}" class="header-icon-link position-relative" title="Cart">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="js-cart-count position-absolute top-0 start-100 translate-middle badge rounded-pill"
+                            style="background:#c8976a;color:#fff;font-size:9px;display:{% if cart_count %}inline-block{% else %}none{% endif %};">{{ cart_count|default:0 }}</span>
+                    </a>
+                    <!-- Account -->
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'auth:account' %}" class="header-icon-link" title="Account">
+                        <i class="fas fa-user"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'auth:login' %}" class="header-icon-link" title="Login">
+                        <i class="fas fa-user"></i>
+                    </a>
+                    {% endif %}
+                    <!-- Mobile toggler -->
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                        <span class="fa fa-bars" style="color:#f6efe5;"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+       
+
+        <!-- Mobile nav collapse -->
+        <div class="collapse d-lg-none" id="navbarCollapse">
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding: 8px 0;">
+                <a href="{% url 'store:home' %}"         class="nav-item nav-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+                <a href="{% url 'store:product_list' %}" class="nav-item nav-link {% if active_page == 'collection' %}active{% endif %}">Shop</a>
+                <a href="{% url 'store:cart' %}"         class="nav-item nav-link {% if active_page == 'cart' %}active{% endif %}">Cart</a>
+                <a href="{% url 'store:checkout' %}"     class="nav-item nav-link {% if active_page == 'checkout' %}active{% endif %}">Checkout</a>
+                <a href="{% url 'store:contact' %}"      class="nav-item nav-link {% if active_page == 'contact' %}active{% endif %}">Contact</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'auth:account' %}"       class="nav-item nav-link {% if active_page == 'account' %}active{% endif %}">Account</a>
+                {% endif %}
+                <!-- Mobile search -->
+                <form class="search-bar-wrap mt-2 mb-2" action="{% url 'store:product_list' %}" method="get">
+                    <input type="text" name="q" placeholder="Search…" value="{{ request.GET.q|default:'' }}">
+                    <button class="search-btn" type="submit"><i class="fas fa-search"></i></button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+    <!-- Mobile search bar -->
+    <div class="mobile-search-bar">
+        <form class="search-bar-wrap" action="{% url 'store:product_list' %}" method="get">
+            <input type="text" name="q" placeholder="Search…" value="{{ request.GET.q|default:'' }}">
+            <button class="search-btn" type="submit"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+</div>
+
+{% block content %}{% endblock %}
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="row g-5 pb-5">
+            <div class="col-md-6 col-lg-4">
+                <span class="footer-brand-text">hello gads</span>
+                <p class="mt-3" style="color:rgba(245,239,230,0.45);font-size:.8125rem;line-height:1.8;">
+                    Crafted with elegance. Your destination for premium jewellery and accessories.
+                </p>
+                <div class="social-links">
+                    <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <h6 class="footer-heading">Quick Links</h6>
+                <a href="{% url 'store:home' %}"         class="footer-link"><i class="fas fa-angle-right"></i> Home</a>
+                <a href="{% url 'store:product_list' %}" class="footer-link"><i class="fas fa-angle-right"></i> Shop</a>
+                <a href="{% url 'store:cart' %}"         class="footer-link"><i class="fas fa-angle-right"></i> Cart</a>
+                <a href="{% url 'store:contact' %}"      class="footer-link"><i class="fas fa-angle-right"></i> Contact</a>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <h6 class="footer-heading">Customer Service</h6>
+                {% if user.is_authenticated %}
+                <a href="{% url 'auth:account' %}"       class="footer-link"><i class="fas fa-angle-right"></i> My Account</a>
+                <a href="{% url 'store:order_history' %}" class="footer-link"><i class="fas fa-angle-right"></i> Order History</a>
+                {% endif %}
+                <a href="{% url 'store:wishlist' %}"     class="footer-link"><i class="fas fa-angle-right"></i> Wishlist</a>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <h6 class="footer-heading">Newsletter</h6>
+                <p style="font-size:.8125rem;color:rgba(245,239,230,0.45);margin-bottom:12px;">Stay updated with new collections.</p>
+                <div class="footer-newsletter">
+                    <input type="email" placeholder="Your email address">
+                    <button class="btn-subscribe">Subscribe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="copyright">
+    <div class="container">
+        <div class="col-12 text-center">
+            <span>&copy; 2026 Hello Gads. All rights reserved.</span>
+        </div>
+    </div>
+</div>
+
+{% comment %} <!-- Bottom bar (mobile) -->
+<nav class="bottom-bar" role="navigation" aria-label="Main">
+    <div class="bottom-bar-inner">
+        <a href="{% url 'store:product_list' %}" class="bottom-bar-item {% if active_page == 'collection' %}active{% endif %}" aria-label="Shop">
+            <span class="bottom-bar-icon">
+                <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            </span>
+            <span class="bottom-bar-label">Shop</span>
+        </a>
+        <a href="{% url 'store:cart' %}" class="bottom-bar-item js-bottom-bar-cart {% if active_page == 'cart' %}active{% endif %}" aria-label="Cart">
+            <span class="bottom-bar-icon">
+                <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                <span class="bottom-bar-badge js-cart-count" style="display:{% if cart_count %}inline-block{% else %}none{% endif %};">{{ cart_count|default:0 }}</span>
+            </span>
+            <span class="bottom-bar-label">Cart</span>
+        </a>
+        <a href="{% url 'store:home' %}" class="bottom-bar-item {% if active_page == 'home' %}active{% endif %}" aria-label="Home">
+            <span class="bottom-bar-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="bottom-bar-label">Home</span>
+        </a>
+        <a href="{% url 'store:wishlist' %}" class="bottom-bar-item {% if active_page == 'wishlist' %}active{% endif %}" aria-label="Wishlist">
+            <span class="bottom-bar-icon">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                <span class="bottom-bar-badge js-wishlist-count" {% if not wishlist_count %}style="display:none;"{% endif %}>{{ wishlist_count|default:0 }}</span>
+            </span>
+            <span class="bottom-bar-label">Wishlist</span>
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'auth:account' %}" class="bottom-bar-item {% if active_page == 'account' %}active{% endif %}" aria-label="Account">
+            <span class="bottom-bar-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <span class="bottom-bar-label">Account</span>
+        </a>
+        {% else %}
+        <a href="{% url 'auth:login' %}" class="bottom-bar-item {% if active_page == 'account' %}active{% endif %}" aria-label="Login">
+            <span class="bottom-bar-icon">
+                <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            </span>
+            <span class="bottom-bar-label">Account</span>
+        </a>
+        {% endif %}
+    </div>
+</nav> {% endcomment %}
+
+<a href="#" class="back-to-top" style="display:none;"><i class="fa fa-arrow-up"></i></a>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'lib/wow/wow.min.js' %}"></script>
+<script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
+<script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/wishlist.js' %}"></script>
+<script src="{% static 'js/add-to-cart.js' %}"></script>
+<script src="{% static 'js/product-card-slider.js' %}"></script> 
+<script>
+(function(){
+    var start = Date.now();
+    var minWait = 0;
+    function hideLoader(){
+        var s = document.getElementById('page-loader-hello');
+        if(s) s.classList.add('hidden');
+    }
+    function tryHide(){
+        var elapsed = Date.now() - start;
+        if (elapsed >= minWait) hideLoader();
+        else setTimeout(hideLoader, minWait - elapsed);
+    }
+    if (document.readyState === 'complete') tryHide();
+    else window.addEventListener('load', tryHide);
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

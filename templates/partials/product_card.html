@@ -1,0 +1,55 @@
+{% load static %}{% load color_tags %}
+{# Reusable product card partial. Pass product (with .get_card_image_urls, .category). Optional: show_add_to_cart (default True). #}
+{% with first_cv=product.color_variants.first %}
+<div class="featured-product-card">
+    {% if product.is_bestseller %}
+        <span class="featured-product-badge featured-product-badge-bestseller">BESTSELLER</span>
+    {% elif product.discount_percent %}
+        <span class="featured-product-badge">{{ product.discount_percent }}% OFF</span>
+    {% endif %}
+    {% if first_cv %}
+    <button type="button" class="product-card-wishlist js-wishlist-toggle {% if first_cv.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+            data-variant-id="{{ first_cv.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+        <svg class="wishlist-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+    </button>
+    {% endif %}
+    <a href="{% url 'store:product_detail' product.slug %}" class="featured-product-link">
+        {% with card_images=product.get_card_image_urls %}
+        <div class="featured-product-image product-card-image-slider{% if card_images|length > 1 %} js-product-card-slider{% endif %}"{% if card_images|length > 1 %} data-card-images="{{ card_images|to_json }}"{% endif %}>
+                {% if card_images %}
+                    <img src="{{ card_images.0 }}" alt="{{ product.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                {% else %}
+                    <img src="{% static 'images/banner.png' %}" alt="{{ product.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                {% endif %}
+        </div>
+        {% endwith %}
+        <div class="featured-product-info">
+            <div class="featured-product-category">{{ product.category.name|default:"" }}</div>
+            <h3>{{ product.name }}</h3>
+            {% if product.original_price and product.original_price > product.price %}
+                <span class="featured-product-discount-pct">{{ product.discount_percent }}% off</span>
+            {% endif %}
+            <div class="featured-product-price">
+                <span class="current-price">₹{{ product.price|floatformat:0 }}</span>
+                {% if product.original_price %}
+                    <span class="original-price">₹{{ product.original_price|floatformat:0 }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% if show_add_to_cart %}
+        {% with variant=product.variants.first %}
+            {% if variant %}
+                <button type="button" class="featured-add-to-cart js-add-to-cart"
+                        data-product-id="{{ product.id }}"
+                        data-size="{{ variant.size }}"
+                        data-color="{{ variant.color|default:'' }}">
+                    <span>Add to Cart</span>
+                </button>
+            {% endif %}
+        {% endwith %}
+    {% endif %}
+</div>
+{% endwith %}

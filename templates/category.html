@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}{% load color_tags %}{% load product_filters %}
+{% block title %}{{ page_title }} - Hello Gads{% endblock %}
+{% block meta_description %}Browse all women's nightwear and babies dresses. Filter by category, price, and size.{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/collection.css' %}">
+{% endblock %}
+{% block content %}
+    <section class="collection-page-header">
+        <div class="container">
+            <h1 class="collection-page-title">{{ page_title }}</h1>
+            <p class="collection-page-description">Discover our premium collection</p>
+        </div>
+    </section>
+
+    <div class="container collection-container">
+        <!-- Sort | Filter bar (mobile-optimized) -->
+        <div class="collection-toolbar">
+            <div class="toolbar-sort">
+                <label for="collectionSort" class="toolbar-label">Sort</label>
+                <select id="collectionSort" name="sort" class="toolbar-sort-select" aria-label="Sort products">
+                    {% for value, label in sort_options %}
+                        <option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <span class="toolbar-divider" aria-hidden="true"></span>
+            <button type="button" class="toolbar-filter-btn js-filter-sheet-open" aria-label="Open filters" id="filterBtn">
+                <svg class="toolbar-filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                <span>Filter</span>
+                {% if filters.category != "all" or filters.min_price or filters.max_price or filters.size or filters.material %}
+                    <span class="toolbar-filter-dot" aria-hidden="true"></span>
+                {% endif %}
+            </button>
+        </div>
+
+        <!-- Filter chips (horizontal scroll) -->
+        <div class="filter-chips-wrap">
+            <div class="filter-chips" role="group" aria-label="Quick filters">
+                <a href="{% url 'store:product_list' %}{% if filters.q %}?q={{ filters.q|urlencode }}{% endif %}" class="filter-chip {% if filters.category == 'all' and not filters.min_price and not filters.max_price %}active{% endif %}">All</a>
+                {% for cat in categories %}
+                    <a href="{% url 'store:product_list' %}?category={{ cat.slug }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}" class="filter-chip {% if filters.category == cat.slug %}active{% endif %}">{{ cat.name }}</a>
+                {% endfor %}
+                <a href="{% url 'store:product_list' %}?min_price=0&max_price=499{% if filters.category != 'all' %}&category={{ filters.category }}{% endif %}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}" class="filter-chip {% if filters.min_price == '0' and filters.max_price == '499' %}active{% endif %}">₹0 – ₹499</a>
+                <a href="{% url 'store:product_list' %}?min_price=500&max_price=999{% if filters.category != 'all' %}&category={{ filters.category }}{% endif %}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}" class="filter-chip {% if filters.min_price == '500' and filters.max_price == '999' %}active{% endif %}">₹500 – ₹999</a>
+                <a href="{% url 'store:product_list' %}?min_price=1000&max_price=1999{% if filters.category != 'all' %}&category={{ filters.category }}{% endif %}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}" class="filter-chip {% if filters.min_price == '1000' and filters.max_price == '1999' %}active{% endif %}">₹1000 – ₹1999</a>
+                <a href="{% url 'store:product_list' %}?min_price=2000{% if filters.category != 'all' %}&category={{ filters.category }}{% endif %}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}" class="filter-chip {% if filters.min_price == '2000' and not filters.max_price %}active{% endif %}">₹2000+</a>
+            </div>
+        </div>
+
+        <p class="collection-product-count">Showing <strong>{{ page_obj.paginator.count }}</strong> products</p>
+
+        {% if products %}
+            <div id="product-container" class="collection-product-grid"
+                 data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}"
+                 data-has-next="{% if page_obj.has_next %}true{% else %}false{% endif %}">
+                {% for card in products %}
+                    {% with item=card.0 is_jewellery=card.1 %}
+                    <article class="collection-product-card">
+                        {% if is_jewellery %}
+                            {% if item.is_featured and item.is_active %}
+                                <span class="collection-card-badge-featured">Featured</span>
+                            {% endif %}
+                        <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_product_ids %}in-wishlist{% endif %}"
+                                data-product-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+                        {% else %}
+                            {% if item.product.is_featured and item.product.is_active %}
+                                <span class="collection-card-badge-featured">Featured</span>
+                            {% endif %}
+                        <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+                                data-variant-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+                        {% endif %}
+                            <svg class="wishlist-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                        </button>
+                        <a href="{% if is_jewellery %}{% url 'store:product_detail' item.slug %}{% else %}{% url 'store:product_detail' item.product.slug %}?variant={{ item.id }}{% endif %}" class="collection-card-link">
+                            {% if is_jewellery %}
+                            <div class="collection-card-image product-card-image-slider">
+                                {% with card_images=item.get_card_image_urls %}
+                                {% if card_images %}
+                                    <img src="{{ card_images.0 }}" alt="{{ item.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                                {% else %}
+                                    <img src="{% static 'images/banner.png' %}" alt="{{ item.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                                {% endif %}
+                                {% endwith %}
+                                {% if item.is_bestseller %}
+                                    <span class="collection-card-badge collection-card-badge-bestseller">BESTSELLER</span>
+                                {% elif item.discount_percent %}
+                                    <span class="collection-card-badge collection-card-badge-discount">↓{{ item.discount_percent }}%</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            {% with images=item.images.all %}
+                            <div class="collection-card-image product-card-image-slider{% if images|length > 1 %} js-product-card-slider{% endif %}"{% if images|length > 1 %} data-card-images="{{ images|image_urls_json }}"{% endif %}>
+                                {% if images %}
+                                    <img src="{{ images.0.image.url }}" alt="{{ item.product.name }} - {{ item.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                                {% else %}
+                                    <img src="{% static 'images/banner.png' %}" alt="{{ item.product.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                                {% endif %}
+                                {% if item.product.is_bestseller %}
+                                    <span class="collection-card-badge collection-card-badge-bestseller">BESTSELLER</span>
+                                {% elif item.product.discount_percent %}
+                                    <span class="collection-card-badge collection-card-badge-discount">↓{{ item.product.discount_percent }}%</span>
+                                {% endif %}
+                            </div>
+                            {% endwith %}
+                            {% endif %}
+                            <div class="collection-card-info">
+                                <h3 class="collection-card-name">{% if is_jewellery %}{{ item.name }}{% else %}{{ item.product.name }}{% endif %}</h3>
+                                <p class="collection-card-variant-color">{% if is_jewellery %}Jewellery{% else %}{{ item.product.category.name|default:"" }} · {{ item.name }}{% endif %}</p>
+                                {% if is_jewellery and item.description %}
+                                    <p class="storefront-card-description">{{ item.description|truncatewords:12 }}</p>
+                                {% elif not is_jewellery and item.product.description %}
+                                    <p class="storefront-card-description">{{ item.product.description|truncatewords:12 }}</p>
+                                {% endif %}
+                                <div class="collection-card-price-block">
+                                    {% if is_jewellery %}
+                                        {% if item.original_price and item.original_price > item.price %}
+                                            <span class="collection-card-discount-pct">{{ item.discount_percent }}% off</span>
+                                        {% endif %}
+                                        <div class="collection-card-prices">
+                                            <span class="current-price">{{ item.price|price_inr }}</span>
+                                            {% if item.original_price and item.original_price > item.price %}
+                                                <span class="original-price">{{ item.original_price|price_inr }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        {% if item.product.original_price and item.product.original_price > item.product.price %}
+                                            <span class="collection-card-discount-pct">{{ item.product.discount_percent }}% off</span>
+                                        {% endif %}
+                                        <div class="collection-card-prices">
+                                            <span class="current-price">{{ item.product.price|price_inr }}</span>
+                                            {% if item.product.original_price and item.product.original_price > item.product.price %}
+                                                <span class="original-price">{{ item.product.original_price|price_inr }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div id="scroll-sentinel" class="collection-scroll-sentinel" aria-hidden="true"></div>
+            <div id="collection-loading" class="collection-loading-spinner" style="display: none;" aria-live="polite">
+                <span class="collection-loading-spinner-dot"></span>
+                <span class="collection-loading-spinner-dot"></span>
+                <span class="collection-loading-spinner-dot"></span>
+            </div>
+
+            <noscript>
+            {% if page_obj.has_previous or page_obj.has_next %}
+            <nav class="collection-pagination" aria-label="Products pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if filters.category != 'all' %}&category={{ filters.category }}{% endif %}{% if filters.min_price %}&min_price={{ filters.min_price }}{% endif %}{% if filters.max_price %}&max_price={{ filters.max_price }}{% endif %}{% if filters.size %}&size={{ filters.size }}{% endif %}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}" class="pagination-link">Previous</a>
+                {% endif %}
+                <span class="pagination-current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if filters.category != 'all' %}&category={{ filters.category }}{% endif %}{% if filters.min_price %}&min_price={{ filters.min_price }}{% endif %}{% if filters.max_price %}&max_price={{ filters.max_price }}{% endif %}{% if filters.size %}&size={{ filters.size }}{% endif %}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}" class="pagination-link">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
+            </noscript>
+        {% else %}
+            <div class="collection-empty">
+                <div class="collection-empty-icon">🔍</div>
+                <h2>No Products Found</h2>
+                <p>No products match your current filters. Try adjusting your selection.</p>
+                <a class="btn btn-primary" href="{% url 'store:product_list' %}">Clear Filters</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Filter bottom sheet (mobile) -->
+    <div class="filter-sheet-overlay js-filter-sheet-overlay" id="filterOverlay" aria-hidden="true"></div>
+    <aside class="filter-sheet js-filter-sheet" id="filterSheet" role="dialog" aria-modal="true" aria-label="Filters">
+        <div class="filter-sheet-header">
+            <h2 class="filter-sheet-title">Filters</h2>
+            <button type="button" class="filter-sheet-close js-filter-sheet-close" aria-label="Close filters">&times;</button>
+        </div>
+        <form class="filter-sheet-form" method="get" action="{% url 'store:product_list' %}">
+            {% if filters.q %}
+                <input type="hidden" name="q" value="{{ filters.q }}">
+            {% endif %}
+            <input type="hidden" name="sort" value="{{ filters.sort }}">
+            <div class="filter-sheet-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="all">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.slug }}" {% if filters.category == category.slug %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-sheet-row">
+                <div class="filter-sheet-group">
+                    <label>Min Price (₹)</label>
+                    <input type="number" name="min_price" placeholder="Min" min="0" value="{{ filters.min_price }}">
+                </div>
+                <div class="filter-sheet-group">
+                    <label>Max Price (₹)</label>
+                    <input type="number" name="max_price" placeholder="Max" min="0" value="{{ filters.max_price }}">
+                </div>
+            </div>
+            <div class="filter-sheet-group">
+                <label>Size</label>
+                <select name="size">
+                    <option value="">All Sizes</option>
+                    {% for size_option in size_options %}
+                        <option value="{{ size_option }}" {% if filters.size == size_option %}selected{% endif %}>{{ size_option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-sheet-group">
+                <label>Material</label>
+                <select name="material">
+                    <option value="">All Materials</option>
+                    {% for material in material_options %}
+                        <option value="{{ material }}" {% if filters.material == material %}selected{% endif %}>{{ material }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-sheet-actions">
+                <a href="{% url 'store:product_list' %}" class="btn btn-secondary filter-sheet-reset">Reset</a>
+                <button type="submit" class="btn btn-primary">Apply</button>
+            </div>
+        </form>
+    </aside>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/product_list.js' %}"></script>
+<script src="{% static 'js/collection-infinite.js' %}"></script>
+{% endblock %}

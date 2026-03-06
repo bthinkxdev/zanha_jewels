@@ -1,0 +1,98 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}{{ form_title }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px;">
+    <div class="card-header">
+        <h3 class="card-title">{{ form_title }}</h3>
+    </div>
+
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label">Product *</label>
+                {{ form.product }}
+                {% if form.product.errors %}
+                    <div style="color: var(--danger); font-size: 0.875rem; margin-top: 0.25rem;">{{ form.product.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Color name *</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div style="color: var(--danger); font-size: 0.875rem; margin-top: 0.25rem;">{{ form.name.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Display order</label>
+                {{ form.display_order }}
+            </div>
+
+            <h4 style="margin-top: 2rem;">Color images</h4>
+            {{ image_formset.management_form }}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Primary</th>
+                            <th>Alt text</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in image_formset %}
+                            <tr>
+                                <td>{{ f.image }}{% if f.instance.image %}<br><img src="{{ f.instance.image.url }}" style="max-height: 60px;" alt=""></td>{% else %}</td>{% endif %}
+                                <td>{{ f.is_primary }}</td>
+                                <td>{{ f.alt_text }}</td>
+                                <td>{% if f.DELETE %}{{ f.DELETE }}{% endif %}{{ f.id }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 style="margin-top: 2rem;">Size variants &amp; stock</h4>
+            <p class="text-muted">No duplicate sizes per color. Stock cannot be negative.</p>
+            {{ size_formset.management_form }}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Size</th>
+                            <th>Stock</th>
+                            <th>SKU (optional)</th>
+                            <th>Active</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in size_formset %}
+                            <tr>
+                                <td>{{ f.size }}{% if f.size.errors %}<div style="color: var(--danger); font-size: 0.75rem;">{{ f.size.errors }}</div>{% endif %}</td>
+                                <td>{{ f.stock_quantity }}{% if f.stock_quantity.errors %}<div style="color: var(--danger); font-size: 0.75rem;">{{ f.stock_quantity.errors }}</div>{% endif %}</td>
+                                <td>{{ f.sku }}</td>
+                                <td>{{ f.is_active }}</td>
+                                <td>{% if f.DELETE %}{{ f.DELETE }}{% endif %}{{ f.id }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex gap-2" style="justify-content: flex-end; margin-top: 2rem;">
+                <a href="{% url 'admin_panel:color_variant_list' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

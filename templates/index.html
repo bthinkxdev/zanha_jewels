@@ -1,0 +1,198 @@
+{% extends "base_gadget.html" %}
+{% load static %}{% load product_filters %}
+{% block title %}Hello Gads — Premium Gadgets{% endblock %}
+{% block meta_description %}Shop premium electronics, mobile accessories, headphones and more.{% endblock %}
+{% block content %}
+<section class="hero-section">
+    <div class="header-carousel owl-carousel">
+        {% if banners %}
+            {% for banner in banners %}
+            <div class="hero-carousel-item">
+                {% if banner.redirect_url %}
+                <a href="{{ banner.redirect_url }}">
+                {% endif %}
+                    <img src="{{ banner.image.url }}" alt="{{ banner.title|default:'Banner' }}" 
+                         class="hero-full-img" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                {% if banner.redirect_url %}
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="hero-carousel-item">
+                <img src="{% static 'img/carousel-1.png' %}" alt="Banner" class="hero-full-img">
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% comment %} <!-- Services Strip -->
+<div class="services-strip">
+    <div class="container px-0">
+        <div class="row g-0">
+            <div class="col-6 col-md-3">
+                <div class="service-item">
+                    <i class="fas fa-shipping-fast"></i>
+                    <div><h6>Free Shipping</h6><p>On orders over ₹499</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="service-item">
+                    <i class="fas fa-undo-alt"></i>
+                    <div><h6>Easy Returns</h6><p>Hassle-free returns</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="service-item">
+                    <i class="fas fa-lock"></i>
+                    <div><h6>Secure Payment</h6><p>100% protected</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="service-item" style="border-right:none;">
+                    <i class="fas fa-headset"></i>
+                    <div><h6>Support</h6><p>We're here for you</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> {% endcomment %}
+
+{% if shop_categories %}
+<!-- Shop by Category -->
+<section class="category-section">
+    <div class="container">
+        <h2 class="category-section-title">Our Categories</h2>
+        <div class="category-grid">
+            {% for category in shop_categories %}
+            <a href="{% url 'store:product_list' %}?category={{ category.slug }}" class="collection-card">
+                <div class="collection-card__inner">
+                    {% if category.image %}
+                    <img src="{{ category.image.url }}" alt="{{ category.name }}" loading="lazy">
+                    {% else %}
+                    <img src="{% static 'img/product-1.png' %}" alt="{{ category.name }}" loading="lazy">
+                    {% endif %}
+                    <div class="collection-card__label">{{ category.name }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+
+{% if bestseller_products %}
+<!-- Best Sellers -->
+<section class="tpc-section">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Best Sellers</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View all</a>
+        </div>
+        <div class="tpc-grid">
+            {% for product in bestseller_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% comment %} {% if new_arrival_products %}
+<!-- New Arrivals -->
+<section class="section-pad bg-bw-1">
+    <div class="container">
+        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
+            <div>
+                <span class="section-label">Just In</span>
+                <h2 class="section-title mb-0">New Arrivals</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
+        </div>
+        <div class="products-grid wow fadeInUp" data-wow-delay="0.2s">
+            {% for product in new_arrival_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %} {% endcomment %}
+
+{% comment %} {% if top_rated_products %}
+<!-- Top Rated -->
+<section class="section-pad">
+    <div class="container">
+        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
+            <div>
+                <span class="section-label">Customer Favorites</span>
+                <h2 class="section-title mb-0">Top Rated</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
+        </div>
+        <div class="products-grid wow fadeInUp" data-wow-delay="0.2s">
+            {% for product in top_rated_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if budget_products %}
+<!-- Budget Picks -->
+<section class="section-pad bg-bw-1">
+    <div class="container">
+        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
+            <div>
+                <span class="section-label">Great Value</span>
+                <h2 class="section-title mb-0">Budget Picks under ₹499</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}?max_price=499" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
+        </div>
+        <div class="products-grid wow fadeInUp" data-wow-delay="0.2s">
+            {% for product in budget_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %} {% endcomment %}
+
+<!-- Promo Banner -->
+<section class="section-pad bg-bw-1">
+    <div class="container">
+        <div class="promo-banner wow fadeInUp" data-wow-delay="0.1s">
+            <p class="text-uppercase fw-bold mb-2" style="letter-spacing:.15em;color:#ccc;">Limited Time Offer</p>
+            <h2 class="display-5">Up to 40% Off<br>Selected Accessories</h2>
+            <p class="mb-4">Cables, cases, chargers and more.</p>
+            <a href="{% url 'store:product_list' %}" class="hero-cta-primary btn px-5">Shop the Sale <i class="fas fa-arrow-right ms-2"></i></a>
+        </div>
+    </div>
+</section>
+
+{% comment %} {% if featured_products %}
+<!-- Featured Collection -->
+<section class="section-pad">
+    <div class="container">
+        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
+            <div>
+                <span class="section-label">Hand-Picked</span>
+                <h2 class="section-title mb-0">Featured Collection</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
+        </div>
+        <div class="products-grid wow fadeInUp" data-wow-delay="0.2s">
+            {% for product in featured_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %} {% endcomment %}
+{% endblock %}

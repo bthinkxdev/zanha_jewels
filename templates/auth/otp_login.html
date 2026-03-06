@@ -1,0 +1,259 @@
+{% extends "base_gadget.html" %}
+{% load static %}
+
+{% block title %}Login - Hello Gads{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1 class="auth-title">Welcome Back!</h1>
+                    <p class="auth-subtitle">Login with your email to continue shopping</p>
+                </div>
+
+                <div id="emailStep" {% if show_otp_input %}style="display: none;"{% endif %}>
+                    <!-- Email Input Step -->
+                    <form method="post" action="{% url 'auth:login' %}" class="auth-form" id="emailForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="request_otp">
+                        <input type="hidden" name="next" value="{{ next|default:'/' }}">
+                        
+                        <div class="form-group">
+                            <label for="id_email" class="form-label">Email Address</label>
+                            {{ email_form.email }}
+                            {% if email_form.email.errors %}
+                                <span class="form-error">{{ email_form.email.errors.0 }}</span>
+                            {% endif %}
+                            <span class="form-error" id="emailError"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-full" id="sendOtpBtn">
+                            <span class="btn-text">Send OTP / Verify Email</span>
+                            <span class="btn-loader" style="display: none;">
+                                <svg class="spinner" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3"></circle>
+                                </svg>
+                            </span>
+                        </button>
+                    </form>
+                </div>
+
+                <div id="otpStep" {% if not show_otp_input %}style="display: none;"{% endif %}>
+                    <!-- OTP Verification Step -->
+                    <div class="otp-sent-notice">
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <p>OTP sent to <strong>{{ email }}</strong></p>
+                    <p class="text-small">Please check your inbox and spam folder</p>
+                </div>
+
+                <form method="post" action="{% url 'auth:login' %}" class="auth-form" id="otpForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="verify_otp">
+                    <input type="hidden" name="next" value="{{ next|default:'/' }}">
+                    <input type="hidden" name="email" value="{{ email }}">
+                    
+                    <div class="form-group">
+                        <label for="id_otp" class="form-label">Enter 4-Digit OTP</label>
+                        <div class="otp-input-group" id="otpInputGroup">
+                            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="0">
+                            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="1">
+                            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="2">
+                            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="3">
+                        </div>
+                        <input type="hidden" name="otp" id="otpHidden" value="">
+                        <span class="form-error" id="otpError">
+                            {% if otp_form.otp.errors %}{{ otp_form.otp.errors.0 }}{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="otp-timer" id="otpTimer">
+                        <p>Didn't receive OTP? <button type="button" class="link-btn" id="resendOtpBtn" disabled>Resend (<span id="countdown">60</span>s)</button></p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="verifyOtpBtn">
+                        <span class="btn-text">Verify & Login</span>
+                        <span class="btn-loader" style="display: none;">
+                            <svg class="spinner" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3"></circle>
+                            </svg>
+                        </span>
+                    </button>
+
+                    <button type="button" class="btn btn-secondary btn-full" id="changeEmailBtn">
+                        Change Email
+                    </button>
+                </form>
+                </div>
+
+                <div class="auth-footer">
+                    <p class="security-notice">
+                        <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Your information is secure and encrypted
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page-specific styles */
+.auth-page {
+    min-height: calc(100vh - 400px);
+    display: flex;
+    align-items: center;
+    padding: 40px 0;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FAFAFA 100%);
+}
+
+.auth-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #212121;
+    margin-bottom: 8px;
+}
+
+.auth-subtitle {
+    color: #757575;
+    font-size: 14px;
+}
+
+.auth-form {
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #212121;
+    font-size: 14px;
+}
+
+.otp-sent-notice {
+    background: #d1f4dd;
+    border: 1px solid #4caf50;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.otp-sent-notice .check-icon {
+    width: 48px;
+    height: 48px;
+    color: #4caf50;
+    margin-bottom: 12px;
+}
+
+.text-small {
+    font-size: 13px;
+    color: #757575;
+    margin-top: 4px;
+}
+
+.otp-input-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 16px 0;
+}
+
+.otp-digit {
+    width: 56px;
+    height: 56px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    border: 2px solid #E0E0E0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.otp-digit:focus {
+    outline: none;
+    border-color: #FF9800;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+}
+
+.otp-timer {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.auth-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #E0E0E0;
+}
+
+.security-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #757575;
+}
+
+.lock-icon {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 768px) {
+    .auth-card {
+        padding: 24px;
+    }
+    
+    .otp-digit {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.AUTH_LOGIN_URL = "{% url 'auth:login' %}";
+</script>
+<script src="{% static 'js/otp-login.js' %}"></script>
+{% endblock %}
+

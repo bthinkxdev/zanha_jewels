@@ -1,0 +1,143 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}{{ form_title }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_product_edit.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="product-edit-wrapper has-pf-actions" id="create-wrapper"
+     data-url-create-basic="{% url 'admin_panel:product_create_basic' %}"
+     data-url-edit="{% url 'admin_panel:product_edit' 0 %}">
+    {% csrf_token %}
+
+    <!-- ── SECTION 1: Basic Information ── -->
+    <div class="edit-section">
+        <h4 class="section-heading">
+            <span class="section-num">1</span> Basic information
+        </h4>
+        <p class="section-hint">
+            Enter the category, name, and core details. Click <strong>Create product</strong> to save,
+            then add attributes and variants on the edit page.
+        </p>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Category <span class="req">*</span></label>
+                {{ basic_form.category }}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="basic-brand">Brand</label>
+                <input type="text" class="form-control" id="basic-brand" placeholder="e.g. Nike, Apple, Samsung">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label" for="basic-name">Product name <span class="req">*</span></label>
+                <input type="text" class="form-control" id="basic-name" placeholder="Enter product name">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="basic-slug">Slug</label>
+                <input type="text" class="form-control" id="basic-slug" placeholder="auto-generated-if-empty">
+                <span class="form-hint">Leave blank to auto-generate from name</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="basic-description">Description</label>
+            <textarea class="form-control" id="basic-description" rows="5"
+                      placeholder="Describe the product — features, materials, sizing, etc."></textarea>
+        </div>
+
+        <!-- GST (India) -->
+        <div class="form-group" style="margin-top: 1rem;">
+            <label class="toggle-wrap" for="basic-is_gst_applicable">
+                <input type="checkbox" class="toggle-input" id="basic-is_gst_applicable">
+                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                <span class="toggle-label">GST applicable</span>
+                <span class="toggle-status" data-on="Yes" data-off="No">No</span>
+            </label>
+            <div id="gst-fields-wrap" class="gst-fields-wrap" style="margin-top: 0.75rem; display: none;">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label" for="basic-gst_percentage">GST % <span class="req">*</span></label>
+                        <input type="number" class="form-control" id="basic-gst_percentage" step="0.01" min="0" max="28" placeholder="0–28">
+                        <span class="form-hint">0–28 (e.g. 18 for 18%)</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="basic-hsn_code">HSN code</label>
+                        <input type="text" class="form-control" id="basic-hsn_code" maxlength="20" placeholder="e.g. 8517">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 2: Flags & Visibility ── -->
+    <div class="edit-section">
+        <h4 class="section-heading">
+            <span class="section-num">2</span> Flags &amp; visibility
+        </h4>
+        <p class="section-hint">Control how this product appears in your store listings.</p>
+
+        <div class="toggle-grid">
+            <label class="toggle-wrap checked" for="basic-is_active">
+                <input type="checkbox" class="toggle-input" id="basic-is_active" checked>
+                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                <span class="toggle-label">Active</span>
+                <span class="toggle-status" data-on="On" data-off="Off">On</span>
+            </label>
+            <label class="toggle-wrap" for="basic-is_featured">
+                <input type="checkbox" class="toggle-input" id="basic-is_featured">
+                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                <span class="toggle-label">Featured</span>
+                <span class="toggle-status" data-on="On" data-off="Off">Off</span>
+            </label>
+            <label class="toggle-wrap" for="basic-is_bestseller">
+                <input type="checkbox" class="toggle-input" id="basic-is_bestseller">
+                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                <span class="toggle-label">Bestseller</span>
+                <span class="toggle-status" data-on="On" data-off="Off">Off</span>
+            </label>
+            <label class="toggle-wrap" for="basic-is_deal_of_day">
+                <input type="checkbox" class="toggle-input" id="basic-is_deal_of_day">
+                <span class="toggle-track"><span class="toggle-knob"></span></span>
+                <span class="toggle-label">Deal of day</span>
+                <span class="toggle-status" data-on="On" data-off="Off">Off</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- ── FORM ACTIONS (desktop inline + mobile sticky) ── -->
+    <div class="pf-actions">
+        <a href="{% url 'admin_panel:product_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <div class="pf-primary-actions">
+            <button type="button" id="btn-create-basic" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create product
+            </button>
+            <span id="basic-feedback" class="save-feedback"></span>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="action-loader-create" class="action-loader-overlay" aria-hidden="true">
+        <div style="text-align: center;">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Saving…</div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/product_create.js' %}"></script>
+{% endblock %}

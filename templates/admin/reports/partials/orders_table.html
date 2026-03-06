@@ -1,0 +1,25 @@
+<tbody>
+    {% for order in orders %}
+    <tr>
+        <td data-label="Order #">
+            <a href="{% url 'admin_panel:order_detail' order.order_number %}" class="report-order-link">{{ order.order_number }}</a>
+        </td>
+        <td data-label="Customer">{{ order.address.full_name|default:"—" }}</td>
+        <td data-label="Phone">{{ order.address.phone|default:"—" }}</td>
+        <td data-label="Items">{{ order.items.count }} items</td>
+        <td data-label="Total" class="report-amount">₹{{ order.total }}</td>
+        <td data-label="Status">
+            {% if order.status == 'placed' %}<span class="badge badge-info">{{ order.get_status_display }}</span>
+            {% elif order.status == 'confirmed' %}<span class="badge badge-warning">{{ order.get_status_display }}</span>
+            {% elif order.status == 'shipped' %}<span class="badge badge-secondary">{{ order.get_status_display }}</span>
+            {% elif order.status == 'delivered' %}<span class="badge badge-success">{{ order.get_status_display }}</span>
+            {% elif order.status == 'cancelled' %}<span class="badge badge-danger">{{ order.get_status_display }}</span>
+            {% else %}<span class="badge">{{ order.get_status_display }}</span>{% endif %}
+        </td>
+        <td data-label="Payment">{% if order.payment %}{{ order.payment.get_method_display }}{% else %}—{% endif %}</td>
+        <td data-label="Date">{{ order.created_at|date:"d M, Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" class="report-empty">No orders found.</td></tr>
+    {% endfor %}
+</tbody>

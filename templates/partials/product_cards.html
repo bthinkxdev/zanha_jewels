@@ -1,0 +1,92 @@
+{% load static %}{% load color_tags %}{% load product_filters %}
+{# Fragment for collection page: used for initial render and AJAX load-more. products = list of (item, is_jewellery). #}
+<div class="js-collection-fragment" data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}" data-has-next="{% if page_obj.has_next %}true{% else %}false{% endif %}">
+    {% for card in products %}
+        {% with item=card.0 is_jewellery=card.1 %}
+        <article class="collection-product-card">
+            {% if is_jewellery %}
+                {% if item.is_featured and item.is_active %}
+                    <span class="collection-card-badge-featured">Featured</span>
+                {% endif %}
+            <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_product_ids %}in-wishlist{% endif %}"
+                    data-product-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+            {% else %}
+                {% if item.product.is_featured and item.product.is_active %}
+                    <span class="collection-card-badge-featured">Featured</span>
+                {% endif %}
+            <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+                    data-variant-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+            {% endif %}
+                <svg class="wishlist-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+            </button>
+            <a href="{% if is_jewellery %}{% url 'store:product_detail' item.slug %}{% else %}{% url 'store:product_detail' item.product.slug %}?variant={{ item.id }}{% endif %}" class="collection-card-link">
+                {% if is_jewellery %}
+                <div class="collection-card-image product-card-image-slider">
+                    {% with card_images=item.get_card_image_urls %}
+                    {% if card_images %}
+                        <img src="{{ card_images.0 }}" alt="{{ item.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                    {% else %}
+                        <img src="{% static 'images/banner.png' %}" alt="{{ item.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                    {% endif %}
+                    {% endwith %}
+                    {% if item.is_bestseller %}
+                        <span class="collection-card-badge collection-card-badge-bestseller">BESTSELLER</span>
+                    {% elif item.discount_percent %}
+                        <span class="collection-card-badge collection-card-badge-discount">↓{{ item.discount_percent }}%</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                {% with images=item.images.all %}
+                <div class="collection-card-image product-card-image-slider{% if images|length > 1 %} js-product-card-slider{% endif %}"{% if images|length > 1 %} data-card-images="{{ images|image_urls_json }}"{% endif %}>
+                    {% if images %}
+                        <img src="{{ images.0.image.url }}" alt="{{ item.product.name }}{% if item.color or item.model %} - {{ item.color }}{% if item.model %} {{ item.model }}{% endif %}{% endif %}" loading="lazy" class="card-slider-img" decoding="async">
+                    {% else %}
+                        <img src="{% static 'images/banner.png' %}" alt="{{ item.product.name }}" loading="lazy" class="card-slider-img" decoding="async">
+                    {% endif %}
+                    {% if item.product.is_bestseller %}
+                        <span class="collection-card-badge collection-card-badge-bestseller">BESTSELLER</span>
+                    {% elif item.product.discount_percent %}
+                        <span class="collection-card-badge collection-card-badge-discount">↓{{ item.product.discount_percent }}%</span>
+                    {% endif %}
+                </div>
+                {% endwith %}
+                {% endif %}
+                <div class="collection-card-info">
+                    <h3 class="collection-card-name">{% if is_jewellery %}{{ item.name }}{% else %}{{ item.product.name }}{% endif %}</h3>
+                    <p class="collection-card-variant-color">{% if is_jewellery %}Jewellery{% else %}{{ item.product.category.name|default:"" }} · {% if item.color %}{{ item.color }}{% endif %}{% if item.model %}{% if item.color %} / {% endif %}{{ item.model }}{% endif %}{% if not item.color and not item.model %}{{ item.product.name }}{% endif %}{% endif %}</p>
+                    {% if is_jewellery and item.description %}
+                        <p class="storefront-card-description">{{ item.description|truncatewords:12 }}</p>
+                    {% elif not is_jewellery and item.product.description %}
+                        <p class="storefront-card-description">{{ item.product.description|truncatewords:12 }}</p>
+                    {% endif %}
+                    <div class="collection-card-price-block">
+                        {% if is_jewellery %}
+                            {% if item.original_price and item.original_price > item.price %}
+                                <span class="collection-card-discount-pct">{{ item.discount_percent }}% off</span>
+                            {% endif %}
+                            <div class="collection-card-prices">
+                                <span class="current-price">{{ item.price|price_inr }}</span>
+                                {% if item.original_price and item.original_price > item.price %}
+                                    <span class="original-price">{{ item.original_price|price_inr }}</span>
+                                {% endif %}
+                            </div>
+                                        {% else %}
+                                            {% if item.product.original_price and item.product.original_price > item.price %}
+                                                <span class="collection-card-discount-pct">Sale</span>
+                                            {% endif %}
+                                            <div class="collection-card-prices">
+                                                <span class="current-price">{{ item.price|price_inr }}</span>
+                                                {% if item.product.original_price and item.product.original_price > item.price %}
+                                                    <span class="original-price">{{ item.product.original_price|price_inr }}</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </article>
+        {% endwith %}
+    {% endfor %}
+</div>

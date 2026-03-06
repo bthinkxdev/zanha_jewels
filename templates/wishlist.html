@@ -1,0 +1,87 @@
+{% extends "base_gadget.html" %}
+{% load static %}
+{% block title %}My Wishlist — Hello Gads{% endblock %}
+{% block meta_description %}Your saved items.{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">My Wishlist</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                <li class="breadcrumb-item"><a href="{% url 'store:home' %}">Home</a></li>
+                <li class="breadcrumb-item active">Wishlist</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-pad">
+    <div class="container">
+        {% if wishlist_items %}
+        <div class="products-grid wow fadeInUp" data-wow-delay="0.1s">
+            {% for item in wishlist_items %}
+            {% with v=item.selected_variant p=v.product %}
+            <div class="product-card wishlist-item" data-variant-id="{{ v.id }}">
+                <div class="product-img-wrap">
+                    {% if p.discount_percent %}<span class="product-badge badge-sale">−{{ p.discount_percent }}%</span>{% endif %}
+                    {% if p.slug %}
+                    <a href="{% url 'store:product_detail' p.slug %}?variant={{ v.id }}">
+                    {% else %}
+                    <a href="{% url 'store:product_list' %}">
+                    {% endif %}
+                        {% with imgs=v.images.all %}
+                        {% if imgs %}
+                        <img src="{{ imgs.0.image.url }}" alt="{{ p.name }}" loading="lazy">
+                        {% else %}
+                        <img src="{% static 'img/product-1.png' %}" alt="{{ p.name }}" loading="lazy">
+                        {% endif %}
+                        {% endwith %}
+                    </a>
+                    <button type="button" class="product-wishlist js-wishlist-toggle in-wishlist" data-variant-id="{{ v.id }}" title="Remove from wishlist" aria-label="Remove from wishlist">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    {% if p.slug %}
+                    <a href="{% url 'store:product_detail' p.slug %}?variant={{ v.id }}" class="product-quick-add">View Detail <i class="fas fa-arrow-right ms-1"></i></a>
+                    {% else %}
+                    <a href="{% url 'store:product_list' %}" class="product-quick-add">View Detail <i class="fas fa-arrow-right ms-1"></i></a>
+                    {% endif %}
+                </div>
+                <div class="product-body">
+                    <div class="product-category">{{ p.category.name|default:"" }}</div>
+                    {% if p.slug %}
+                    <a href="{% url 'store:product_detail' p.slug %}?variant={{ v.id }}" class="text-decoration-none"><h3 class="product-name">{{ p.name }}</h3></a>
+                    {% else %}
+                    <a href="{% url 'store:product_list' %}" class="text-decoration-none"><h3 class="product-name">{{ p.name }}</h3></a>
+                    {% endif %}
+                    <p class="mb-1" style="font-size:var(--text-xs);color:var(--clr-grey-5);">{{ v.get_attribute_values_display|default:"" }}</p>
+                    <div class="product-price">
+                        <span class="price-current">₹{{ v.price|floatformat:0 }}</span>
+                        {% if v.original_price and v.original_price > v.price %}
+                        <span class="price-old">₹{{ v.original_price|floatformat:0 }}</span>
+                        {% endif %}
+                    </div>
+                    <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form d-inline-block w-100">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ p.id }}">
+                        <input type="hidden" name="variant_id" value="{{ v.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="product-cta w-100 border-0">Add to Cart</button>
+                    </form>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4" style="font-size:4rem;opacity:0.5;">❤️</div>
+            <h2 class="mb-3" style="font-family:var(--font-heading);font-weight:700;">Your Wishlist is Empty</h2>
+            <p class="mb-4" style="color:var(--clr-grey-5);">Save items you love by clicking the heart on product cards or product pages.</p>
+            <a href="{% url 'store:product_list' %}" class="btn btn-secondary px-4 py-3">
+                Browse Collection <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

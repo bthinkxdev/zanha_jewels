@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .brand-name {
+            color: #ff6b35;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .otp-container {
+            background-color: #f8f9fa;
+            border: 2px dashed #ff6b35;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .otp-code {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff6b35;
+            letter-spacing: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .otp-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .expiry-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .security-notice {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+        }
+        .support-link {
+            color: #ff6b35;
+            text-decoration: none;
+        }
+        p {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1 class="brand-name">{{ site_name }}</h1>
+            <p>Your One-Time Login Code</p>
+        </div>
+        
+        <p>Hello!</p>
+        
+        <p>You requested a login code to access your account. Use the code below to complete your login:</p>
+        
+        <div class="otp-container">
+            <div class="otp-label">Your One-Time Password</div>
+            <div class="otp-code">{{ otp }}</div>
+        </div>
+        
+        <div class="expiry-notice">
+            <strong>⏰ Time Sensitive:</strong> This code will expire in <strong>{{ expiry_minutes }} minutes</strong>.
+        </div>
+        
+        <div class="security-notice">
+            <strong>🔒 Security Notice:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Never share this code with anyone</li>
+                <li>We will never ask for your code via phone or email</li>
+                <li>If you didn't request this code, please ignore this email</li>
+            </ul>
+        </div>
+        
+        <p>If you have any questions or need assistance, please contact our support team.</p>
+        
+        <div class="footer">
+            <p>Best regards,<br><strong>{{ site_name }} Team</strong></p>
+            <p>Need help? Contact us at <a href="mailto:{{ support_email }}" class="support-link">{{ support_email }}</a></p>
+        </div>
+    </div>
+</body>
+</html>
+

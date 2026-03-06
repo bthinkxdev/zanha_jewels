@@ -1,0 +1,306 @@
+{% extends "admin_panel/base.html" %}
+{% load static product_filters %}
+
+{% block title %}Order {{ order.order_number }}{% endblock %}
+{% block page_title %}
+    <span class="page-title-actions">
+        <span class="page-title-text">Order Details</span>
+        <div class="page-title-buttons">
+            <a href="{% url 'admin_panel:order_invoice' order.order_number %}" target="_blank" class="btn btn-primary" aria-label="Print Invoice">
+                <i class="fas fa-print"></i> <span class="btn-text">Print Invoice</span>
+            </a>
+            <a href="{% url 'admin_panel:order_invoice' order.order_number %}" target="_blank" class="btn btn-secondary order-detail-pdf-btn" aria-label="Download PDF">
+                <i class="fas fa-file-pdf"></i> <span class="btn-text">Download PDF</span>
+            </a>
+        </div>
+    </span>
+{% endblock %}
+
+{% block content %}
+<div class="order-detail-page">
+<div class="order-detail-grid">
+    <!-- Order Information -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Order Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Order Number</span>
+                <span class="order-detail-info-value" style="font-size: 1.1rem;">{{ order.order_number }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Order Date</span>
+                <span class="order-detail-info-value">{{ order.created_at|date:"d M, Y - h:i A" }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Status</span>
+                <span class="order-detail-info-value">
+                    {% if order.status == 'placed' %}
+                        <span class="badge badge-info">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'confirmed' %}
+                        <span class="badge badge-warning">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'shipped' %}
+                        <span class="badge badge-secondary">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="badge badge-success">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="badge badge-danger">{{ order.get_status_display }}</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Payment Method</span>
+                <span class="order-detail-info-value">{{ order.payment.get_method_display }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Payment Status</span>
+                <span class="order-detail-info-value">
+                    {% if order.payment.status == 'paid' %}
+                        <span class="badge badge-success">Paid</span>
+                    {% elif order.payment.status == 'pending' %}
+                        <span class="badge badge-warning">Pending</span>
+                    {% else %}
+                        <span class="badge badge-danger">Failed</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <hr class="order-detail-divider">
+
+            <h4 class="order-detail-section-title">Update Order Status</h4>
+            <form method="post" action="{% url 'admin_panel:order_update_status' order.order_number %}" class="order-detail-status-form">
+                {% csrf_token %}
+                <select name="status" class="form-control">
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Update
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Customer Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Full Name</span>
+                <span class="order-detail-info-value">{{ order.address.full_name }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Phone</span>
+                <div class="order-detail-phone-row">
+                    <a href="tel:{{ order.address.phone }}">{{ order.address.phone }}</a>
+                    <a href="https://wa.me/{{ order.address.phone|whatsapp_number }}" target="_blank" class="order-detail-whatsapp-link" aria-label="WhatsApp customer" title="Chat on WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+            {% if order.address.email %}
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Email</span>
+                <a href="mailto:{{ order.address.email }}" class="order-detail-info-value">{{ order.address.email }}</a>
+            </div>
+            {% endif %}
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Shipping Address</span>
+                <span class="order-detail-info-value" style="line-height: 1.6; display: block;">
+                    {{ order.address.address_line }}<br>
+                    {{ order.address.city }}, {{ order.address.state }}<br>
+                    {{ order.address.pincode }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shipment -->
+<div class="card mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0">Shipment</h3>
+        {% if shipment %}
+            <span class="badge {% if shipment.is_cancelled %}badge-danger{% elif order.status == 'delivered' %}badge-success{% else %}badge-secondary{% endif %}">
+                {{ shipment.current_status|default:"Pending" }}
+            </span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if shipment %}
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Shiprocket Order ID</span>
+                <span class="order-detail-info-value">{{ shipment.shiprocket_order_id|default:"—" }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Shipment ID</span>
+                <span class="order-detail-info-value">{{ shipment.shiprocket_shipment_id|default:"—" }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">AWB Code</span>
+                <span class="order-detail-info-value">
+                    {{ shipment.awb_code|default:"—" }}
+                    {% if shipment.awb_code %}
+                    <a href="https://www.shiprocket.in/shipment-tracking/?awb={{ shipment.awb_code }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm" aria-label="Track on Shiprocket">
+                        <i class="fas fa-external-link-alt"></i> Track order
+                    </a>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Courier</span>
+                <span class="order-detail-info-value">{{ shipment.courier_name|default:"—" }}</span>
+            </div>
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Last Tracking Update</span>
+                <span class="order-detail-info-value">
+                    {% if shipment.updated_at %}
+                        {{ shipment.updated_at|date:"d M, Y - h:i A" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </span>
+            </div>
+            {% if shipment.tracking_data and shipment.tracking_data.eta %}
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Estimated Delivery</span>
+                <span class="order-detail-info-value">{{ shipment.tracking_data.eta }}</span>
+            </div>
+            {% endif %}
+            {% if shipment.label_url %}
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Shipping Label</span>
+                <a href="{{ shipment.label_url }}" target="_blank" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-download"></i> Download Label
+                </a>
+            </div>
+            {% endif %}
+            {% if shipment.error_log %}
+            <div class="order-detail-info-row">
+                <span class="order-detail-info-label">Last Error</span>
+                <span class="order-detail-info-value" style="white-space: pre-wrap; color:#b71c1c;">
+                    {{ shipment.error_log|truncatechars:300 }}
+                </span>
+            </div>
+            {% endif %}
+            {% if shipment.tracking_data and shipment.tracking_data.activities %}
+            <div class="order-detail-tracking-timeline mt-3">
+                <h4 class="order-detail-section-title">Tracking Timeline</h4>
+                <ul class="order-detail-timeline-list">
+                    {% for activity in shipment.tracking_data.activities %}
+                    <li class="order-detail-timeline-item">
+                        <span class="order-detail-timeline-date">{{ activity.date|default:activity.event_date|default:"" }}</span>
+                        <span class="order-detail-timeline-text">{{ activity.activity|default:activity.status|default:"" }}</span>
+                        {% if activity.location %}
+                        <span class="order-detail-timeline-location text-muted"> — {{ activity.location }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                {% if not shipment.is_cancelled and order.status != 'delivered' %}
+                <form method="post" action="{% url 'admin_panel:order_shipment_cancel' order.order_number %}"
+                      onsubmit="return confirm('Cancel shipment for order {{ order.order_number }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-ban"></i> Cancel Shipment
+                    </button>
+                </form>
+                {% endif %}
+                {% if order.status != 'delivered' and not shipment.is_cancelled %}
+                <form method="post" action="{% url 'admin_panel:order_shipment_retry' order.order_number %}"
+                      onsubmit="return confirm('Retry shipment creation for order {{ order.order_number }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-sync-alt"></i> Retry Shipment
+                    </button>
+                </form>
+                {% endif %}
+                {% if shipment.awb_code and not shipment.is_cancelled %}
+                <form method="post" action="{% url 'admin_panel:order_shipment_refresh_tracking' order.order_number %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-sync"></i> Refresh tracking
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        {% else %}
+            <p style="color: #888; margin-bottom: 1rem;">
+                No shipment created yet. A shipment will be created automatically when the order is marked as
+                <strong>Confirmed</strong>.
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Order Items -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h3 class="card-title">Order Items</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="order-items-table-wrap table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Variant</th>
+                        <th>Unit Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                        <tr>
+                            <td style="font-weight: 500;">{{ item.product_name }}</td>
+                            <td>{{ item.variant_snapshot }}</td>
+                            <td>₹{{ item.unit_price }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td style="font-weight: 600;">₹{{ item.line_total }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="order-detail-totals">
+            <div class="order-detail-totals-row">
+                <span>Subtotal</span>
+                <span class="amount">₹{{ order.subtotal }}</span>
+            </div>
+            <div class="order-detail-totals-row">
+                <span>Shipping</span>
+                <span class="amount">₹{{ order.shipping }}</span>
+            </div>
+            <div class="order-detail-totals-row total-row">
+                <span>Total</span>
+                <span class="amount">₹{{ order.total }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="order-detail-footer">
+    <div class="order-detail-contact">
+        <strong>Store Contact:</strong>
+        <a href="tel:{{ site_phone|default:'+916238439926' }}">{{ site_phone|default:'+91 62384 39926' }}</a>
+        <a href="https://wa.me/{{ site_whatsapp|default:'916238439926' }}" target="_blank" class="order-detail-whatsapp-link" aria-label="WhatsApp store" title="Contact us on WhatsApp">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+        </a>
+    </div>
+    <a href="{% url 'admin_panel:order_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Orders
+    </a>
+</div>
+</div>
+{% endblock %}
+

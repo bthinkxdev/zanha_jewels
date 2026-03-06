@@ -1,0 +1,95 @@
+<button type="button" class="btn btn-secondary filter-trigger mb-2" id="reportFilterTrigger" aria-label="Open filters">
+    <i class="fas fa-filter"></i> Filters
+</button>
+<div class="filter-overlay" id="reportFilterOverlay" aria-hidden="true"></div>
+<div class="filters-sheet report-filters-sheet" id="reportFiltersSheet">
+<div class="filters-sheet-header">
+    <strong>Report Filters</strong>
+    <button type="button" class="btn btn-sm btn-secondary" id="reportFilterSheetClose" aria-label="Close">✕</button>
+</div>
+<form id="report-filter-form" class="report-filters" method="get" action="">
+    <div class="report-filter-row">
+        <div class="report-filter-group">
+            <label>Date range</label>
+            <select name="date_preset" id="date_preset" class="form-control">
+                {% for value, label in date_presets %}
+                <option value="{{ value }}" {% if filters.date_preset == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="report-filter-group report-custom-dates" id="customDates" style="{% if filters.date_preset != 'custom' %}display:none{% endif %}">
+            <label>From</label>
+            <input type="date" name="date_from" id="date_from" class="form-control" value="{{ filters.date_from|default:'' }}">
+        </div>
+        <div class="report-filter-group report-custom-dates" id="customDatesTo" style="{% if filters.date_preset != 'custom' %}display:none{% endif %}">
+            <label>To</label>
+            <input type="date" name="date_to" id="date_to" class="form-control" value="{{ filters.date_to|default:'' }}">
+        </div>
+        {% if status_choices %}
+        <div class="report-filter-group">
+            <label>Order status</label>
+            <select name="status" class="form-control">
+                <option value="">All</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if filters.order_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        {% if payment_choices %}
+        <div class="report-filter-group">
+            <label>Payment method</label>
+            <select name="payment_method" class="form-control">
+                <option value="">All</option>
+                {% for value, label in payment_choices %}
+                <option value="{{ value }}" {% if filters.payment_method == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        {% if categories %}
+        <div class="report-filter-group">
+            <label>Category</label>
+            <select name="category" class="form-control">
+                <option value="">All</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" {% if filters.category_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        {% if products %}
+        <div class="report-filter-group">
+            <label>Product</label>
+            <select name="product" class="form-control">
+                <option value="">All</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" {% if filters.product_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="report-filter-group">
+            <label>Guest only</label>
+            <select name="guest_only" class="form-control" style="min-width: 5rem;">
+                <option value="">All</option>
+                <option value="1" {% if filters.guest_only %}selected{% endif %}>Guest only</option>
+            </select>
+        </div>
+        <div class="report-filter-group">
+            <label>Min amount (₹)</label>
+            <input type="number" name="min_amount" class="form-control" placeholder="0" step="0.01" value="{{ filters.min_amount|default:'' }}">
+        </div>
+        <div class="report-filter-group">
+            <label>Max amount (₹)</label>
+            <input type="number" name="max_amount" class="form-control" placeholder="—" step="0.01" value="{{ filters.max_amount|default:'' }}">
+        </div>
+        <div class="report-filter-group report-filter-actions report-filter-actions-inline">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Apply</button>
+            <button type="button" class="btn btn-secondary" id="reportResetFilters">Reset</button>
+        </div>
+    </div>
+    <input type="hidden" name="sort" id="reportSortInput" value="{{ sort|default:'-created_at' }}">
+</form>
+</div>

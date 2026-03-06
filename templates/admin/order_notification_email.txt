@@ -1,0 +1,30 @@
+New Order Received - {{ site_name }}
+=====================================
+
+A new order has been placed!
+
+ORDER DETAILS
+-------------
+Order Number: {{ order.order_number }}
+Customer: {{ order.address.full_name }}
+Phone: {{ order.address.phone }}
+Total Amount: ₹{{ order.total }}
+Payment Method: {{ payment_method }}
+
+SHIPPING ADDRESS
+----------------
+{{ order.address.full_name }}
+{{ order.address.address_line }}
+{{ order.address.city }}, {{ order.address.state }} - {{ order.address.pincode }}
+Phone: {{ order.address.phone }}
+
+ORDER ITEMS
+-----------
+{% for item in order.items.all %}
+- {{ item.product_name }}{% if item.variant_snapshot %} ({{ item.variant_snapshot }}){% endif %} x{{ item.quantity }} = ₹{{ item.line_total }}
+{% endfor %}
+
+View Order: {{ order_url }}
+
+---
+This is an automated notification from {{ site_name }}.

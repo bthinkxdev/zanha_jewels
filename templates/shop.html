@@ -1,0 +1,243 @@
+{% extends "base_gadget.html" %}
+{% load static %}{% load product_filters %}
+{% block title %}{{ page_title|default:"Shop" }} — Hello Gads{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block content %}
+{% comment %} <div class="page-header">
+    <div class="container text-center">
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">{{ page_title|default:"Shop All Products" }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                <li class="breadcrumb-item"><a href="{% url 'store:home' %}">Home</a></li>
+                <li class="breadcrumb-item active">Shop</li>
+            </ol>
+        </nav>
+    </div>
+</div> {% endcomment %}
+
+<section class="section-pad">
+    <div class="container">
+
+        <!-- Toolbar -->
+        <div class="shop-toolbar wow fadeInUp" data-wow-delay="0.1s">
+
+            <!-- Left: filters + sort -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button class="btn-filter" id="filterToggleBtn" type="button">
+                    <i class="fas fa-sliders-h"></i> Filters
+                </button>
+                <form method="get" action="{% url 'store:product_list' %}" id="shopFilters" class="d-flex align-items-center gap-2">
+                    <input type="hidden" name="category" value="{{ filters.category|default:'all' }}">
+                    <input type="hidden" name="min_price" value="{{ filters.min_price }}">
+                    <input type="hidden" name="max_price" value="{{ filters.max_price }}">
+                    <input type="hidden" name="q" value="{{ filters.q }}">
+                    <select name="sort" class="sort-select" onchange="this.form.submit()">
+                        {% for value, label in sort_options %}
+                        <option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
+            <!-- Right: count + grid toggles -->
+            <div class="toolbar-right">
+                <span class="results-count">
+                    {% if page_obj %}
+                        <strong>{{ page_obj.paginator.count }}</strong> products
+                    {% else %}
+                        <strong>{{ card_items|length }}</strong> products
+                    {% endif %}
+                </span>
+
+                <!-- Grid toggle buttons -->
+                <div class="grid-toggle">
+                    <!-- Default 5-col grid icon -->
+                    <button class="grid-toggle-btn active" id="btnGrid" title="Grid view" aria-label="Grid view">
+                        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1" y="1" width="6" height="6" rx="1"/>
+                            <rect x="9" y="1" width="6" height="6" rx="1"/>
+                            <rect x="1" y="9" width="6" height="6" rx="1"/>
+                            <rect x="9" y="9" width="6" height="6" rx="1"/>
+                        </svg>
+                    </button>
+                    <!-- Compact many-col icon -->
+                    <button class="grid-toggle-btn" id="btnCompact" title="Compact view" aria-label="Compact view">
+                        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1"  y="1" width="3" height="3" rx="0.5"/>
+                            <rect x="5"  y="1" width="3" height="3" rx="0.5"/>
+                            <rect x="9"  y="1" width="3" height="3" rx="0.5"/>
+                            <rect x="13" y="1" width="2" height="3" rx="0.5"/>
+                            <rect x="1"  y="6" width="3" height="3" rx="0.5"/>
+                            <rect x="5"  y="6" width="3" height="3" rx="0.5"/>
+                            <rect x="9"  y="6" width="3" height="3" rx="0.5"/>
+                            <rect x="13" y="6" width="2" height="3" rx="0.5"/>
+                            <rect x="1"  y="11" width="3" height="3" rx="0.5"/>
+                            <rect x="5"  y="11" width="3" height="3" rx="0.5"/>
+                            <rect x="9"  y="11" width="3" height="3" rx="0.5"/>
+                            <rect x="13" y="11" width="2" height="3" rx="0.5"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="wow fadeInUp" data-wow-delay="0.2s" id="shopProductGrid">
+            {% for card in card_items %}
+            {% with variant=card.0 is_jewellery=card.1 %}
+            {% if not is_jewellery %}
+            <div class="product-card">
+                <div class="product-img-wrap">
+                    {% if variant.product.discount_percent %}<span class="product-badge badge-sale">−{{ variant.product.discount_percent }}%</span>{% endif %}
+                    {% comment %} {% if variant.product.is_bestseller %}<span class="product-badge badge-new">Bestseller</span>{% endif %} {% endcomment %}
+                    <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}">
+                        {% with imgs=variant.images.all %}
+                        {% if imgs %}
+                        <img src="{{ imgs.0.image.url }}" alt="{{ variant.product.name }}" loading="lazy">
+                        {% else %}
+                        <img src="{% static 'img/product-1.png' %}" alt="{{ variant.product.name }}" loading="lazy">
+                        {% endif %}
+                        {% endwith %}
+                    </a>
+                    {% comment %} <button type="button" class="product-wishlist js-wishlist-toggle {% if variant.id in wishlist_variant_ids %}in-wishlist{% endif %}" data-variant-id="{{ variant.id }}" title="Wishlist">
+                        <i class="far fa-heart"></i>
+                    </button> {% endcomment %}
+                    {% comment %} <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="product-quick-add">
+                        View Detail <i class="fas fa-arrow-right ms-1"></i>
+                    </a> {% endcomment %}
+                </div>
+                <div class="product-body">
+                    {% comment %} <div class="product-category">{{ variant.product.category.name|default:"" }}</div> {% endcomment %}
+                    <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="text-decoration-none">
+                        <h3 class="product-name">{{ variant.product.name }}</h3>
+                    </a>
+                    <div class="product-price">
+                        <span class="price-current">₹{{ variant.price|floatformat:0 }}</span>
+                        {% if variant.original_price and variant.original_price > variant.price %}
+                        <span class="price-old">₹{{ variant.original_price|floatformat:0 }}</span>
+                        {% endif %}
+                    </div>
+                    <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ variant.product_id }}">
+                        <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="product-cta border-0">Add to Cart</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No products found. Try adjusting filters.</p>
+                <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark">Clear filters</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-5 d-flex justify-content-center" aria-label="Shop pagination">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">Previous</a></li>
+                {% endif %}
+                {% for p in page_obj.paginator.page_range %}
+                {% if p == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ p }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">{{ p }}</a></li>
+                {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    </div>
+</section>
+
+<!-- Filter offcanvas -->
+<aside id="filterOffcanvas" class="filter-offcanvas" role="dialog" aria-label="Filters">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h5 class="mb-0 fw-bold">Filters</h5>
+        <button class="filter-close" id="filterCloseBtn" type="button" aria-label="Close">&times;</button>
+    </div>
+    <form method="get" action="{% url 'store:product_list' %}">
+        <input type="hidden" name="sort" value="{{ filters.sort }}">
+        <input type="hidden" name="q" value="{{ filters.q }}">
+        <div class="filter-section">
+            <h6>Category</h6>
+            <select name="category" class="form-select mb-3">
+                <option value="all" {% if filters.category == 'all' %}selected{% endif %}>All</option>
+                {% for cat in categories %}
+                <option value="{{ cat.slug }}" {% if filters.category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-section">
+            <h6>Price</h6>
+            <input type="number" name="min_price" value="{{ filters.min_price }}" placeholder="Min" class="form-control mb-2" min="0" step="1">
+            <input type="number" name="max_price" value="{{ filters.max_price }}" placeholder="Max" class="form-control mb-2" min="0" step="1">
+        </div>
+        <button type="submit" class="btn btn-dark w-100">Apply</button>
+    </form>
+</aside>
+<div id="filterOverlay" class="filter-offcanvas-overlay"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+    /* ── Filter offcanvas ── */
+    var btn       = document.getElementById('filterToggleBtn');
+    var closeBtn  = document.getElementById('filterCloseBtn');
+    var offcanvas = document.getElementById('filterOffcanvas');
+    var overlay   = document.getElementById('filterOverlay');
+
+    function openFilter()  { offcanvas && offcanvas.classList.add('open');    overlay && overlay.classList.add('open'); }
+    function closeFilter() { offcanvas && offcanvas.classList.remove('open'); overlay && overlay.classList.remove('open'); }
+
+    if(btn)      btn.addEventListener('click', openFilter);
+    if(closeBtn) closeBtn.addEventListener('click', closeFilter);
+    if(overlay)  overlay.addEventListener('click', closeFilter);
+
+    /* ── Grid toggle ── */
+    var grid       = document.getElementById('shopProductGrid');
+    var btnGrid    = document.getElementById('btnGrid');
+    var btnCompact = document.getElementById('btnCompact');
+
+    function setGrid(mode) {
+        if (!grid) return;
+        if (mode === 'compact') {
+            grid.classList.add('grid-compact');
+            btnCompact && btnCompact.classList.add('active');
+            btnGrid    && btnGrid.classList.remove('active');
+            try { localStorage.setItem('shopGridMode', 'compact'); } catch(e){}
+        } else {
+            grid.classList.remove('grid-compact');
+            btnGrid    && btnGrid.classList.add('active');
+            btnCompact && btnCompact.classList.remove('active');
+            try { localStorage.setItem('shopGridMode', 'grid'); } catch(e){}
+        }
+    }
+
+    /* Restore last preference */
+    try {
+        var saved = localStorage.getItem('shopGridMode');
+        if (saved === 'compact') setGrid('compact');
+    } catch(e){}
+
+    if (btnGrid)    btnGrid.addEventListener('click',    function(){ setGrid('grid'); });
+    if (btnCompact) btnCompact.addEventListener('click', function(){ setGrid('compact'); });
+
+})();
+</script>
+{% endblock %}

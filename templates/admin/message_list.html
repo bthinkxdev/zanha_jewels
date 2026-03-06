@@ -1,0 +1,117 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Messages{% endblock %}
+{% block page_title %}Contact Messages{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Contact Messages</h3>
+    </div>
+
+    <div class="card-body">
+        <!-- Filters - Desktop -->
+        <form method="get" class="filters filters-inline">
+            <div class="filter-group">
+                <select name="status" class="form-control" onchange="this.form.submit()">
+                    <option value="">All Messages</option>
+                    <option value="unresolved" {% if filter_status == "unresolved" %}selected{% endif %}>Unresolved</option>
+                    <option value="resolved" {% if filter_status == "resolved" %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+        </form>
+
+        <button type="button" class="btn btn-secondary filter-trigger mb-2" id="filterTrigger" aria-label="Open filters">
+            <i class="fas fa-filter"></i> Filters
+        </button>
+
+        <div class="filter-overlay" id="filterOverlay" aria-hidden="true"></div>
+        <div class="filters-sheet" id="filtersSheet">
+            <div class="filters-sheet-header">
+                <strong>Filter Messages</strong>
+                <button type="button" class="btn btn-sm btn-secondary" id="filterSheetClose" aria-label="Close">✕</button>
+            </div>
+            <form method="get" class="filters-sheet-body">
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Messages</option>
+                        <option value="unresolved" {% if filter_status == "unresolved" %}selected{% endif %}>Unresolved</option>
+                        <option value="resolved" {% if filter_status == "resolved" %}selected{% endif %}>Resolved</option>
+                    </select>
+                </div>
+                <div class="filters-sheet-footer">
+                    <button type="button" class="btn btn-secondary" id="filterClear">Clear</button>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Messages List -->
+        {% if contact_messages %}
+            <div style="display: grid; gap: 1rem;">
+                {% for message in contact_messages %}
+                    <div class="card message-card" style="box-shadow: none; border: 1px solid var(--gray-200);">
+                        <div class="card-body">
+                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 1rem;">
+                                <div style="flex: 1;">
+                                    <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem;">{{ message.subject }}</h4>
+                                    <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--gray-600);">
+                                        <span><i class="fas fa-user"></i> {{ message.name }}</span>
+                                        <span><i class="fas fa-envelope"></i> {{ message.email }}</span>
+                                        <span><i class="fas fa-clock"></i> {{ message.created_at|date:"d M, Y h:i A" }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    {% if message.is_resolved %}
+                                        <span class="badge badge-success">Resolved</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Unresolved</span>
+                                    {% endif %}
+                                    
+                                    <form method="post" action="{% url 'admin_panel:message_toggle_resolved' message.pk %}" style="margin: 0;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm {% if message.is_resolved %}btn-secondary{% else %}btn-success{% endif %}">
+                                            <i class="fas fa-check"></i>
+                                            {% if message.is_resolved %}Unresolve{% else %}Resolve{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px; border-left: 3px solid var(--primary);">
+                                <p style="margin: 0; white-space: pre-wrap; line-height: 1.6;">{{ message.message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="pagination" style="margin-top: 1.5rem;">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if filter_status %}&status={{ filter_status }}{% endif %}">First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}">Previous</a>
+                    {% endif %}
+
+                    <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if filter_status %}&status={{ filter_status }}{% endif %}">Last</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-envelope"></i>
+                <p>No messages found</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,304 @@
+/**
+ * Storefront product cards – unified, static, Flipkart-style
+ * Featured badge, fixed dimensions, no layout shift, compact spacing
+ * Used on: Home (deal, bestseller, mini), Collection grid
+ */
+
+/* ============================================
+   FEATURED BADGE (top-left, absolute, no layout impact)
+   ============================================ */
+.card-badge-featured,
+.collection-card-badge-featured {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-radius: 4px;
+    background: rgba(30, 30, 30, 0.92);
+    color: #fff;
+    z-index: 3;
+    line-height: 1.2;
+}
+
+/* When both Featured and discount/bestseller: stack or show Featured only per requirements */
+.home-ref-card .card-badge-featured,
+.collection-product-card .collection-card-badge-featured {
+    top: 8px;
+    left: 8px;
+}
+
+/* Product detail page – small badge near title */
+.product-name-with-badge {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.product-detail-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-radius: 4px;
+    background: rgba(30, 30, 30, 0.92);
+    color: #fff;
+}
+
+/* ============================================
+   UNIFIED CARD – FIXED HEIGHTS, NO SHIFT
+   ============================================ */
+.storefront-product-card,
+.home-ref-card.storefront-card,
+.collection-product-card {
+    height: 100%;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.storefront-product-card:hover,
+.home-ref-card.storefront-card:hover,
+.collection-product-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--gray-300);
+}
+
+/* Fixed image container – aspect ratio, no stretch, lazy already in HTML */
+.storefront-card-image,
+.home-ref-card .home-ref-image.storefront-card-image,
+.collection-product-card .collection-card-image {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-top: 125%;
+    flex-shrink: 0;
+    background: var(--gray-50);
+    overflow: hidden;
+}
+
+.storefront-card-image img,
+.home-ref-card .home-ref-image.storefront-card-image img,
+.collection-product-card .collection-card-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.storefront-product-card:hover .storefront-card-image img,
+.home-ref-card.storefront-card:hover .home-ref-image img,
+.collection-product-card:hover .collection-card-image img {
+    transform: scale(1.04);
+}
+
+/* ============================================
+   CARD INFO – FIXED LINES, ELLIPSIS, COMPACT
+   ============================================ */
+.storefront-card-info,
+.home-ref-card .home-ref-info.storefront-card-info,
+.collection-product-card .collection-card-info {
+    padding: 8px 10px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Product name – 1 line, ellipsis */
+.storefront-card-name,
+.home-ref-card .home-card-name.storefront-card-name,
+.collection-product-card .collection-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    margin: 0 0 2px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Color / variant – 1 line, ellipsis */
+.storefront-card-variant,
+.home-card-brand.storefront-card-variant,
+.collection-product-card .collection-card-variant-color {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin: 0 0 2px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Description – 1 line, faded, smaller */
+.storefront-card-description {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin: 0 0 4px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Rating – small */
+.storefront-card-rating,
+.home-card-rating {
+    font-size: 11px;
+    color: var(--gray-600);
+    margin: 0 0 4px;
+}
+
+/* Price block – single price, bold */
+.storefront-card-prices,
+.home-ref-prices.storefront-card-prices,
+.collection-product-card .collection-card-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.storefront-card-prices .current-price,
+.home-ref-prices.storefront-card-prices .current-price,
+.collection-product-card .collection-card-prices .current-price {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--black);
+}
+
+.storefront-card-prices .original-price,
+.home-ref-prices.storefront-card-prices .original-price,
+.collection-product-card .collection-card-prices .original-price {
+    font-size: 12px;
+    color: var(--gray-400);
+    text-decoration: line-through;
+}
+
+/* Discount % small badge next to price (not on image) */
+.storefront-card-discount-pct,
+.collection-card-discount-pct {
+    font-size: 11px;
+    font-weight: 600;
+    color: #16a34a;
+}
+
+/* ============================================
+   BADGES ON IMAGE (discount, bestseller) – do not affect size
+   ============================================ */
+.home-card-badge,
+.collection-card-badge {
+    position: absolute;
+    z-index: 2;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-radius: 4px;
+}
+
+.home-ref-card .home-card-badge,
+.collection-product-card .collection-card-badge {
+    top: 8px;
+    left: 8px;
+}
+
+/* When Featured badge exists, move discount/bestseller down to avoid overlap */
+.home-ref-card:has(.card-badge-featured) .home-card-badge,
+.collection-product-card:has(.collection-card-badge-featured) .collection-card-badge {
+    top: 32px;
+}
+
+/* ============================================
+   MOBILE – 2-col grid, compact
+   ============================================ */
+@media (max-width: 639px) {
+    .storefront-product-card,
+    .home-ref-card.storefront-card,
+    .collection-product-card {
+        min-height: 260px;
+    }
+
+    .storefront-card-info,
+    .home-ref-card .home-ref-info.storefront-card-info,
+    .collection-product-card .collection-card-info {
+        padding: 6px 8px 8px;
+    }
+
+    .storefront-card-name,
+    .home-ref-card .home-card-name.storefront-card-name,
+    .collection-product-card .collection-card-name {
+        font-size: 12px;
+    }
+
+    .storefront-card-prices .current-price,
+    .collection-product-card .collection-card-prices .current-price {
+        font-size: 14px;
+    }
+
+    .collection-product-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+}
+
+/* ============================================
+   WISHLIST BUTTON – same position on all cards
+   ============================================ */
+.home-ref-card .product-card-wishlist,
+.collection-product-card .product-card-wishlist {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: var(--white);
+    border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-ref-card .product-card-wishlist .wishlist-heart,
+.collection-product-card .product-card-wishlist .wishlist-heart {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 639px) {
+    .home-ref-card .product-card-wishlist,
+    .collection-product-card .product-card-wishlist {
+        width: 30px;
+        height: 30px;
+    }
+
+    .home-ref-card .product-card-wishlist .wishlist-heart,
+    .collection-product-card .product-card-wishlist .wishlist-heart {
+        width: 14px;
+        height: 14px;
+    }
+}

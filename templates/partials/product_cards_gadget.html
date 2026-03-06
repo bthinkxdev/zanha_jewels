@@ -1,0 +1,37 @@
+{% load static %}{% load product_filters %}
+{% for card in card_items %}
+{% with variant=card.0 is_jewellery=card.1 %}
+{% if not is_jewellery %}
+<div class="product-card">
+    <div class="product-img-wrap">
+        {% if variant.product.discount_percent %}<span class="product-badge badge-sale">−{{ variant.product.discount_percent }}%</span>{% endif %}
+        <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}">
+            {% with imgs=variant.images.all %}
+            {% if imgs %}<img src="{{ imgs.0.image.url }}" alt="{{ variant.product.name }}" loading="lazy">
+            {% else %}<img src="{% static 'img/product-1.png' %}" alt="{{ variant.product.name }}" loading="lazy">{% endif %}
+            {% endwith %}
+        </a>
+        <button type="button" class="product-wishlist js-wishlist-toggle {% if variant.id in wishlist_variant_ids %}in-wishlist{% endif %}" data-variant-id="{{ variant.id }}" title="Wishlist"><i class="far fa-heart"></i></button>
+        <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="product-quick-add">View Detail <i class="fas fa-arrow-right ms-1"></i></a>
+    </div>
+    <div class="product-body">
+        <div class="product-category">{{ variant.product.category.name|default:"" }}</div>
+        <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="text-decoration-none"><h3 class="product-name">{{ variant.product.name }}</h3></a>
+        <div class="product-price">
+            <span class="price-current">₹{{ variant.price|floatformat:0 }}</span>
+            {% if variant.original_price and variant.original_price > variant.price %}
+            <span class="price-old">₹{{ variant.original_price|floatformat:0 }}</span>
+            {% endif %}
+        </div>
+        <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form d-inline-block w-100">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ variant.product_id }}">
+            <input type="hidden" name="variant_id" value="{{ variant.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="product-cta w-100 border-0">Add to Cart</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+{% endfor %}

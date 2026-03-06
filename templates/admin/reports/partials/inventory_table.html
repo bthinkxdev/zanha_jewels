@@ -1,0 +1,15 @@
+{% if variants %}
+<tbody>
+    {% for v in variants %}
+    <tr>
+        <td data-label="Product">{{ v.product.name|default:"—" }}</td>
+        <td data-label="Category">{{ v.product.category.name|default:"—" }}</td>
+        <td data-label="Variant">{{ v.get_attribute_values_display|default:"—" }}</td>
+        <td data-label="Stock">{{ v.stock_quantity }}</td>
+        <td data-label="SKU">{{ v.sku|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</tbody>
+{% else %}
+<tbody><tr><td colspan="5" class="report-empty">No inventory data.</td></tr></tbody>
+{% endif %}

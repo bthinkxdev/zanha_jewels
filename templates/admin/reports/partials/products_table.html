@@ -1,0 +1,13 @@
+<tbody>
+    {% for p in products %}
+    <tr>
+        <td data-label="Product"><a href="{% url 'admin_panel:product_edit' p.pk %}">{{ p.name }}</a></td>
+        <td data-label="Category">{{ p.category.name|default:"—" }}</td>
+        <td data-label="Units sold">{{ p.units_sold|default:0 }}</td>
+        <td data-label="Revenue" class="report-amount">₹{{ p.revenue|floatformat:0|default:"0" }}</td>
+        <td data-label="Orders">{{ p.order_count|default:0 }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="report-empty">No product data found.</td></tr>
+    {% endfor %}
+</tbody>

@@ -1,0 +1,174 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Orders{% endblock %}
+{% block page_title %}Orders{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Manage Orders</h3>
+    </div>
+
+    <div class="card-body">
+        <!-- Filters - Desktop inline -->
+        <form method="get" class="filters filters-inline">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" class="form-control" placeholder="Search orders..." 
+                       value="{{ search_query }}">
+            </div>
+            <div class="filter-group">
+                <select name="status" class="form-control" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        <!-- Mobile filter trigger -->
+        <button type="button" class="btn btn-secondary filter-trigger mb-2" id="filterTrigger" aria-label="Open filters">
+            <i class="fas fa-filter"></i> Filters
+        </button>
+
+        <!-- Mobile filter bottom sheet -->
+        <div class="filter-overlay" id="filterOverlay" aria-hidden="true"></div>
+        <div class="filters-sheet" id="filtersSheet">
+            <div class="filters-sheet-header">
+                <strong>Filters</strong>
+                <button type="button" class="btn btn-sm btn-secondary" id="filterSheetClose" aria-label="Close">✕</button>
+            </div>
+            <form method="get" class="filters-sheet-body">
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text" name="search" class="form-control" placeholder="Search orders..." value="{{ search_query }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters-sheet-footer">
+                    <button type="button" class="btn btn-secondary" id="filterClear">Clear</button>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Orders list -->
+        {% if orders %}
+            <!-- Mobile cards (visible <=768px) -->
+            <div class="list-cards">
+                {% for order in orders %}
+                    <div class="list-card">
+                        <div class="list-card-header">
+                            <a href="{% url 'admin_panel:order_detail' order.order_number %}" class="list-card-title" style="color: var(--primary); text-decoration: none;">
+                                {{ order.order_number }}
+                            </a>
+                            <span class="badge {% if order.status == 'placed' %}badge-info{% elif order.status == 'confirmed' %}badge-warning{% elif order.status == 'shipped' %}badge-secondary{% elif order.status == 'delivered' %}badge-success{% elif order.status == 'cancelled' %}badge-danger{% else %}badge-secondary{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="list-card-meta">
+                            <span><i class="fas fa-user"></i> {{ order.address.full_name }}</span>
+                            <span><i class="fas fa-phone"></i> {{ order.address.phone }}</span>
+                            <span><i class="fas fa-box"></i> {{ order.items.count }} items</span>
+                            <span><i class="fas fa-calendar"></i> {{ order.created_at|date:"d M, Y" }}</span>
+                        </div>
+                        <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem;">₹{{ order.total }}</div>
+                        <div class="list-card-actions">
+                            <a href="{% url 'admin_panel:order_detail' order.order_number %}" class="btn btn-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop table (hidden <=768px) -->
+            <div class="list-table">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'admin_panel:order_detail' order.order_number %}" 
+                                           style="color: var(--primary); text-decoration: none; font-weight: 600;">
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ order.address.full_name }}</td>
+                                    <td>{{ order.address.phone }}</td>
+                                    <td>{{ order.items.count }} items</td>
+                                    <td style="font-weight: 600;">₹{{ order.total }}</td>
+                                    <td>
+                                        {% if order.status == 'placed' %}
+                                            <span class="badge badge-info">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'confirmed' %}
+                                            <span class="badge badge-warning">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'shipped' %}
+                                            <span class="badge badge-secondary">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'delivered' %}
+                                            <span class="badge badge-success">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'cancelled' %}
+                                            <span class="badge badge-danger">{{ order.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.created_at|date:"d M, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'admin_panel:order_detail' order.order_number %}" class="btn btn-sm btn-secondary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Previous</a>
+                    {% endif %}
+
+                    <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Last</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-shopping-bag"></i>
+                <p>No orders found</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

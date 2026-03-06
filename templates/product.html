@@ -1,0 +1,1366 @@
+{% extends "base_gadget.html" %}
+{% load static %}{% load product_filters %}
+{% block title %}{{ product.name }} — Hello Gads{% endblock %}
+{% block meta_description %}{{ product.description|truncatewords:20|default:product.name }}{% endblock %}
+{% block extra_css %}
+<style>
+.gallery-main{transition:opacity .15s ease;}
+.spec-table td,.spec-table th{padding:10px 14px;font-size:.875rem;}
+.spec-table th{font-weight:700;background:#f5f5f5;width:38%;}
+.attribute-value-btn.disabled-option{
+    opacity:0.45;
+    cursor:not-allowed;
+    text-decoration:line-through;
+}
+</style>
+{% endblock %}
+{% block content %}
+<!-- Breadcrumb -->
+<div style="background:#f5f5f5;border-bottom:1px solid #e0e0e0;padding:12px 0;">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0" style="font-size:.8125rem;">
+                <li class="breadcrumb-item"><a href="{% url 'store:home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'store:product_list' %}">Shop</a></li>
+                <li class="breadcrumb-item active">{{ product.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="product-detail-main">
+    <div class="container">
+        <div class="row g-5">
+            <!-- Gallery -->
+            <div class="col-lg-6 gallery-section">
+                <div class="gallery-main wow fadeInLeft" data-wow-delay="0.1s">
+                    {% if selected_variant %}
+                        {% with imgs=selected_variant.images.all %}
+                        {% if imgs %}
+                        <img id="mainProductImg" src="{{ imgs.0.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                        <img id="mainProductImg" src="{% static 'img/product-1.png' %}" alt="{{ product.name }}">
+                        {% endif %}
+                        {% endwith %}
+                    {% else %}
+                    <img id="mainProductImg" src="{% static 'img/product-1.png' %}" alt="{{ product.name }}">
+                    {% endif %}
+                </div>
+                <div class="gallery-thumbs mt-3">
+                    {% if selected_variant %}
+                        {% for img in selected_variant.images.all %}
+                        <div class="gallery-thumb {% if forloop.first %}active{% endif %}">
+                            <img src="{{ img.image.url }}" alt="{{ product.name }}" loading="lazy" data-full="{{ img.image.url }}">
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="col-lg-6 product-detail-info wow fadeInRight" data-wow-delay="0.1s">
+                <div class="product-category mb-2">{{ product.category.name|default:"" }}</div>
+                <h1 class="product-detail-title">{{ product.name }}</h1>
+
+                {% if average_rating is not None %}
+                <div class="product-detail-rating">
+                    <span class="stars">{% for i in "12345" %}{% if forloop.counter <= average_rating %}★{% else %}<span class="star-empty">★</span>{% endif %}{% endfor %}</span>
+                    <span class="rating-count">{{ average_rating|floatformat:1 }} / 5 &nbsp;&bull;&nbsp; {{ reviews|length }} reviews</span>
+                    {% if reviews %}<a href="#reviews" class="ms-2" style="font-size:.8rem;">See all</a>{% endif %}
+                </div>
+                {% endif %}
+
+                <div class="product-detail-price" id="productPriceBlock">
+                    {% if selected_variant %}
+                        {% if product.is_gst_applicable and product_gst_percentage is not None %}
+                        <div class="price-breakdown">
+                            <div>Base Price: <span class="price-main">₹{{ selected_variant.price|floatformat:2 }}</span></div>
+                            <div>GST ({{ product_gst_percentage }}%): <span class="price-gst">₹{{ product_detail_gst_amount|floatformat:2 }}</span></div>
+                            <div class="price-total-line">Total: <span class="price-main">₹{{ product_detail_total_with_gst|floatformat:2 }}</span></div>
+                        </div>
+                        {% else %}
+                        <span class="price-main">₹{{ selected_variant.price|floatformat:0 }}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                {% if product.description %}
+                <p class="product-detail-short-desc">{{ product.description|truncatewords:40 }}</p>
+                {% endif %}
+
+                <!-- Variant selection: attribute-based (grouped) or flat variant list -->
+                {% if attributes_grouped %}
+                <div class="mb-3" id="variantAttributeGroups">
+                    {% for attr in attributes_grouped %}
+                    <div class="mb-2">
+                        <span style="font-size:.8125rem;font-weight:700;text-transform:uppercase;">{{ attr.name }}</span>
+                        <div class="d-flex gap-2 mt-1 flex-wrap" data-attribute-id="{{ attr.id }}" data-attribute-name="{{ attr.name }}">
+                            {% for av in attr.values %}
+                            <button
+                                type="button"
+                                class="btn {% if av.id in selected_attribute_value_ids %}btn-dark{% else %}btn-outline-dark{% endif %} px-3 attribute-value-btn"
+                                data-attribute-value-id="{{ av.id }}"
+                                data-attribute-value="{{ av.value }}"
+                                style="min-height:38px;"
+                            >{{ av.value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% elif variants %}
+                <div class="mb-3">
+                    <span style="font-size:.8125rem;font-weight:700;text-transform:uppercase;">Option</span>
+                    <div class="d-flex gap-2 mt-2 flex-wrap" id="variantOptions">
+                        {% for v in variants %}
+                        <a href="?variant={{ v.id }}" class="btn {% if selected_variant.id == v.id %}btn-dark{% else %}btn-outline-dark{% endif %} px-3 variant-option" data-variant-id="{{ v.id }}" style="min-height:38px;">{{ v.get_attribute_values_display|default:"Option" }} {{ forloop.counter }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Add to cart form -->
+                <form method="post" action="{% url 'store:cart_add' %}" id="addToCartForm" class="mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="variant_id" id="formVariantId" value="{{ selected_variant.id|default:'' }}">
+                    <input type="hidden" name="quantity" id="formQuantity" value="1">
+                    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                        <label style="font-size:.8125rem;font-weight:700;">Qty</label>
+                        <div class="qty-selector quantity">
+                            <button class="btn-minus" type="button"><i class="fas fa-minus"></i></button>
+                            <input type="number" id="qtyInput" value="1" min="1" max="99" readonly style="width:50px;text-align:center;">
+                            <button class="btn-plus" type="button"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <span class="stock-indicator" style="font-size:.8125rem;">
+                            {% if selected_variant %}
+                                {% if selected_variant.stock_quantity and selected_variant.stock_quantity > 0 %}
+                                <i class="fas fa-check-circle me-1" style="color:#000;"></i> In Stock ({{ selected_variant.stock_quantity }})
+                                {% else %}
+                                <i class="fas fa-times-circle me-1" style="color:#c00;"></i> Out of Stock
+                                {% endif %}
+                            {% else %}
+                                <i class="fas fa-info-circle me-1" style="color:#000;"></i> Select options to see availability
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="product-cta-row">
+                        <button type="submit" class="btn-add-cart btn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>
+                            <i class="fas fa-shopping-bag me-2"></i> Add to Cart
+                        </button>
+                        <button type="button" class="btn-buy-now btn" id="buyNowBtn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>Buy Now</button>
+                    </div>
+                </form>
+
+                <div class="d-flex flex-wrap gap-3 my-3">
+                    <div class="trust-badge"><i class="fas fa-shield-alt"></i> Secure Payment</div>
+                    <div class="trust-badge"><i class="fas fa-undo-alt"></i> Easy Returns</div>
+                </div>
+
+                <button type="button" class="product-wishlist {% if in_wishlist %}in-wishlist{% endif %}" id="productWishlistBtn" data-variant-id="{{ selected_variant.id }}" title="Wishlist">
+                    <i class="{% if in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i> 
+                    <span class="wishlist-text">{% if in_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Description / Specs -->
+        {% if product.description %}
+        <div class="row mt-5 pt-3">
+            <div class="col-lg-8">
+                <div class="accordion" id="productAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDesc" aria-expanded="true">Description</button>
+                        </h2>
+                        <div id="collapseDesc" class="accordion-collapse collapse show" data-bs-parent="#productAccordion">
+                            <div class="accordion-body">{{ product.description|linebreaks }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Reviews -->
+        {% if reviews %}
+        <div class="row mt-4" id="reviews">
+            <div class="col-12">
+                <h3 class="mb-3">Customer Reviews ({{ reviews|length }})</h3>
+                {% for review in reviews %}
+                <div class="review-card mb-3 p-3 border rounded">
+                    <div class="reviewer fw-bold">{{ review.user.get_full_name|default:review.user.email }}</div>
+                    <div class="review-date small text-muted">{{ review.created_at|date }}</div>
+                    <div class="review-stars">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% endif %}{% endfor %}</div>
+                    {% if review.title %}<div class="review-title">{{ review.title }}</div>{% endif %}
+                    <p class="mb-0">{{ review.comment }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Review Form -->
+        {% if can_review %}
+        <div class="row mt-4">
+            <div class="col-lg-6">
+                <h4 class="mb-3">Write a Review</h4>
+                <form id="reviewForm" action="{% url 'store:product_review_create' product.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-block">Rating <span class="text-danger">*</span></label>
+                        <div style="display:flex;gap:4px;margin-top:6px;">
+                            {% for i in "12345" %}
+                            <button type="button" class="star-btn" data-value="{{ forloop.counter }}" style="background:none;border:none;font-size:36px;color:#ddd;cursor:pointer;padding:0 2px;line-height:1;transition:color 0.1s;">★</button>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="rating" id="reviewRating">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Title <span class="text-muted fw-normal small">(optional)</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="Summarise your experience" maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Review <span class="text-muted fw-normal small">(optional)</span></label>
+                        <textarea name="comment" class="form-control" rows="4" placeholder="Share your thoughts about this product..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-dark px-4" id="reviewSubmitBtn">Submit Review</button>
+                    <span id="reviewMsg" class="ms-3 small"></span>
+                </form>
+            </div>
+        </div>
+        {% elif user_review %}
+        <div class="row mt-3">
+            <div class="col-12">
+                <p class="text-muted small">✓ You have already reviewed this product.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Related -->
+        {% if related_products %}
+        <div class="row mt-5 pt-4">
+            <div class="col-12">
+                <h3 class="mb-4">You May Also Like</h3>
+                <div class="products-grid">
+                    {% for rel in related_products %}
+                    {% with fv=rel.variants.all|first %}
+                    {% if fv %}
+                    <div class="product-card">
+                        <div class="product-img-wrap">
+                            <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}">
+                                {% with imgs=fv.images.all %}{% if imgs %}<img src="{{ imgs.0.image.url }}" alt="{{ rel.name }}" loading="lazy">{% else %}<img src="{% static 'img/product-1.png' %}" alt="{{ rel.name }}" loading="lazy">{% endif %}{% endwith %}
+                            </a>
+                        </div>
+                        <div class="product-body">
+                            <div class="product-category">{{ rel.category.name|default:"" }}</div>
+                            <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="text-decoration-none"><h3 class="product-name">{{ rel.name }}</h3></a>
+                            <div class="product-price"><span class="price-current">₹{{ fv.price|floatformat:0 }}</span></div>
+                            <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="product-cta">View</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{{ variant_json|json_script:"variant-data" }}
+{{ ordered_attributes|json_script:"ordered-attributes" }}
+
+<script>
+(function(){
+    // Legacy attribute-driven logic (kept for reference) is disabled.
+    // New variant-driven implementation is added in a separate script block below.
+    return;
+    var variantData = {};
+    var mainImg = document.getElementById('mainProductImg');
+    var formVariantId = document.getElementById('formVariantId');
+    var priceBlock = document.getElementById('productPriceBlock');
+    var qtyInput = document.getElementById('qtyInput');
+    var formQuantity = document.getElementById('formQuantity');
+    if (!qtyInput) return;
+    document.querySelectorAll('.gallery-thumb img').forEach(function(thumb){
+        thumb.addEventListener('click', function(){
+            var src = this.getAttribute('data-full') || this.src;
+            if(mainImg) mainImg.src = src;
+            document.querySelectorAll('.gallery-thumb').forEach(function(t){ t.classList.remove('active'); });
+            thumb.closest('.gallery-thumb').classList.add('active');
+        });
+    });
+    document.querySelectorAll('.variant-option[data-variant-id]').forEach(function(opt){
+        var vid = opt.getAttribute('data-variant-id');
+        if(!vid) return;
+        opt.addEventListener('click', function(e){ e.preventDefault(); window.location.href = '?variant=' + vid; });
+    });
+    // Attribute-based variant resolution
+    var attrGroups = document.getElementById('variantAttributeGroups');
+    var productId = {{ product.id|default:0 }};
+    if (attrGroups && productId) {
+        var attributeGroups = Array.prototype.slice.call(
+            attrGroups.querySelectorAll('[data-attribute-id]')
+        );
+
+        function getSelectedValueIds() {
+            var ids = [];
+            attributeGroups.forEach(function(group){
+                var selected = group.querySelector('.attribute-value-btn.btn-dark');
+                if (selected && !selected.disabled) {
+                    var id = selected.getAttribute('data-attribute-value-id');
+                    if (id) ids.push(parseInt(id, 10));
+                }
+            });
+            return ids;
+        }
+
+        function recomputeAvailability() {
+            if (!variantData) return;
+            // Map current selection per attribute group
+            var selectedPerGroup = {};
+            attributeGroups.forEach(function(group){
+                var attrId = group.getAttribute('data-attribute-id');
+                var selected = group.querySelector('.attribute-value-btn.btn-dark');
+                selectedPerGroup[attrId] = selected && !selected.disabled
+                    ? selected.getAttribute('data-attribute-value-id')
+                    : null;
+            });
+
+            attributeGroups.forEach(function(group){
+                var attrId = group.getAttribute('data-attribute-id');
+                var buttons = group.querySelectorAll('.attribute-value-btn');
+                Array.prototype.forEach.call(buttons, function(btn){
+                    var valId = btn.getAttribute('data-attribute-value-id');
+                    if (!valId) return;
+                    var valIdNum = parseInt(valId, 10);
+                    var enabled = false;
+
+                    outer: for (var vid in variantData) {
+                        if (!Object.prototype.hasOwnProperty.call(variantData, vid)) continue;
+                        var v = variantData[vid];
+                        if (!v.in_stock) continue;
+                        var vIds = v.attribute_value_ids || [];
+                        if (vIds.indexOf(valIdNum) === -1) continue;
+                        // Check other attributes' selections match this variant
+                        for (var i = 0; i < attributeGroups.length; i++) {
+                            var otherGroup = attributeGroups[i];
+                            var otherAttrId = otherGroup.getAttribute('data-attribute-id');
+                            if (otherAttrId === attrId) continue;
+                            var selectedVal = selectedPerGroup[otherAttrId];
+                            if (selectedVal && vIds.indexOf(parseInt(selectedVal, 10)) === -1) {
+                                continue outer;
+                            }
+                        }
+                        enabled = true;
+                        break outer;
+                    }
+
+                    if (enabled) {
+                        btn.disabled = false;
+                        btn.classList.remove('disabled-option');
+                    } else {
+                        btn.disabled = true;
+                        btn.classList.add('disabled-option');
+                        btn.classList.remove('btn-dark');
+                        if (!btn.classList.contains('btn-outline-dark')) {
+                            btn.classList.add('btn-outline-dark');
+                        }
+                    }
+                });
+            });
+        }
+        function handleVariantUnavailable() {
+            if (priceBlock) {
+                priceBlock.innerHTML = '';
+            }
+            if (formVariantId) {
+                formVariantId.value = '';
+            }
+            var stockEl = document.querySelector('.stock-indicator');
+            if (stockEl) {
+                stockEl.innerHTML = '<i class="fas fa-times-circle me-1" style="color:#c00;"></i> Not available in this combination';
+            }
+            var addBtn = document.querySelector('.btn-add-cart');
+            if (addBtn) addBtn.disabled = true;
+            var buyNowBtn = document.getElementById('buyNowBtn');
+            if (buyNowBtn) buyNowBtn.disabled = true;
+        }
+        function updateUIFromVariant(data) {
+            if (!data || !data.variant) return;
+            var v = data.variant;
+            if (priceBlock) priceBlock.innerHTML = '<span class="price-main">₹' + parseFloat(v.price).toFixed(0) + '</span>';
+            if (formVariantId) formVariantId.value = v.id;
+            var stockEl = document.querySelector('.stock-indicator');
+            if (stockEl) stockEl.innerHTML = v.in_stock
+                ? '<i class="fas fa-check-circle me-1" style="color:#000;"></i> In Stock (' + v.stock_quantity + ')'
+                : '<i class="fas fa-times-circle me-1" style="color:#c00;"></i> Out of Stock';
+            var addBtn = document.querySelector('.btn-add-cart');
+            if (addBtn) addBtn.disabled = !v.in_stock;
+            var buyNowBtn = document.getElementById('buyNowBtn');
+            if (buyNowBtn) buyNowBtn.disabled = !v.in_stock;
+            var wishBtn = document.getElementById('productWishlistBtn');
+            if (wishBtn) wishBtn.setAttribute('data-variant-id', v.id);
+            if (mainImg && v.image_urls && v.image_urls[0]) mainImg.src = v.image_urls[0];
+            var thumbs = document.querySelector('.gallery-thumbs');
+            if (thumbs && v.image_urls && v.image_urls.length) {
+                thumbs.innerHTML = v.image_urls.map(function(url, i){
+                    return '<div class="gallery-thumb' + (i === 0 ? ' active' : '') + '"><img src="' + url + '" alt="" loading="lazy" data-full="' + url + '"></div>';
+                }).join('');
+            }
+        }
+
+        // Initial availability calculation based on current selection
+        recomputeAvailability();
+
+        attrGroups.querySelectorAll('.attribute-value-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                if (btn.disabled) return;
+                var groupEl = btn.closest('[data-attribute-id]');
+                var attrId = groupEl.getAttribute('data-attribute-id');
+                // Update selection in this group
+                groupEl.querySelectorAll('.attribute-value-btn').forEach(function(b){
+                    b.classList.remove('btn-dark');
+                    if (!b.classList.contains('disabled-option')) {
+                        b.classList.add('btn-outline-dark');
+                    }
+                });
+                btn.classList.remove('btn-outline-dark'); btn.classList.add('btn-dark');
+                // Clear selections in other groups so we can freely change attribute,
+                // then recompute availability based only on the new partial selection.
+                attributeGroups.forEach(function(otherGroup){
+                    if (otherGroup === groupEl) return;
+                    otherGroup.querySelectorAll('.attribute-value-btn').forEach(function(b){
+                        b.classList.remove('btn-dark');
+                        if (!b.classList.contains('disabled-option')) {
+                            b.classList.add('btn-outline-dark');
+                        }
+                    });
+                });
+                // Recompute which options are available now
+                recomputeAvailability();
+                // Recompute which options are available for other attributes
+                var ids = getSelectedValueIds();
+                if (ids.length !== attributeGroups.length) {
+                    // Wait until user selects all attributes before resolving variant
+                    var stockEl = document.querySelector('.stock-indicator');
+                    if (stockEl) {
+                        stockEl.innerHTML = '<i class="fas fa-info-circle me-1" style="color:#000;"></i> Select all options to see availability';
+                    }
+                    var addBtn = document.querySelector('.btn-add-cart');
+                    if (addBtn) addBtn.disabled = true;
+                    var buyNowBtn = document.getElementById('buyNowBtn');
+                    if (buyNowBtn) buyNowBtn.disabled = true;
+                    return;
+                }
+                fetch('{% url "store:product_variant_resolve" %}?product_id=' + productId + '&attribute_value_ids=' + ids.join(','), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r){ return r.json(); })
+                    .then(function(data){
+                        if (data && data.success) {
+                            updateUIFromVariant(data);
+                        } else {
+                            handleVariantUnavailable();
+                        }
+                    })
+                    .catch(function(){
+                        handleVariantUnavailable();
+                    });
+            });
+        });
+    }
+    // Buy Now: submit same form to buy-now endpoint (cart is replaced with this item only, then checkout)
+    var buyNowBtn = document.getElementById('buyNowBtn');
+    var addToCartForm = document.getElementById('addToCartForm');
+    var buyNowUrl = '{% url "store:buy_now" %}';
+    if (buyNowBtn && addToCartForm) {
+        buyNowBtn.addEventListener('click', function(){
+            if (buyNowBtn.disabled) return;
+            var vid = formVariantId ? formVariantId.value : '';
+            if (!vid || vid === '') {
+                alert('Please select a variant.');
+                return;
+            }
+            addToCartForm.action = buyNowUrl;
+            addToCartForm.submit();
+        });
+    }
+    //Wishlist
+    document.getElementById('productWishlistBtn').addEventListener('click', function() {
+        const btn = this;
+        const variantId = btn.getAttribute('data-variant-id');
+        const icon = btn.querySelector('i');
+        const textSpan = btn.querySelector('.wishlist-text');
+
+        if (!variantId) {
+            alert("Please select a product variant first.");
+            return;
+        }
+
+        fetch("/api/wishlist/toggle/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}", 
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({ "variant_id": variantId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Toggle visual state
+                btn.classList.toggle('in-wishlist', data.added);
+                icon.classList.toggle('fas', data.added);
+                icon.classList.toggle('far', !data.added);
+                textSpan.innerText = data.added ? "In Wishlist" : "Add to Wishlist";
+            } else {
+                alert(data.error || "Something went wrong");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+    // Review Form
+    var reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        var stars = reviewForm.querySelectorAll('.star-btn');
+        var ratingInput = document.getElementById('reviewRating');
+        stars.forEach(function(btn){
+            btn.addEventListener('mouseenter', function(){
+                var hoverVal = parseInt(btn.getAttribute('data-value'));
+                stars.forEach(function(b){
+                    b.style.color = parseInt(b.getAttribute('data-value')) <= hoverVal ? '#f5a623' : '#ddd';
+                });
+            });
+            btn.addEventListener('mouseleave', function(){
+                var selected = ratingInput.value ? parseInt(ratingInput.value) : 0;
+                stars.forEach(function(b){
+                    b.style.color = parseInt(b.getAttribute('data-value')) <= selected ? '#f5a623' : '#ddd';
+                });
+            });
+            btn.addEventListener('click', function(){
+                var val = parseInt(btn.getAttribute('data-value'));
+                ratingInput.value = val;
+                stars.forEach(function(b){
+                    b.style.color = parseInt(b.getAttribute('data-value')) <= val ? '#f5a623' : '#ddd';
+                });
+            });
+        });
+        reviewForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            if (!ratingInput.value) {
+                document.getElementById('reviewMsg').style.color = 'red';
+                document.getElementById('reviewMsg').textContent = 'Please select a rating.';
+                return;
+            }
+            var submitBtn = document.getElementById('reviewSubmitBtn');
+            var msg = document.getElementById('reviewMsg');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            fetch(reviewForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new FormData(reviewForm)
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if (data.success) {
+                    msg.style.color = 'green';
+                    msg.textContent = data.message || 'Review submitted!';
+                    setTimeout(function(){ location.reload(); }, 1200);
+                } else {
+                    msg.style.color = 'red';
+                    msg.textContent = data.error || 'Something went wrong.';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Review';
+                }
+            })
+            .catch(function(){
+                msg.style.color = 'red';
+                msg.textContent = 'Network error. Please try again.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Review';
+            });
+        });
+    }
+})();
+</script>
+
+<script>
+(function(){
+    // --- Variant-driven product detail logic (strict top-down hierarchy) ---
+    var variantJsonEl = document.getElementById('variant-data');
+    var orderedAttrsEl = document.getElementById('ordered-attributes');
+    var variants = [];
+    var orderedAttributeNames = [];
+
+    if (variantJsonEl) {
+        try {
+            variants = JSON.parse(variantJsonEl.textContent || '[]') || [];
+        } catch (e) {
+            variants = [];
+        }
+    }
+    if (orderedAttrsEl) {
+        try {
+            orderedAttributeNames = JSON.parse(orderedAttrsEl.textContent || '[]') || [];
+        } catch (e) {
+            orderedAttributeNames = [];
+        }
+    }
+
+    var mainImg = document.getElementById('mainProductImg');
+    var formVariantId = document.getElementById('formVariantId');
+    var priceBlock = document.getElementById('productPriceBlock');
+    var stockEl = document.querySelector('.stock-indicator');
+    var addBtn = document.querySelector('.btn-add-cart');
+    var buyNowBtn = document.getElementById('buyNowBtn');
+    var wishlistBtn = document.getElementById('productWishlistBtn');
+
+    var qtyInput = document.getElementById('qtyInput');
+    var formQuantity = document.getElementById('formQuantity');
+
+    // Gallery thumbs
+    document.querySelectorAll('.gallery-thumb img').forEach(function(thumb){
+        thumb.addEventListener('click', function(){
+            var src = this.getAttribute('data-full') || this.src;
+            if (mainImg && src) {
+                mainImg.src = src;
+            }
+            document.querySelectorAll('.gallery-thumb').forEach(function(t){ t.classList.remove('active'); });
+            var parent = thumb.closest('.gallery-thumb');
+            if (parent) parent.classList.add('active');
+        });
+    });
+
+    // Quantity controls
+    if (qtyInput && formQuantity) {
+        var qtyContainer = qtyInput.closest('.quantity');
+        if (qtyContainer) {
+            var minusBtn = qtyContainer.querySelector('.btn-minus');
+            var plusBtn = qtyContainer.querySelector('.btn-plus');
+            var syncQty = function(delta) {
+                var current = parseInt(qtyInput.value || '1', 10) || 1;
+                current = current + delta;
+                if (current < 1) current = 1;
+                if (current > 99) current = 99;
+                qtyInput.value = current;
+                formQuantity.value = current;
+            };
+            if (minusBtn) {
+                minusBtn.addEventListener('click', function(){ syncQty(-1); });
+            }
+            if (plusBtn) {
+                plusBtn.addEventListener('click', function(){ syncQty(1); });
+            }
+        }
+    }
+
+    // Attribute groups and selection state (DOM order defines level order)
+    var attrGroupsRoot = document.getElementById('variantAttributeGroups');
+    var attributeGroups = [];
+    if (attrGroupsRoot) {
+        attributeGroups = Array.prototype.slice.call(
+            attrGroupsRoot.querySelectorAll('[data-attribute-name]')
+        );
+    }
+
+    // Selected attributes: { "Color": "Blue", "Size": "XL" }
+    var selected = {};
+    var currentVariant = null;
+
+    function setStockMessage(message, kind) {
+        if (!stockEl) return;
+        if (kind === 'out') {
+            stockEl.innerHTML = '<i class="fas fa-times-circle me-1" style="color:#c00;"></i> ' + message;
+        } else if (kind === 'info') {
+            stockEl.innerHTML = '<i class="fas fa-info-circle me-1" style="color:#000;"></i> ' + message;
+        } else if (kind === 'ok') {
+            stockEl.innerHTML = '<i class="fas fa-check-circle me-1" style="color:#000;"></i> ' + message;
+        } else {
+            stockEl.textContent = message;
+        }
+    }
+
+    function applyVariant(variant) {
+        currentVariant = variant || null;
+        if (!variant) {
+            if (priceBlock) {
+                priceBlock.innerHTML = '';
+            }
+            if (formVariantId) {
+                formVariantId.value = '';
+            }
+            if (addBtn) {
+                addBtn.disabled = true;
+            }
+            if (buyNowBtn) {
+                buyNowBtn.disabled = true;
+            }
+            setStockMessage('Out of Stock', 'out');
+            return;
+        }
+
+        if (priceBlock) {
+            var priceNumber = parseFloat(variant.price || '0');
+            var gstApplicable = variant.is_gst_applicable && variant.gst_percentage != null;
+            var gstPct = gstApplicable ? parseFloat(variant.gst_percentage) : 0;
+            if (gstApplicable && !isNaN(gstPct) && gstPct >= 0 && gstPct <= 28) {
+                var base = priceNumber;
+                var gstAmount = Math.round(base * gstPct / 100 * 100) / 100;
+                var total = Math.round((base + gstAmount) * 100) / 100;
+                priceBlock.innerHTML = '<div class="price-breakdown">' +
+                    '<div>Base Price: <span class="price-main">₹' + base.toFixed(2) + '</span></div>' +
+                    '<div>GST (' + gstPct + '%): <span class="price-gst">₹' + gstAmount.toFixed(2) + '</span></div>' +
+                    '<div class="price-total-line">Total: <span class="price-main">₹' + total.toFixed(2) + '</span></div>' +
+                    '</div>';
+            } else {
+                var priceText = isNaN(priceNumber) ? variant.price : priceNumber.toFixed(0);
+                priceBlock.innerHTML = '<span class="price-main">₹' + priceText + '</span>';
+            }
+        }
+
+        if (formVariantId) {
+            formVariantId.value = variant.id;
+        }
+
+        var inStock = variant.stock > 0;
+        if (addBtn) {
+            addBtn.disabled = !inStock;
+        }
+        if (buyNowBtn) {
+            buyNowBtn.disabled = !inStock;
+        }
+
+        if (wishlistBtn) {
+            wishlistBtn.setAttribute('data-variant-id', variant.id);
+        }
+
+        if (inStock) {
+            setStockMessage('In Stock (' + variant.stock + ')', 'ok');
+        } else {
+            setStockMessage('Out of Stock', 'out');
+        }
+
+        if (mainImg && variant.image) {
+            mainImg.src = variant.image;
+        }
+    }
+
+    function matchesSelectionUpToLevel(variant, levelIndex) {
+        if (!variant || !variant.attributes) return false;
+        for (var i = 0; i < levelIndex; i++) {
+            var group = attributeGroups[i];
+            var attrName = group.getAttribute('data-attribute-name');
+            var selVal = selected[attrName];
+            if (!selVal) {
+                return false;
+            }
+            if (variant.attributes[attrName] !== selVal) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Check if we have a value selected for every attribute level
+    function isFullSelection() {
+        if (!attributeGroups.length) return true;
+        for (var i = 0; i < attributeGroups.length; i++) {
+            var group = attributeGroups[i];
+            var name = group.getAttribute('data-attribute-name');
+            if (!name || !selected[name]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Resolve the first variant that exactly matches the current full selection
+    function resolveVariantFromSelection() {
+        if (!variants.length || !attributeGroups.length) {
+            return null;
+        }
+        for (var vIdx = 0; vIdx < variants.length; vIdx++) {
+            var v = variants[vIdx];
+            if (!v || !v.attributes) continue;
+            var ok = true;
+            for (var i = 0; i < attributeGroups.length; i++) {
+                var group = attributeGroups[i];
+                var attrName = group.getAttribute('data-attribute-name');
+                if (!attrName) {
+                    ok = false;
+                    break;
+                }
+                var val = selected[attrName];
+                if (!val || v.attributes[attrName] !== val) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    // Clear selections and visual state for all levels below the given index
+    function clearLowerSelections(startLevelIndex) {
+        for (var i = startLevelIndex; i < attributeGroups.length; i++) {
+            var group = attributeGroups[i];
+            var name = group.getAttribute('data-attribute-name');
+            if (name && selected[name]) {
+                delete selected[name];
+            }
+            group.querySelectorAll('.attribute-value-btn').forEach(function(btn){
+                btn.classList.remove('btn-dark');
+                if (!btn.classList.contains('disabled-option')) {
+                    btn.classList.add('btn-outline-dark');
+                }
+                // Disabled state will be recomputed during cascade
+            });
+        }
+    }
+
+    // Auto-select the FIRST valid value at a given level based on current upper selections
+    function autoSelectAtLevel(levelIndex) {
+        if (!variants.length || !attributeGroups.length) {
+            return false;
+        }
+
+        var group = attributeGroups[levelIndex];
+        if (!group) return false;
+        var attrName = group.getAttribute('data-attribute-name');
+        if (!attrName) return false;
+
+        var buttons = Array.prototype.slice.call(
+            group.querySelectorAll('.attribute-value-btn')
+        );
+
+        // All previous levels must have a selection
+        if (levelIndex > 0) {
+            for (var i = 0; i < levelIndex; i++) {
+                var prevName = attributeGroups[i].getAttribute('data-attribute-name');
+                if (!prevName || !selected[prevName]) {
+                    // Cannot compute this level yet
+                    buttons.forEach(function(btn){
+                        btn.disabled = true;
+                        btn.classList.add('disabled-option');
+                        btn.classList.remove('btn-dark');
+                        if (!btn.classList.contains('btn-outline-dark')) {
+                            btn.classList.add('btn-outline-dark');
+                        }
+                    });
+                    if (selected[attrName]) {
+                        delete selected[attrName];
+                    }
+                    return false;
+                }
+            }
+        }
+
+        // Filter variants that respect all previously selected attributes (0..levelIndex-1)
+        var filteredVariants = variants.filter(function(v){
+            return matchesSelectionUpToLevel(v, levelIndex);
+        });
+
+        if (!filteredVariants.length) {
+            // No variants reachable at this level for current upper selection
+            buttons.forEach(function(btn){
+                btn.disabled = true;
+                btn.classList.add('disabled-option');
+                btn.classList.remove('btn-dark');
+                if (!btn.classList.contains('btn-outline-dark')) {
+                    btn.classList.add('btn-outline-dark');
+                }
+            });
+            if (selected[attrName]) {
+                delete selected[attrName];
+            }
+            return false;
+        }
+
+        // Collect allowed values for this attribute from filtered variants
+        var allowedValues = new Set();
+        filteredVariants.forEach(function(v){
+            var val = v.attributes ? v.attributes[attrName] : null;
+            if (val) allowedValues.add(val);
+        });
+
+        var firstEnabledBtn = null;
+        buttons.forEach(function(btn){
+            var value = btn.getAttribute('data-attribute-value');
+            if (!value) return;
+            var isAllowed = allowedValues.has(value);
+            if (isAllowed) {
+                btn.disabled = false;
+                btn.classList.remove('disabled-option');
+                if (!firstEnabledBtn) {
+                    firstEnabledBtn = btn;
+                }
+            } else {
+                btn.disabled = true;
+                btn.classList.add('disabled-option');
+                if (btn.classList.contains('btn-dark')) {
+                    btn.classList.remove('btn-dark');
+                    if (!btn.classList.contains('btn-outline-dark')) {
+                        btn.classList.add('btn-outline-dark');
+                    }
+                    if (selected[attrName] === value) {
+                        delete selected[attrName];
+                    }
+                }
+            }
+        });
+
+        if (!firstEnabledBtn) {
+            // No child values available at this level
+            if (selected[attrName]) {
+                delete selected[attrName];
+            }
+            return false;
+        }
+
+        // Auto-select the first valid value (DOM/display_order)
+        group.querySelectorAll('.attribute-value-btn').forEach(function(b){
+            b.classList.remove('btn-dark');
+            if (!b.classList.contains('disabled-option')) {
+                b.classList.add('btn-outline-dark');
+            }
+        });
+        firstEnabledBtn.classList.remove('btn-outline-dark');
+        firstEnabledBtn.classList.add('btn-dark');
+        var firstVal = firstEnabledBtn.getAttribute('data-attribute-value');
+        selected[attrName] = firstVal;
+
+        return true;
+    }
+
+    // Cascade from a given level downwards, auto-selecting children and resolving the variant
+    function cascadeFrom(startLevelIndex) {
+        if (!variants.length) {
+            applyVariant(null);
+            return;
+        }
+
+        if (!attributeGroups.length) {
+            // No attributes: just use the first sellable variant
+            applyVariant(variants[0]);
+            return;
+        }
+
+        if (startLevelIndex < 0) {
+            startLevelIndex = 0;
+        }
+
+        for (var level = startLevelIndex; level < attributeGroups.length; level++) {
+            var ok = autoSelectAtLevel(level);
+            if (!ok) {
+                break;
+            }
+        }
+
+        if (isFullSelection()) {
+            var resolved = resolveVariantFromSelection();
+            applyVariant(resolved);
+        } else {
+            // No complete in-stock path from current upper selections
+            applyVariant(null);
+        }
+    }
+
+    function tryResolveFinalVariant() {
+        if (!variants.length) {
+            applyVariant(null);
+            setStockMessage('Out of Stock', 'out');
+            return;
+        }
+
+        if (!attributeGroups.length) {
+            // Product without attributes: first sellable variant
+            applyVariant(variants[0]);
+            return;
+        }
+
+        // Check full selection
+        for (var i = 0; i < attributeGroups.length; i++) {
+            var name = attributeGroups[i].getAttribute('data-attribute-name');
+            if (!name || !selected[name]) {
+                // Not fully selected yet
+                applyVariant(null);
+                setStockMessage('Select all options to see availability', 'info');
+                return;
+            }
+        }
+
+        var matches = variants.filter(function(v){
+            for (var i = 0; i < attributeGroups.length; i++) {
+                var g = attributeGroups[i];
+                var attrName = g.getAttribute('data-attribute-name');
+                var val = selected[attrName];
+                if (!val) return false;
+                if (v.attributes[attrName] !== val) return false;
+            }
+            return true;
+        });
+
+        if (!matches.length) {
+            applyVariant(null);
+            return;
+        }
+
+        // When multiple match, pick the first sellable (all are sellable by construction)
+        applyVariant(matches[0]);
+    }
+
+    function disableLevelsFrom(startLevelIndex) {
+        for (var i = startLevelIndex; i < attributeGroups.length; i++) {
+            var group = attributeGroups[i];
+            var buttons = group.querySelectorAll('.attribute-value-btn');
+            buttons.forEach(function(btn){
+                btn.classList.remove('btn-dark');
+                if (!btn.classList.contains('btn-outline-dark')) {
+                    btn.classList.add('btn-outline-dark');
+                }
+                btn.disabled = true;
+                btn.classList.add('disabled-option');
+            });
+            var name = group.getAttribute('data-attribute-name');
+            if (name && selected[name]) {
+                delete selected[name];
+            }
+        }
+    }
+
+    // Core: update a specific level based on STRICT top-down rules
+    function updateLevel(levelIndex) {
+        if (!variants.length || !attributeGroups.length) {
+            return;
+        }
+
+        var group = attributeGroups[levelIndex];
+        if (!group) return;
+        var attrName = group.getAttribute('data-attribute-name');
+        if (!attrName) return;
+
+        var buttons = Array.prototype.slice.call(
+            group.querySelectorAll('.attribute-value-btn')
+        );
+
+        var filteredVariants;
+        if (levelIndex === 0) {
+            // LEVEL 0: independent, based only on existence of any sellable variant
+            filteredVariants = variants.slice();
+        } else {
+            // LEVEL N: only enabled after all previous levels selected
+            for (var i = 0; i < levelIndex; i++) {
+                var prevName = attributeGroups[i].getAttribute('data-attribute-name');
+                if (!prevName || !selected[prevName]) {
+                    // Previous level not selected ⇒ disable everything at this level
+                    buttons.forEach(function(btn){
+                        btn.disabled = true;
+                        btn.classList.add('disabled-option');
+                        btn.classList.remove('btn-dark');
+                        if (!btn.classList.contains('btn-outline-dark')) {
+                            btn.classList.add('btn-outline-dark');
+                        }
+                    });
+                    if (selected[attrName]) {
+                        delete selected[attrName];
+                    }
+                    return;
+                }
+            }
+            filteredVariants = variants.filter(function(v){
+                return matchesSelectionUpToLevel(v, levelIndex);
+            });
+        }
+
+        if (!filteredVariants.length) {
+            // No variants reachable at this level for current upper selection
+            buttons.forEach(function(btn){
+                btn.disabled = true;
+                btn.classList.add('disabled-option');
+                btn.classList.remove('btn-dark');
+                if (!btn.classList.contains('btn-outline-dark')) {
+                    btn.classList.add('btn-outline-dark');
+                }
+            });
+            if (selected[attrName]) {
+                delete selected[attrName];
+            }
+            return;
+        }
+
+        // Collect allowed values for this attribute from filtered variants
+        var allowedValues = new Set();
+        filteredVariants.forEach(function(v){
+            var val = v.attributes ? v.attributes[attrName] : null;
+            if (val) allowedValues.add(val);
+        });
+
+        buttons.forEach(function(btn){
+            var value = btn.getAttribute('data-attribute-value');
+            if (!value) return;
+            var isAllowed = allowedValues.has(value);
+            if (isAllowed) {
+                btn.disabled = false;
+                btn.classList.remove('disabled-option');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('disabled-option');
+                if (btn.classList.contains('btn-dark')) {
+                    btn.classList.remove('btn-dark');
+                    if (!btn.classList.contains('btn-outline-dark')) {
+                        btn.classList.add('btn-outline-dark');
+                    }
+                    if (selected[attrName] === value) {
+                        delete selected[attrName];
+                    }
+                }
+            }
+        });
+    }
+
+    function initialiseSelectedFromDOM() {
+        // No attributes: honour hidden variant ID or first variant
+        if (!attributeGroups.length) {
+            if (formVariantId) {
+                var vid = parseInt(formVariantId.value || '0', 10);
+                if (vid && variants.length) {
+                    var found = variants.find(function(v){ return v.id === vid; });
+                    if (found) {
+                        applyVariant(found);
+                        return;
+                    }
+                }
+            }
+            if (variants.length) {
+                applyVariant(variants[0]);
+            } else {
+                applyVariant(null);
+            }
+            return;
+        }
+
+        // Preselect from server-rendered state (if any)
+        selected = {};
+        for (var i = 0; i < attributeGroups.length; i++) {
+            var group = attributeGroups[i];
+            var attrName = group.getAttribute('data-attribute-name');
+            if (!attrName) continue;
+            var selectedBtn = group.querySelector('.attribute-value-btn.btn-dark');
+            if (selectedBtn && !selectedBtn.classList.contains('disabled-option')) {
+                var value = selectedBtn.getAttribute('data-attribute-value');
+                if (value) {
+                    selected[attrName] = value;
+                }
+            }
+        }
+
+        // If server already provided a full valid path, just resolve that variant
+        if (isFullSelection()) {
+            var resolved = resolveVariantFromSelection();
+            applyVariant(resolved);
+            return;
+        }
+
+        // Otherwise, cascade from the first missing level
+        var firstMissing = -1;
+        for (var j = 0; j < attributeGroups.length; j++) {
+            var g = attributeGroups[j];
+            var name = g.getAttribute('data-attribute-name');
+            if (!name || !selected[name]) {
+                firstMissing = j;
+                break;
+            }
+        }
+
+        if (firstMissing === -1) {
+            var fallback = resolveVariantFromSelection();
+            applyVariant(fallback);
+            return;
+        }
+
+        clearLowerSelections(firstMissing);
+        cascadeFrom(firstMissing);
+    }
+
+    // Attach click handlers for attribute buttons (respecting level order, premium cascading)
+    if (attributeGroups.length) {
+        attributeGroups.forEach(function(group, levelIndex){
+            group.querySelectorAll('.attribute-value-btn').forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    if (btn.disabled) return;
+                    var groupEl = btn.closest('[data-attribute-name]');
+                    if (!groupEl) return;
+                    var attrName = groupEl.getAttribute('data-attribute-name');
+                    if (!attrName) return;
+
+                    // Visual selection within this group
+                    groupEl.querySelectorAll('.attribute-value-btn').forEach(function(b){
+                        b.classList.remove('btn-dark');
+                        if (!b.classList.contains('disabled-option')) {
+                            b.classList.add('btn-outline-dark');
+                        }
+                    });
+                    btn.classList.remove('btn-outline-dark');
+                    btn.classList.add('btn-dark');
+
+                    var value = btn.getAttribute('data-attribute-value');
+                    selected[attrName] = value;
+
+                    // Clear all lower level selections
+                    clearLowerSelections(levelIndex + 1);
+
+                    // Premium cascading: auto-select children from next level downwards
+                    cascadeFrom(levelIndex + 1);
+                });
+            });
+        });
+    }
+
+    // Buy Now: submit same form to buy-now endpoint
+    var addToCartForm = document.getElementById('addToCartForm');
+    var buyNowUrl = '{% url "store:buy_now" %}';
+    if (buyNowBtn && addToCartForm) {
+        buyNowBtn.addEventListener('click', function(){
+            if (buyNowBtn.disabled) return;
+            var vid = formVariantId ? formVariantId.value : '';
+            if (!vid) {
+                alert('Please select a variant.');
+                return;
+            }
+            addToCartForm.action = buyNowUrl;
+            addToCartForm.submit();
+        });
+    }
+
+    // Wishlist toggle
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', function() {
+            var btn = wishlistBtn;
+            var variantId = btn.getAttribute('data-variant-id');
+            var icon = btn.querySelector('i');
+            var textSpan = btn.querySelector('.wishlist-text');
+
+            if (!variantId) {
+                alert("Please select a product variant first.");
+                return;
+            }
+
+            fetch("/api/wishlist/toggle/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify({ "variant_id": variantId })
+            })
+            .then(function(response){ return response.json(); })
+            .then(function(data){
+                if (data.success) {
+                    btn.classList.toggle('in-wishlist', data.added);
+                    if (icon) {
+                        icon.classList.toggle('fas', data.added);
+                        icon.classList.toggle('far', !data.added);
+                    }
+                    if (textSpan) {
+                        textSpan.innerText = data.added ? "In Wishlist" : "Add to Wishlist";
+                    }
+                } else {
+                    alert(data.error || "Something went wrong");
+                }
+            })
+            .catch(function(error){
+                console.error('Error:', error);
+            });
+        });
+    }
+
+    // Review Form (unchanged behaviour)
+    var reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        var stars = reviewForm.querySelectorAll('.star-btn');
+        var ratingInput = document.getElementById('reviewRating');
+        stars.forEach(function(btn){
+            btn.addEventListener('mouseenter', function(){
+                var hoverVal = parseInt(btn.getAttribute('data-value'));
+                stars.forEach(function(b){
+                    b.style.color = parseInt(b.getAttribute('data-value')) <= hoverVal ? '#f5a623' : '#ddd';
+                });
+            });
+            btn.addEventListener('mouseleave', function(){
+                var selectedVal = ratingInput.value ? parseInt(ratingInput.value) : 0;
+                stars.forEach(function(b){
+                    b.style.color = parseInt(b.getAttribute('data-value')) <= selectedVal ? '#f5a623' : '#ddd';
+                });
+            });
+            btn.addEventListener('click', function(){
+                var val = parseInt(btn.getAttribute('data-value'));
+                ratingInput.value = val;
+                stars.forEach(function(b){
+                    b.style.color = parseInt(b.getAttribute('data-value')) <= val ? '#f5a623' : '#ddd';
+                });
+            });
+        });
+        reviewForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            var msg = document.getElementById('reviewMsg');
+            if (!ratingInput.value) {
+                if (msg) {
+                    msg.style.color = 'red';
+                    msg.textContent = 'Please select a rating.';
+                }
+                return;
+            }
+            var submitBtn = document.getElementById('reviewSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            fetch(reviewForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new FormData(reviewForm)
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if (data.success) {
+                    if (msg) {
+                        msg.style.color = 'green';
+                        msg.textContent = data.message || 'Review submitted!';
+                    }
+                    setTimeout(function(){ location.reload(); }, 1200);
+                } else {
+                    if (msg) {
+                        msg.style.color = 'red';
+                        msg.textContent = data.error || 'Something went wrong.';
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Review';
+                }
+            })
+            .catch(function(){
+                if (msg) {
+                    msg.style.color = 'red';
+                    msg.textContent = 'Network error. Please try again.';
+                }
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Review';
+            });
+        });
+    }
+
+    // Initial state
+    initialiseSelectedFromDOM();
+})();
+</script>
+{% endblock %}

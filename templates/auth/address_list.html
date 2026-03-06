@@ -1,0 +1,234 @@
+{% extends 'base_gadget.html' %}
+{% load static %}
+
+{% block title %}My Addresses - Hello Gads{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">My Addresses</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                <li class="breadcrumb-item"><a href="{% url 'auth:account' %}">Account</a></li>
+                <li class="breadcrumb-item active">Addresses</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<div class="addresses-page section-pad">
+    <div class="container">
+        <div class="breadcrumb mb-4">
+            <a href="{% url 'auth:account' %}">← Back to Account</a>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <h2 class="h5 mb-0">Saved addresses</h2>
+            <a href="{% url 'auth:address_create' %}" class="btn btn-secondary">+ Add New Address</a>
+        </div>
+
+        {% if addresses %}
+        <div class="addresses-grid">
+            {% for address in addresses %}
+            <div class="address-card {% if address.is_default %}default{% endif %}">
+                {% if address.is_default %}
+                    <span class="default-badge">Default</span>
+                {% endif %}
+                <div class="address-content">
+                    <div class="address-info">
+                        <strong>{{ address.full_name }}</strong>
+                        <p>{{ address.address_line }}</p>
+                        <p>{{ address.city }}, {{ address.state }} - {{ address.pincode }}</p>
+                        <p>Phone: {{ address.phone }}</p>
+                    </div>
+                    <div class="address-actions">
+                        <a href="{% url 'auth:address_edit' address.pk %}" class="btn-action">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Edit
+                        </a>
+                        <form method="post" action="{% url 'auth:address_delete' address.pk %}" class="inline-form" onsubmit="return confirm('Are you sure you want to delete this address?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action danger">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <h3>No addresses saved yet</h3>
+            <p>Add your first address to make checkout faster</p>
+            <a href="{% url 'auth:address_create' %}" class="btn btn-primary">Add Address</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.addresses-page {
+    padding: var(--space-8) 0;
+    min-height: calc(100vh - 400px);
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-4);
+}
+
+.breadcrumb a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.addresses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-5);
+}
+
+.address-card {
+    position: relative;
+    background: white;
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    padding: var(--space-5);
+    transition: all 0.3s ease;
+}
+
+.address-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.address-card.default {
+    border-color: var(--color-primary);
+}
+
+.default-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--color-primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.address-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.address-info strong {
+    font-size: 16px;
+    display: block;
+    margin-bottom: var(--space-2);
+}
+
+.address-info p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: var(--color-text-light);
+    line-height: 1.5;
+}
+
+.address-actions {
+    display: flex;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid #E0E0E0;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 8px 12px;
+    border: none;
+    background: #F5F5F5;
+    color: var(--color-text);
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-action:hover {
+    background: #E0E0E0;
+}
+
+.btn-action.danger {
+    color: #dc3545;
+}
+
+.btn-action.danger:hover {
+    background: #fff5f5;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-4);
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    color: var(--color-text-light);
+    margin-bottom: var(--space-4);
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.empty-state p {
+    color: var(--color-text-light);
+    margin-bottom: var(--space-6);
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .addresses-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+

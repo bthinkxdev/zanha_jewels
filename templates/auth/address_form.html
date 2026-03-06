@@ -1,0 +1,249 @@
+{% extends 'base_gadget.html' %}
+{% load static %}
+
+{% block title %}{{ form_title }} - Hello Gads{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">{{ form_title|default:"Address" }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                <li class="breadcrumb-item"><a href="{% url 'auth:account' %}">Account</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'auth:address_list' %}">Addresses</a></li>
+                <li class="breadcrumb-item active">{{ form_title|default:"Edit" }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<div class="address-form-page section-pad">
+    <div class="container">
+        <div class="address-form-container">
+            <div class="breadcrumb mb-4">
+                <a href="{% url 'auth:address_list' %}">← Back to Addresses</a>
+            </div>
+
+            <div class="checkout-card">
+                <h2 class="h5">{{ form_title|default:"Address" }}</h2>
+                <form method="post" class="address-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-row">
+                        <div class="form-group {% if form.full_name.errors %}has-error{% endif %}">
+                            <label for="{{ form.full_name.id_for_label }}">Full Name *</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}
+                                <span class="form-error">{{ form.full_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group {% if form.phone.errors %}has-error{% endif %}">
+                            <label for="{{ form.phone.id_for_label }}">Phone Number *</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <span class="form-error">{{ form.phone.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group {% if form.address_line.errors %}has-error{% endif %}">
+                        <label for="{{ form.address_line.id_for_label }}">Street Address *</label>
+                        {{ form.address_line }}
+                        {% if form.address_line.errors %}
+                            <span class="form-error">{{ form.address_line.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group {% if form.city.errors %}has-error{% endif %}">
+                            <label for="{{ form.city.id_for_label }}">City *</label>
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                                <span class="form-error">{{ form.city.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group {% if form.state.errors %}has-error{% endif %}">
+                            <label for="{{ form.state.id_for_label }}">State *</label>
+                            {{ form.state }}
+                            {% if form.state.errors %}
+                                <span class="form-error">{{ form.state.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group {% if form.pincode.errors %}has-error{% endif %}">
+                            <label for="{{ form.pincode.id_for_label }}">PIN Code *</label>
+                            {{ form.pincode }}
+                            {% if form.pincode.errors %}
+                                <span class="form-error">{{ form.pincode.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            {{ form.is_default }}
+                            <span>Set as default address</span>
+                        </label>
+                        {% if form.is_default.errors %}
+                            <span class="form-error">{{ form.is_default.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-full">Save Address</button>
+                        <a href="{% url 'auth:address_list' %}" class="btn btn-secondary btn-full">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page-specific overrides */
+.address-form-page {
+    padding: var(--space-8) 0;
+    min-height: calc(100vh - 400px);
+}
+
+.address-form-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-4);
+}
+
+.breadcrumb a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: var(--space-8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.form-card h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: var(--space-6);
+}
+
+.address-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    font-size: 14px;
+}
+
+.checkbox-group {
+    margin-top: var(--space-2);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+@media (max-width: 768px) {
+    .address-form-page {
+        padding: var(--space-4) 0;
+    }
+    
+    .form-card {
+        padding: 20px;
+        margin: 0 var(--space-2);
+        border-radius: 8px;
+    }
+    
+    .form-card h1 {
+        font-size: 20px;
+        margin-bottom: var(--space-4);
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+    
+    .form-group {
+        margin-bottom: var(--space-3);
+    }
+    
+    .form-group label {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+    
+    .form-error {
+        display: block !important;
+        visibility: visible !important;
+        font-size: 14px !important;
+        margin-top: 8px !important;
+        padding: 4px 0;
+        line-height: 1.4;
+    }
+    
+    .form-input,
+    .form-control {
+        font-size: 16px;
+        padding: 14px 12px;
+        border-radius: 6px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-top: var(--space-3);
+    }
+    
+    .btn-full {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+}
+</style>
+
+<script src="{% static 'js/address.js' %}"></script>
+{% endblock %}
+
