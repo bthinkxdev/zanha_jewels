@@ -40,5 +40,6 @@ urlpatterns = [
     path("terms/", views.StaticPageView.as_view(template_name="terms.html", extra_context={"active_page": "terms"}), name="terms"),
     path("shipping/", views.StaticPageView.as_view(template_name="shipping.html", extra_context={"active_page": "shipping"}), name="shipping"),
     path("webhooks/shiprocket/", ShiprocketWebhookView.as_view(), name="shiprocket_webhook"),
+    path('api/cart/drawer/', views.CartDrawerView.as_view(), name='cart_drawer'),
 ]
 

@@ -88,6 +88,7 @@
                             updateCartCount(result.data.cart_count);
                             triggerCartGleam();
                         }
+                        document.dispatchEvent(new CustomEvent('cart:updated', { detail: result.data }));
                         showToast("Added to cart");
                     } else {
                         showToast(result.data.error || "Could not add to cart", true);

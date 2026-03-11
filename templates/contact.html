@@ -1,6 +1,6 @@
 {% extends "base_gadget.html" %}
 {% load static %}{% load product_filters %}
-{% block title %}Contact — Hello Gads{% endblock %}
+{% block title %}Contact — Zanha Design{% endblock %}
 {% block content %}
 {% block extra_css %}
 <style>
@@ -41,14 +41,14 @@
                     <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="info">
                         <h6>Our Store</h6>
-                        <p>Hello Gads — Your trusted store for gadgets and electronics.</p>
+                        <p>Zanha Design — Your trusted store for gadgets and electronics.</p>
                     </div>
                 </div>
                 <div class="contact-info-item">
                     <div class="icon-wrap"><i class="fas fa-phone-alt"></i></div>
                     <div class="info">
                         <h6>Phone</h6>
-                        <p><a href="tel:{{ site_phone|default:'' }}" style="color:#555;">{{ site_phone|default:"+91 62384 39926" }}</a></p>
+                        <p><a href="tel:{{ site_phone|default:'' }}" style="color:#555;">{{ site_phone|default:"+91 88919 23189" }}</a></p>
                     </div>
                 </div>
                 <div class="contact-info-item">
@@ -72,11 +72,7 @@
                     <h2>Send a Message</h2>
                     <p style="color:#666;font-size:.9375rem;margin-bottom:28px;">Fill in the form below and we'll respond within 1 business day.</p>
 
-                    {% if messages %}
-                    {% for message in messages %}
-                    <div class="alert alert-success mb-4">{{ message }}</div>
-                    {% endfor %}
-                    {% endif %}
+                    
 
                     <form method="post" action="{% url 'store:contact' %}" id="contactForm">
                         {% csrf_token %}

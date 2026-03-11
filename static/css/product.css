@@ -1,0 +1,732 @@
+/* ============================================================
+   product.css 
+   ============================================================ */
+
+/* ── FONTS ────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap');
+
+/* ============================================================
+   PAGE BACKGROUND & SECTION
+   ============================================================ */
+.product-detail-main {
+    background: #ffffff;
+    padding: 40px 0 72px;
+}
+
+/* ============================================================
+   GALLERY — Left Column
+   ============================================================ */
+
+/* Main image container: large, rounded, borderless, white bg */
+.gallery-section .gallery-main {
+    border: none !important;
+    border-radius: 18px !important;
+    background: #f5f5f5 !important;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    cursor: default;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.gallery-section .gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 18px;
+    display: block;
+}
+
+/* Gallery nav arrows — subtle, positioned on main image */
+.gallery-section .gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.75);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #0d1a3c;
+    font-size: 1rem;
+    transition: background 0.2s;
+    z-index: 5;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+}
+.gallery-section .gallery-arrow:hover {
+    background: #fff;
+}
+.gallery-section .gallery-arrow-prev { left: 14px; }
+.gallery-section .gallery-arrow-next { right: 14px; }
+
+/* Thumbnails: centered below main image */
+.gallery-section .gallery-thumbs {
+    display: flex !important;
+    flex-direction: row;
+    justify-content: center !important;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px !important;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+.gallery-section .gallery-thumbs::-webkit-scrollbar {
+    display: none;
+}
+
+.gallery-section .gallery-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    border: 2px solid transparent !important;
+    overflow: hidden;
+    cursor: pointer;
+    background: #f5f5f5;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+}
+.gallery-section .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 9px;
+}
+.gallery-section .gallery-thumb.active,
+.gallery-section .gallery-thumb:hover {
+    border-color: #0d1a3c !important;
+}
+
+/* ============================================================
+   PRODUCT INFO — Right Column
+   ============================================================ */
+.product-detail-info {
+    padding: 24px 90px 24px 172px;
+}
+
+/* Category label — small, muted, uppercase */
+.product-detail-info .product-category {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #9e9890;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Product title — Instrument Sans, large, light weight */
+.product-detail-info .product-detail-title {
+    font-family: 'Instrument Sans', sans-serif !important;
+    font-size: 54px !important;
+    font-weight: 400 !important;
+    line-height: 1.05 !important;
+    letter-spacing: normal !important;
+    color: #0d1a3c !important;
+    margin-bottom: 16px !important;
+}
+
+/* Responsive title size */
+@media (max-width: 1199px) {
+    .product-detail-info .product-detail-title {
+        font-size: 42px !important;
+    }
+}
+@media (max-width: 767px) {
+    .product-detail-info .product-detail-title {
+        font-size: 32px !important;
+        line-height: 1.1 !important;
+    }
+    .product-detail-info {
+        padding-left: 0;
+    }
+}
+
+/* Rating — below title, small */
+.product-detail-info .product-detail-rating {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.product-detail-info .product-detail-rating .stars {
+    color: #c8976a;
+    font-size: 0.9rem;
+}
+.product-detail-info .product-detail-rating .rating-count {
+    font-size: 0.8125rem;
+    color: #9e9890;
+}
+
+/* Price block — separated by a thin divider line above */
+.product-detail-info .product-detail-price {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 10px !important;
+    padding: 20px 0 20px !important;
+    border-top: 1px solid #e8e4df !important;
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+}
+
+.product-detail-info .product-detail-price .price-main {
+    font-family: 'Muli', sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 28px !important;
+    color: #0d1a3c !important;
+    letter-spacing: normal !important;
+}
+
+/* GST breakdown */
+.product-detail-info .price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.product-detail-info .price-breakdown > div {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.875rem;
+    color: #0d1a3c;
+}
+.product-detail-info .price-breakdown .price-total-line {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+.product-detail-info .price-breakdown .price-gst {
+    color: #6e6860;
+}
+
+.product-detail-info .product-detail-price .price-was {
+    font-size: 0.9rem;
+    color: #c5bfb7;
+    text-decoration: line-through;
+}
+.product-detail-info .product-detail-price .price-save {
+    font-size: 0.72rem;
+    background: #0d1a3c;
+    color: #f5efe6;
+    padding: 2px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    align-self: center;
+}
+
+/* ── DIVIDER between price and variant section ── */
+.product-detail-info .pd-divider {
+    width: 100%;
+    height: 1px;
+    background: #e8e4df;
+    margin: 8px 0 20px;
+}
+
+@media (max-width: 767px) {
+    .product-detail-info {
+        max-width: 100% !important;
+        padding: 20px 0 0 0 !important;
+    }
+    .product-cta-row {
+        gap: 8px !important;
+    }
+    .qty-selector {
+        width: 110px !important;
+    }
+    .btn-buy-now {
+        width: 100% !important;
+        margin-top: 8px;
+    }
+}
+
+/* ============================================================
+   VARIANT / ATTRIBUTE BUTTONS
+   ============================================================ */
+#variantAttributeGroups {
+    margin-bottom: 20px;
+}
+#variantAttributeGroups > .mb-2 > span {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #0d1a3c;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* Attribute value buttons — rounded rect, outlined */
+.attribute-value-btn {
+    font-family: 'Muli', sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    padding: 10px 22px !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #d9cfc3 !important;
+    background: #ffffff !important;
+    color: #0d1a3c !important;
+    min-height: 44px !important;
+    transition: all 0.18s ease !important;
+    cursor: pointer;
+    line-height: 1.2 !important;
+}
+.attribute-value-btn:hover:not(.disabled-option) {
+    border-color: #0d1a3c !important;
+    background: #ffffff !important;
+    color: #0d1a3c !important;
+}
+/* Selected state */
+.attribute-value-btn.btn-dark {
+    background: #0d1a3c !important;
+    color: #ffffff !important;
+    border-color: #0d1a3c !important;
+}
+/* Disabled / unavailable */
+.attribute-value-btn.disabled-option {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    text-decoration: line-through !important;
+}
+
+/* Override Bootstrap btn-outline-dark to match our style */
+.attribute-value-btn.btn-outline-dark {
+    background: #ffffff !important;
+    color: #0d1a3c !important;
+    border: 1.5px solid #d9cfc3 !important;
+}
+.attribute-value-btn.btn-outline-dark:hover:not(.disabled-option) {
+    background: #ffffff !important;
+    color: #0d1a3c !important;
+    border-color: #0d1a3c !important;
+}
+
+/* ============================================================
+   FORM: QTY + ADD TO CART + BUY NOW
+   The layout:  [ Qty ──────── ] [ Add to Cart ────────────── ]
+                [ Buy it now ————————————————————————————————— ]
+   ============================================================ */
+#addToCartForm {
+    margin-top: 4px;
+}
+
+/* Label for qty */
+#addToCartForm > .d-flex > label {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #0d1a3c;
+    display: none; /* hidden to match reference — clean look */
+}
+
+/* Row: qty + add to cart side by side */
+.product-cta-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin: 0 0 10px !important;
+    width: 100%;
+}
+
+/* Quantity selector — pill-shaped, matches reference dimensions */
+.qty-selector {
+    width: 126px !important;
+    height: 52px !important;
+    border-radius: 15px !important;
+    border: 1.5px solid #d9cfc3 !important;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: #ffffff;
+}
+.qty-selector button {
+    width: 40px !important;
+    height: 52px !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem !important;
+    color: #0d1a3c;
+    transition: background 0.15s;
+    border-radius: 0 !important;
+}
+.qty-selector button:hover {
+    background: #f5f5f5 !important;
+}
+.qty-selector input {
+    width: 46px !important;
+    height: 52px !important;
+    border: none !important;
+    border-left: 1px solid #e8e4df !important;
+    border-right: 1px solid #e8e4df !important;
+    text-align: center;
+    font-family: 'Muli', sans-serif !important;
+    font-size: 0.9375rem !important;
+    font-weight: 500 !important;
+    color: #0d1a3c !important;
+    background: transparent !important;
+    outline: none !important;
+    -moz-appearance: textfield;
+    padding: 0 !important;
+}
+.qty-selector input::-webkit-outer-spin-button,
+.qty-selector input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Add to cart button — rounded, outlined style (matches reference) */
+.btn-add-cart {
+    flex: 1 !important;
+    height: 52px !important;
+    border-radius: 14px !important;
+    background: #ffffff !important;
+    color: #0d1a3c !important;
+    border: 1.5px solid #0d1a3c !important;
+    font-family: 'Muli', sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer;
+    transition: all 0.2s ease !important;
+    min-height: unset !important;
+    padding: 0 20px !important;
+}
+.btn-add-cart:hover:not(:disabled),
+.btn-add-cart:focus:not(:disabled) {
+    background: #f5f5f5 !important;
+    color: #0d1a3c !important;
+    border-color: #0d1a3c !important;
+    box-shadow: none !important;
+}
+.btn-add-cart:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+}
+.btn-add-cart i {
+    font-size: 0.9rem;
+}
+
+/* Buy it now — full width, dark navy, pill rounded */
+.btn-buy-now {
+    width: 100% !important;
+    height: 52px !important;
+    border-radius: 14px !important;
+    background: #0d1a3c !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-family: 'Muli', sans-serif !important;
+    font-size: 0.9375rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.03em !important;
+    text-transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer;
+    transition: background 0.2s ease !important;
+    min-height: unset !important;
+    padding: 0 !important;
+    flex: unset !important;
+}
+.btn-buy-now:hover:not(:disabled) {
+    background: #1a2d5a !important;
+    color: #ffffff !important;
+}
+.btn-buy-now:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+}
+
+/* Stock indicator */
+.stock-indicator {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.8125rem;
+    color: #6e6860;
+    display: flex;
+    align-items: center;
+}
+
+/* Row containing qty + stock indicator — above cta row */
+#addToCartForm .d-flex.align-items-center.gap-3.mb-3 {
+    margin-bottom: 14px !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+}
+
+/* Trust badges */
+.trust-badge {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.75rem;
+    color: #6e6860;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.02em;
+}
+.trust-badge i {
+    color: #a8956e;
+    font-size: 0.85rem;
+}
+
+/* Wishlist button */
+.product-wishlist {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: 'Muli', sans-serif;
+    font-size: 0.8125rem;
+    color: #9e9890;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+    margin-top: 6px;
+}
+.product-wishlist:hover,
+.product-wishlist.in-wishlist {
+    color: #e04;
+}
+.product-wishlist i {
+    font-size: 1rem;
+}
+
+/* ============================================================
+   YOU MAY ALSO LIKE — Related Products Grid
+   4-column, image card + name + price, no borders, clean
+   ============================================================ */
+.row.mt-5.pt-4 h3,
+.row.mt-5.pt-4 h3.mb-4 {
+    font-family: 'Instrument Sans', sans-serif !important;
+    font-size: 1.5rem !important;
+    font-weight: 400 !important;
+    color: #0d1a3c !important;
+    letter-spacing: normal !important;
+    margin-bottom: 28px !important;
+}
+
+/* Grid: 4 columns */
+.products-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+}
+@media (max-width: 991px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+@media (max-width: 479px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+}
+
+/* Product card — clean, no border, no shadow */
+.products-grid .product-card {
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0;
+    overflow: visible;
+}
+
+/* Image wrapper — rounded, fixed aspect ratio */
+.products-grid .product-card .product-img-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f0ece6;
+    display: block;
+    flex-shrink: 0;
+}
+.products-grid .product-card .product-img-wrap a {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.products-grid .product-card .product-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 14px;
+    transition: transform 0.4s ease;
+}
+.products-grid .product-card:hover .product-img-wrap img {
+    transform: scale(1.04);
+}
+
+/* Card body */
+.products-grid .product-card .product-body {
+    padding: 10px 2px 0;
+}
+
+.products-grid .product-card .product-category {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #9e9890;
+    margin-bottom: 4px;
+}
+
+.products-grid .product-card .product-name {
+    font-family: 'Muli', sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    color: #0d1a3c !important;
+    line-height: 1.35 !important;
+    margin: 0 0 5px !important;
+}
+
+.products-grid .product-card .product-price {
+    margin-bottom: 8px;
+}
+.products-grid .product-card .product-price .price-current {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #0d1a3c;
+}
+
+/* "View" link — minimal, small */
+.products-grid .product-card .product-cta {
+    display: inline-block;
+    font-family: 'Muli', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #9e9890;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    padding-bottom: 1px;
+}
+.products-grid .product-card .product-cta:hover {
+    color: #0d1a3c;
+    border-bottom-color: #0d1a3c;
+}
+
+/* ============================================================
+   REVIEWS SECTION
+   ============================================================ */
+.review-card {
+    border: 1px solid #e8e4df !important;
+    border-radius: 10px !important;
+    background: #fafaf9;
+}
+.reviewer {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0d1a3c;
+}
+.review-date {
+    color: #9e9890 !important;
+    font-size: 0.75rem !important;
+}
+.review-stars {
+    color: #c8976a;
+    font-size: 1rem;
+    margin: 4px 0;
+}
+.review-title {
+    font-family: 'Muli', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #0d1a3c;
+    margin-bottom: 4px;
+}
+.review-card p {
+    font-family: 'Muli', sans-serif;
+    font-size: 0.875rem;
+    color: #6e6860;
+    line-height: 1.65;
+}
+
+/* ============================================================
+   REVIEW FORM
+   ============================================================ */
+.row.mt-4 h4 {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #0d1a3c;
+}
+.row.mt-5.pt-4 h3:first-child {
+    font-family: 'Instrument Sans', sans-serif !important;
+    font-size: 1.5rem !important;
+    font-weight: 400 !important;
+    color: #0d1a3c !important;
+}
+.row#reviews h3 {
+    font-family: 'Instrument Sans', sans-serif !important;
+    font-size: 1.5rem !important;
+    font-weight: 400 !important;
+    color: #0d1a3c !important;
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 991px) {
+    .product-detail-main {
+        padding: 24px 0 56px;
+    }
+    .product-detail-info {
+        padding: 24px 0 0 0 !important;
+        margin-top: 8px;
+    }
+    .product-detail-info .product-detail-title {
+        font-size: 36px !important;
+    }
+}
+
+@media (max-width: 575px) {
+    .product-cta-row {
+        gap: 8px !important;
+    }
+    .qty-selector {
+        width: 110px !important;
+    }
+    .btn-add-cart {
+        font-size: 0.8125rem !important;
+        padding: 0 12px !important;
+    }
+    .btn-buy-now {
+        font-size: 0.875rem !important;
+    }
+    .gallery-section .gallery-thumb {
+        width: 52px;
+        height: 52px;
+    }
+}

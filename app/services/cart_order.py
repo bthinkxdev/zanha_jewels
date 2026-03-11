@@ -59,7 +59,7 @@ def send_order_notification_email(order, request=None):
             'order': order,
             'order_url': order_url,
             'payment_method': payment_method,
-            'site_name': ' Hello Gads',
+            'site_name': ' Zanha Design',
         }
 
         try:
@@ -171,8 +171,8 @@ class CartService:
         try:
             subtotal = sum(item.line_total for item in cart.items.select_related("product"))
             gst_total = cart.gst_total
-            FREE_SHIPPING_THRESHOLD = getattr(settings, "FREE_SHIPPING_ABOVE", 499)
-            delivery_charge = getattr(settings, "FLAT_DELIVERY_CHARGE", 80)
+            FREE_SHIPPING_THRESHOLD = getattr(settings, "FREE_SHIPPING_ABOVE", 999)
+            delivery_charge = getattr(settings, "FLAT_DELIVERY_CHARGE", 100)
             shipping = 0 if subtotal >= FREE_SHIPPING_THRESHOLD else delivery_charge
             total = subtotal + gst_total + shipping
             return CartTotals(subtotal=subtotal, gst_total=gst_total, shipping=shipping, total=total)

@@ -1912,3 +1912,77 @@ class RazorpayPaymentCancelView(View):
                 'message': 'Returning to cart...',
                 'redirect': '/cart/'
             })
+        
+class CartDrawerView(View):
+    """
+    AJAX-only endpoint that returns cart contents as JSON for the cart drawer.
+    GET /api/cart/drawer/
+    """
+    def get(self, request, *args, **kwargs):
+        try:
+            cart = CartService.get_or_create_cart(request)
+            items_qs = (
+                cart.items
+                .select_related("product", "selected_variant")
+                .prefetch_related("selected_variant__images")
+                .all()
+            )
+
+            items_data = []
+            for item in items_qs:
+                # Primary image
+                image_url = None
+                if item.selected_variant:
+                    for img in item.selected_variant.images.filter(
+                        image__isnull=False
+                    ).exclude(image="").order_by("-is_primary", "display_order", "id"):
+                        try:
+                            raw = img.image.url
+                            if raw:
+                                image_url = request.build_absolute_uri(raw) if raw.startswith("/") else raw
+                                break
+                        except Exception:
+                            pass
+
+                # Variant display string (e.g. "Gold / 1.6 cm")
+                variant_display = ""
+                if item.selected_variant:
+                    try:
+                        variant_display = item.selected_variant.get_attribute_values_display()
+                    except Exception:
+                        pass
+
+                items_data.append({
+                    "id":              item.id,
+                    "name":            item.product.name if item.product else "",
+                    "variant_display": variant_display,
+                    "unit_price":      str(item.selected_variant.price if item.selected_variant else 0),
+                    "quantity":        item.quantity,
+                    "image":           image_url or "",
+                    "product_url":     request.build_absolute_uri(
+                        f"/products/{item.product.slug}/?variant={item.selected_variant_id}"
+                        if item.product and item.selected_variant_id
+                        else "/shop/"
+                    ),
+                })
+
+            totals = CartService.compute_totals(cart)
+            item_count = sum(i["quantity"] for i in items_data)
+
+            return JsonResponse({
+                "success":    True,
+                "items":      items_data,
+                "total":      str(totals.total),
+                "subtotal":   str(totals.subtotal),
+                "item_count": item_count,
+            })
+
+        except Exception as exc:
+            logger.error("CartDrawerView error: %s", exc, exc_info=True)
+            return JsonResponse({
+                "success":    False,
+                "items":      [],
+                "total":      "0",
+                "subtotal":   "0",
+                "item_count": 0,
+            })

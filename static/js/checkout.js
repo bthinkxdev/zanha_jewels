@@ -146,7 +146,7 @@ function openRazorpayPopup(data) {
         amount: data.amount,
         currency: 'INR',
         order_id: data.razorpay_order_id,
-        name: 'Hello Gads',
+        name: 'Zanha Design',
         description: 'Order #' + data.order_number,
         prefill: {
             name: data.customer_name || '',

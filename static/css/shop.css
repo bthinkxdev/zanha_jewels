@@ -71,7 +71,7 @@
 @media (max-width: 575px)  { #shopProductGrid.grid-compact { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
 
 /* ══════════════════════════════════════════════
-   PRODUCT CARD — styled like thauya-product-card
+   PRODUCT CARD 
    ══════════════════════════════════════════════ */
 #shopProductGrid .product-card {
     display: flex;

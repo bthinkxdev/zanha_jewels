@@ -194,8 +194,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 ADMIN_NOTIFICATION_EMAILS = ['adithyamc@bthinkx.com']
 
 # Site contact (used site-wide: footer, invoice, WhatsApp FAB, etc.)
-SITE_PHONE = config("SITE_PHONE", default="+91 62384 39926")
-SITE_WHATSAPP = config("SITE_WHATSAPP", default="916238439926")  # No + or spaces for wa.me
+SITE_PHONE = config("SITE_PHONE", default="+91 88919 23189")
+SITE_WHATSAPP = config("SITE_WHATSAPP", default="918891923189")  # No + or spaces for wa.me
 
 # Razorpay Configuration
 RZP_CLIENT_ID = config('RZP_CLIENT_ID')

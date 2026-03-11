@@ -1,8 +1,9 @@
 {% extends "base_gadget.html" %}
 {% load static %}{% load product_filters %}
-{% block title %}{{ product.name }} — Hello Gads{% endblock %}
+{% block title %}{{ product.name }} — Zanha Design{% endblock %}
 {% block meta_description %}{{ product.description|truncatewords:20|default:product.name }}{% endblock %}
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product.css' %}">
 <style>
 .gallery-main{transition:opacity .15s ease;}
 .spec-table td,.spec-table th{padding:10px 14px;font-size:.875rem;}
@@ -15,7 +16,7 @@
 </style>
 {% endblock %}
 {% block content %}
-<!-- Breadcrumb -->
+<!-- Breadcrumb 
 <div style="background:#f5f5f5;border-bottom:1px solid #e0e0e0;padding:12px 0;">
     <div class="container">
         <nav aria-label="breadcrumb">
@@ -26,7 +27,7 @@
             </ol>
         </nav>
     </div>
-</div>
+</div>-->
 
 <section class="product-detail-main">
     <div class="container">
@@ -59,7 +60,6 @@
 
             <!-- Info -->
             <div class="col-lg-6 product-detail-info wow fadeInRight" data-wow-delay="0.1s">
-                <div class="product-category mb-2">{{ product.category.name|default:"" }}</div>
                 <h1 class="product-detail-title">{{ product.name }}</h1>
 
                 {% if average_rating is not None %}
@@ -84,11 +84,7 @@
                     {% endif %}
                 </div>
 
-                {% if product.description %}
-                <p class="product-detail-short-desc">{{ product.description|truncatewords:40 }}</p>
-                {% endif %}
-
-                <!-- Variant selection: attribute-based (grouped) or flat variant list -->
+                <!-- Variant selection -->
                 {% if attributes_grouped %}
                 <div class="mb-3" id="variantAttributeGroups">
                     {% for attr in attributes_grouped %}
@@ -125,46 +121,43 @@
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="formVariantId" value="{{ selected_variant.id|default:'' }}">
                     <input type="hidden" name="quantity" id="formQuantity" value="1">
-                    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-                        <label style="font-size:.8125rem;font-weight:700;">Qty</label>
+
+                    <div class="product-cta-row">
                         <div class="qty-selector quantity">
                             <button class="btn-minus" type="button"><i class="fas fa-minus"></i></button>
                             <input type="number" id="qtyInput" value="1" min="1" max="99" readonly style="width:50px;text-align:center;">
                             <button class="btn-plus" type="button"><i class="fas fa-plus"></i></button>
                         </div>
-                        <span class="stock-indicator" style="font-size:.8125rem;">
-                            {% if selected_variant %}
-                                {% if selected_variant.stock_quantity and selected_variant.stock_quantity > 0 %}
-                                <i class="fas fa-check-circle me-1" style="color:#000;"></i> In Stock ({{ selected_variant.stock_quantity }})
-                                {% else %}
-                                <i class="fas fa-times-circle me-1" style="color:#c00;"></i> Out of Stock
-                                {% endif %}
-                            {% else %}
-                                <i class="fas fa-info-circle me-1" style="color:#000;"></i> Select options to see availability
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="product-cta-row">
                         <button type="submit" class="btn-add-cart btn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>
                             <i class="fas fa-shopping-bag me-2"></i> Add to Cart
                         </button>
-                        <button type="button" class="btn-buy-now btn" id="buyNowBtn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>Buy Now</button>
                     </div>
+
+                    <button type="button" class="btn-buy-now btn" id="buyNowBtn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>
+                        Buy Now
+                    </button>
                 </form>
 
-                <div class="d-flex flex-wrap gap-3 my-3">
+                {% comment %} <div class="d-flex flex-wrap gap-3 my-3">
                     <div class="trust-badge"><i class="fas fa-shield-alt"></i> Secure Payment</div>
                     <div class="trust-badge"><i class="fas fa-undo-alt"></i> Easy Returns</div>
-                </div>
+                    <span class="stock-indicator" style="font-size:.8125rem;">
+                        {% if selected_variant %}
+                            {% if selected_variant.stock_quantity and selected_variant.stock_quantity > 0 %}
+                            <i class="fas fa-check-circle me-1" style="color:#000;"></i> In Stock ({{ selected_variant.stock_quantity }})
+                            {% else %}
+                            <i class="fas fa-times-circle me-1" style="color:#c00;"></i> Out of Stock
+                            {% endif %}
+                        {% else %}
+                            <i class="fas fa-info-circle me-1" style="color:#000;"></i> Select options to see availability
+                        {% endif %}
+                    </span>
+                </div> {% endcomment %}
 
-                <button type="button" class="product-wishlist {% if in_wishlist %}in-wishlist{% endif %}" id="productWishlistBtn" data-variant-id="{{ selected_variant.id }}" title="Wishlist">
-                    <i class="{% if in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i> 
-                    <span class="wishlist-text">{% if in_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
-                </button>
+        
             </div>
-        </div>
 
-        <!-- Description / Specs -->
+        <!-- Description / Specs 
         {% if product.description %}
         <div class="row mt-5 pt-3">
             <div class="col-lg-8">
@@ -180,7 +173,7 @@
                 </div>
             </div>
         </div>
-        {% endif %}
+        {% endif %}-->
 
         <!-- Reviews -->
         {% if reviews %}
@@ -253,10 +246,10 @@
                             </a>
                         </div>
                         <div class="product-body">
-                            <div class="product-category">{{ rel.category.name|default:"" }}</div>
+                            {% comment %} <div class="product-category">{{ rel.category.name|default:"" }}</div> {% endcomment %}
                             <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="text-decoration-none"><h3 class="product-name">{{ rel.name }}</h3></a>
                             <div class="product-price"><span class="price-current">₹{{ fv.price|floatformat:0 }}</span></div>
-                            <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="product-cta">View</a>
+                            {% comment %} <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="product-cta">View</a> {% endcomment %}
                         </div>
                     </div>
                     {% endif %}

@@ -1,5 +1,5 @@
 /* ============================================================
-   JEWEL — Thauya-Inspired Luxury Jewellery Theme
+   JEWEL —  Luxury Jewellery Theme
    Dark Navy · Cream · Elegant · Minimal
    ============================================================ */
 
@@ -624,7 +624,7 @@ a:hover { color: var(--clr-navy); }
 .section-divider.mx-auto { margin-left: auto; margin-right: auto; }
 
 /* ============================================================
-   PRODUCT CARDS — Thauya Style
+   PRODUCT CARDS 
    ============================================================ */
 .tpc-section {
     background: var(--clr-white);
@@ -1435,13 +1435,20 @@ a:hover { color: var(--clr-navy); }
    ============================================================ */
 .contact-section { background: var(--clr-off-white); padding: 60px 0; }
 .contact-card {
-    background: var(--clr-white);
+    background: #0D1A3C;
     border: 1px solid var(--clr-grey-2);
-    border-radius: var(--radius-sm);
+    border-radius: 14px;
     padding: 44px;
     max-width: 640px; margin: 0 auto;
+    text-align: center;
 }
-.contact-card h2 { font-family: var(--font-display); font-weight: 300; color: var(--clr-navy); margin-bottom: 8px; letter-spacing: 0.04em; }
+.contact-card h2 { 
+    font-family: "Instrument Sans", sans-serif;  
+    font-weight: 300; 
+    color: #FFFFFF;  
+    margin-bottom: 8px; 
+    letter-spacing: 0.04em; 
+}
 .contact-info-item {
     display: flex; align-items: flex-start;
     gap: 16px; padding: 16px 0;
@@ -1766,4 +1773,135 @@ body.has-bottom-bar {
         letter-spacing: 0.08em;
         color: var(--clr-grey-5);
     }
+}
+
+/* ── Desktop expandable search ─────────────────────────── */
+.desktop-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.desktop-search-form {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    width: 0;
+    opacity: 0;
+    transition: width 0.3s ease, opacity 0.2s ease;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    margin-left: 6px;
+}
+
+.desktop-search-form.open {
+    width: 220px;
+    opacity: 1;
+}
+
+.desktop-search-form input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #f6efe5;
+    font-size: 0.875rem;
+    padding: 6px 12px;
+    width: 100%;
+    font-family: var(--font-body);
+}
+
+.desktop-search-form input::placeholder {
+    color: rgba(246,239,229,0.4);
+}
+
+.desktop-search-form button {
+    background: transparent;
+    border: none;
+    color: rgba(246,239,229,0.6);
+    padding: 0 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+button.header-icon-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(246,239,229,0.7);
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+button.header-icon-link:hover {
+    color: #f6efe5;
+}
+
+/* ── Mobile search overlay — top sheet style ───────────── */
+.mobile-search-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--clr-navy-deep);
+    z-index: 9999;
+    padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    transform: translateY(-100%);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    opacity: 0;
+}
+.mobile-search-overlay.open {
+    display: flex;
+    transform: translateY(0);
+    opacity: 1;
+}
+.mobile-search-inner {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    padding: 10px 16px;
+}
+.mobile-search-close {
+    background: none;
+    border: none;
+    color: rgba(246,239,229,0.8);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.mobile-search-inner input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #f6efe5;
+    font-size: 1rem;
+    font-family: var(--font-body);
+    min-width: 0;
+}
+.mobile-search-inner input::placeholder {
+    color: rgba(246,239,229,0.4);
+}
+.mobile-search-submit {
+    background: none;
+    border: none;
+    color: rgba(246,239,229,0.7);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    line-height: 1;
 }

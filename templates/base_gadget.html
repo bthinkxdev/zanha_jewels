@@ -17,6 +17,7 @@
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
     <link href="{% static 'css/bottom-bar.css' %}" rel="stylesheet">
     <link href="{% static 'css/page-loader-gadget.css' %}" rel="stylesheet">
+    <link href="{% static 'css/cart-drawer.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="has-bottom-bar" data-wishlist-toggle-url="{% url 'store:wishlist_toggle' %}"
@@ -25,7 +26,7 @@
 
 <!-- Page Loader -->
 <div id="page-loader-hello" class="page-loader-hello" role="status" aria-live="polite">
-    <span class="loader-brand">hello gads</span>
+    <span class="loader-brand">Zanha Design</span>
     <div class="loader-bar-wrap">
         <div class="loader-bar"></div>
     </div>
@@ -70,7 +71,6 @@
                 <nav class="d-flex">
                     <a href="{% url 'store:home' %}"         class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a>
                     <a href="{% url 'store:product_list' %}" class="nav-link {% if active_page == 'collection' %}active{% endif %}">Shop</a>
-                    <a href="{% url 'store:cart' %}"         class="nav-link {% if active_page == 'cart' %}active{% endif %}">Cart</a>
                     <a href="{% url 'store:checkout' %}"     class="nav-link {% if active_page == 'checkout' %}active{% endif %}">Checkout</a>
                     <a href="{% url 'store:contact' %}"      class="nav-link {% if active_page == 'contact' %}active{% endif %}">Contact Us</a>
                     {% if user.is_authenticated %}
@@ -83,13 +83,20 @@
             <div class="col-auto ms-auto">
                 <div class="d-flex align-items-center gap-3">
                     <!-- Search icon -->
-                    <a href="{% url 'store:product_list' %}" class="header-icon-link" title="Search">
-                        <i class="fas fa-search"></i>
-                    </a>
-                    <!-- Wishlist -->
-                    <a href="{% url 'store:wishlist' %}" class="header-icon-link" title="Wishlist">
-                        <i class="fas fa-heart"></i>
-                    </a>
+                    <!-- Search icon + expandable form (desktop) -->
+                    <div class="desktop-search-wrap" id="desktopSearchWrap">
+    <button type="button" class="header-icon-link" id="desktopSearchToggle" title="Search">
+        <i class="fas fa-search"></i>
+    </button>
+    <form class="desktop-search-form" id="desktopSearchForm"
+          action="{% url 'store:product_list' %}" method="get">
+        <input type="text" name="q" id="desktopSearchInput"
+               placeholder="Search…" value="{{ request.GET.q|default:'' }}"
+               autocomplete="off">
+        <button type="submit"><i class="fas fa-search"></i></button>
+    </form>
+</div>
+                    
                     <!-- Cart -->
                     <a href="{% url 'store:cart' %}" class="header-icon-link position-relative" title="Cart">
                         <i class="fas fa-shopping-bag"></i>
@@ -127,34 +134,53 @@
                 {% if user.is_authenticated %}
                 <a href="{% url 'auth:account' %}"       class="nav-item nav-link {% if active_page == 'account' %}active{% endif %}">Account</a>
                 {% endif %}
-                <!-- Mobile search -->
-                <form class="search-bar-wrap mt-2 mb-2" action="{% url 'store:product_list' %}" method="get">
-                    <input type="text" name="q" placeholder="Search…" value="{{ request.GET.q|default:'' }}">
-                    <button class="search-btn" type="submit"><i class="fas fa-search"></i></button>
-                </form>
+                
             </div>
         </div>
 
     </div>
 </div>
 
-    <!-- Mobile search bar -->
-    <div class="mobile-search-bar">
-        <form class="search-bar-wrap" action="{% url 'store:product_list' %}" method="get">
-            <input type="text" name="q" placeholder="Search…" value="{{ request.GET.q|default:'' }}">
-            <button class="search-btn" type="submit"><i class="fas fa-search"></i></button>
-        </form>
-    </div>
-</div>
 
 {% block content %}{% endblock %}
 
+<!-- Services Strip -->
+<div class="services-strip">
+    <div class="container px-0">
+        <div class="row g-0">
+            <div class="col-6 col-md-3">
+                <div class="service-item">
+                    <i class="fas fa-shipping-fast"></i>
+                    <div><h6>Free Shipping</h6><p>On orders over ₹999</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="service-item">
+                    <i class="fas fa-undo-alt"></i>
+                    <div><h6>Easy Returns</h6><p>Hassle-free returns</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="service-item">
+                    <i class="fas fa-lock"></i>
+                    <div><h6>Secure Payment</h6><p>100% protected</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="service-item" style="border-right:none;">
+                    <i class="fas fa-headset"></i>
+                    <div><h6>Support</h6><p>We're here for you</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Footer -->
 <footer class="footer">
     <div class="container">
         <div class="row g-5 pb-5">
             <div class="col-md-6 col-lg-4">
-                <span class="footer-brand-text">hello gads</span>
+                <span class="footer-brand-text">Zanha Design</span>
                 <p class="mt-3" style="color:rgba(245,239,230,0.45);font-size:.8125rem;line-height:1.8;">
                     Crafted with elegance. Your destination for premium jewellery and accessories.
                 </p>
@@ -180,13 +206,13 @@
                 <a href="{% url 'store:wishlist' %}"     class="footer-link"><i class="fas fa-angle-right"></i> Wishlist</a>
             </div>
             <div class="col-md-6 col-lg-3">
-                <h6 class="footer-heading">Newsletter</h6>
-                <p style="font-size:.8125rem;color:rgba(245,239,230,0.45);margin-bottom:12px;">Stay updated with new collections.</p>
-                <div class="footer-newsletter">
-                    <input type="email" placeholder="Your email address">
-                    <button class="btn-subscribe">Subscribe</button>
-                </div>
+                <h6 class="footer-heading">Policies</h6>
+                <a href="{% url 'store:about' %}"    class="footer-link"><i class="fas fa-angle-right"></i> About Us</a>
+                <a href="{% url 'store:privacy' %}"  class="footer-link"><i class="fas fa-angle-right"></i> Privacy Policy</a>
+                <a href="{% url 'store:terms' %}"    class="footer-link"><i class="fas fa-angle-right"></i> Terms &amp; Conditions</a>
+                <a href="{% url 'store:shipping' %}" class="footer-link"><i class="fas fa-angle-right"></i> Refund &amp; Shipping</a>
             </div>
+            
         </div>
     </div>
 </footer>
@@ -194,12 +220,12 @@
 <div class="copyright">
     <div class="container">
         <div class="col-12 text-center">
-            <span>&copy; 2026 Hello Gads. All rights reserved.</span>
+            <span>&copy; 2026 Zanha Design. All rights reserved.</span>
         </div>
     </div>
 </div>
 
-{% comment %} <!-- Bottom bar (mobile) -->
+<!-- Bottom bar (mobile) -->
 <nav class="bottom-bar" role="navigation" aria-label="Main">
     <div class="bottom-bar-inner">
         <a href="{% url 'store:product_list' %}" class="bottom-bar-item {% if active_page == 'collection' %}active{% endif %}" aria-label="Shop">
@@ -208,26 +234,26 @@
             </span>
             <span class="bottom-bar-label">Shop</span>
         </a>
-        <a href="{% url 'store:cart' %}" class="bottom-bar-item js-bottom-bar-cart {% if active_page == 'cart' %}active{% endif %}" aria-label="Cart">
+        {% comment %} <a href="{% url 'store:cart' %}" class="bottom-bar-item js-bottom-bar-cart {% if active_page == 'cart' %}active{% endif %}" aria-label="Cart">
             <span class="bottom-bar-icon">
                 <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
                 <span class="bottom-bar-badge js-cart-count" style="display:{% if cart_count %}inline-block{% else %}none{% endif %};">{{ cart_count|default:0 }}</span>
             </span>
             <span class="bottom-bar-label">Cart</span>
-        </a>
+        </a> {% endcomment %}
         <a href="{% url 'store:home' %}" class="bottom-bar-item {% if active_page == 'home' %}active{% endif %}" aria-label="Home">
             <span class="bottom-bar-icon">
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </span>
             <span class="bottom-bar-label">Home</span>
         </a>
-        <a href="{% url 'store:wishlist' %}" class="bottom-bar-item {% if active_page == 'wishlist' %}active{% endif %}" aria-label="Wishlist">
+        {% comment %} <a href="{% url 'store:wishlist' %}" class="bottom-bar-item {% if active_page == 'wishlist' %}active{% endif %}" aria-label="Wishlist">
             <span class="bottom-bar-icon">
                 <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                 <span class="bottom-bar-badge js-wishlist-count" {% if not wishlist_count %}style="display:none;"{% endif %}>{{ wishlist_count|default:0 }}</span>
             </span>
             <span class="bottom-bar-label">Wishlist</span>
-        </a>
+        </a> {% endcomment %}
         {% if user.is_authenticated %}
         <a href="{% url 'auth:account' %}" class="bottom-bar-item {% if active_page == 'account' %}active{% endif %}" aria-label="Account">
             <span class="bottom-bar-icon">
@@ -244,7 +270,74 @@
         </a>
         {% endif %}
     </div>
-</nav> {% endcomment %}
+</nav> 
+
+<!-- Overlay -->
+<div id="cartDrawerOverlay" class="cd-overlay" aria-hidden="true"></div>
+
+<!-- Drawer panel -->
+<aside id="cartDrawer" class="cd-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
+
+  <!-- Header -->
+  <div class="cd-header">
+    <div class="cd-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+      </svg>
+      Cart
+      <span id="cdBadge" class="cd-badge">0</span>
+    </div>
+    <button id="cdClose" class="cd-close" aria-label="Close cart">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Scrollable item list -->
+  <div id="cdItems" class="cd-items"></div>
+
+  <!-- Footer (shown when items exist) -->
+  <div id="cdFooter" class="cd-footer" hidden>
+    <div class="cd-total-row">
+      <span class="cd-total-label">Estimated total</span>
+      <span id="cdTotal" class="cd-total-val">₹0</span>
+    </div>
+    <p class="cd-tax-note">Taxes, discounts and shipping calculated at checkout.</p>
+    <div class="cd-actions">
+      <a href="/cart/"     class="cd-btn cd-btn-ghost">View cart</a>
+      <a href="/checkout/" class="cd-btn cd-btn-solid">Check out</a>
+    </div>
+  </div>
+
+  <!-- Empty state (shown when cart is empty) -->
+  <div id="cdEmpty" class="cd-empty" hidden>
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c9c3b9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+    </svg>
+    <p>Your cart is empty</p>
+    <a href="/shop/" class="cd-btn cd-btn-solid" style="width:auto;padding:0 32px;">Shop now</a>
+  </div>
+
+</aside>
+
+<!-- Mobile search overlay -->
+<div id="mobileSearchOverlay" class="mobile-search-overlay" aria-hidden="true">
+    <form class="mobile-search-inner" action="{% url 'store:product_list' %}" method="get">
+        <button type="button" id="mobileSearchClose" class="mobile-search-close" aria-label="Close">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <input type="text" name="q" id="mobileSearchInput"
+               placeholder="Search products…"
+               value="{{ request.GET.q|default:'' }}"
+               autocomplete="off">
+        <button type="submit" class="mobile-search-submit">
+            <i class="fas fa-search"></i>
+        </button>
+    </form>
+</div>
 
 <a href="#" class="back-to-top" style="display:none;"><i class="fa fa-arrow-up"></i></a>
 
@@ -256,21 +349,71 @@
 <script src="{% static 'js/wishlist.js' %}"></script>
 <script src="{% static 'js/add-to-cart.js' %}"></script>
 <script src="{% static 'js/product-card-slider.js' %}"></script> 
+<script src="{% static 'js/cart-drawer.js' %}"></script>
 <script>
+// ── Page loader ──────────────────────────────────────────
 (function(){
     var start = Date.now();
-    var minWait = 0;
     function hideLoader(){
         var s = document.getElementById('page-loader-hello');
-        if(s) s.classList.add('hidden');
+        if (s) s.classList.add('hidden');
     }
-    function tryHide(){
-        var elapsed = Date.now() - start;
-        if (elapsed >= minWait) hideLoader();
-        else setTimeout(hideLoader, minWait - elapsed);
+    if (document.readyState === 'complete') hideLoader();
+    else window.addEventListener('load', hideLoader);
+})();
+
+// ── Search (desktop expand + mobile overlay) ─────────────
+(function(){
+    var toggle  = document.getElementById('desktopSearchToggle');
+    var form    = document.getElementById('desktopSearchForm');
+    var input   = document.getElementById('desktopSearchInput');
+    var overlay = document.getElementById('mobileSearchOverlay');
+    var mInput  = document.getElementById('mobileSearchInput');
+    var mClose  = document.getElementById('mobileSearchClose');
+
+    function isMobile(){ return window.innerWidth < 992; }
+
+    if (toggle) {
+        toggle.addEventListener('click', function(e){
+            e.stopPropagation();
+            if (isMobile()) {
+                if (!overlay) return;
+                overlay.classList.add('open');
+                overlay.setAttribute('aria-hidden', 'false');
+                setTimeout(function(){ if (mInput) mInput.focus(); }, 50);
+            } else {
+                if (!form) return;
+                var isOpen = form.classList.toggle('open');
+                if (isOpen && input) input.focus();
+            }
+        });
     }
-    if (document.readyState === 'complete') tryHide();
-    else window.addEventListener('load', tryHide);
+
+    if (mClose && overlay) {
+        mClose.addEventListener('click', function(){
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+        });
+    }
+
+    // Close overlay on Escape key
+    document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') {
+            if (overlay) {
+                overlay.classList.remove('open');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+            if (form) form.classList.remove('open');
+        }
+    });
+
+    // Close desktop search on outside click
+    document.addEventListener('click', function(e){
+        var wrap = document.getElementById('desktopSearchWrap');
+        if (wrap && !wrap.contains(e.target) && form) {
+            form.classList.remove('open');
+        }
+    });
 })();
 </script>
 {% block extra_js %}{% endblock %}

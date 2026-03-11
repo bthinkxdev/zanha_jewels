@@ -105,7 +105,7 @@ class OTPService:
         context = {
             'otp': otp,
             'expiry_minutes': cls.OTP_EXPIRY_MINUTES,
-            'site_name': 'Hello Gads',
+            'site_name': 'Zanha Design',
             'support_email': settings.DEFAULT_FROM_EMAIL,
         }
         
