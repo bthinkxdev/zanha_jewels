@@ -1,6 +1,6 @@
 {% extends "base_gadget.html" %}
-{% block title %}Shipping Policy - Zanha Design{% endblock %}
-{% block meta_description %}Zanha Design Shipping Policy - Flat ₹80 delivery charge for all orders. Fast delivery across India.{% endblock %}
+{% block title %}Shipping Policy - Zanha Jewels{% endblock %}
+{% block meta_description %}Zanha Jewels Shipping Policy - Flat ₹80 delivery charge for all jewellery orders. Fast delivery across India.{% endblock %}
 {% block content %}
     <section class="static-page">
         <div class="container">
@@ -9,7 +9,7 @@
 
                 <p><em>Last Updated: January 2026</em></p>
 
-                <p>At Zanha Design, we are committed to delivering your orders quickly and safely. This Shipping Policy outlines our delivery procedures, timelines, and shipping charges for all orders placed on our website.</p>
+                <p>At Zanha Jewels, we are committed to delivering your jewellery orders quickly and safely. This Shipping Policy outlines our delivery procedures, timelines, and shipping charges for all orders placed on our website.</p>
 
                 <h2>1. Shipping Coverage</h2>
                 <p>We currently ship to all serviceable locations across India. Our delivery partners ensure coverage to both urban and rural areas.</p>
@@ -184,7 +184,7 @@
                 <h2>19. Contact Us for Shipping Queries</h2>
                 <p>Have questions about your shipment? We're here to help!</p>
                 <ul>
-                    <li><strong>Email:</strong> support@queenorange.com</li>
+                    <li><strong>Email:</strong> {{ site_email|default:'support@zanhajewels.com' }}</li>
                     <li><strong>Phone:</strong> <a href="tel:{{ site_phone|default:'+918891923189' }}">{{ site_phone|default:'+91 88919 23189' }}</a></li>
                     <li><strong>WhatsApp:</strong> <a href="https://wa.me/{{ site_whatsapp|default:'918891923189' }}" target="_blank">{{ site_phone|default:'+91 88919 23189' }}</a></li>
                     <li><strong>Hours:</strong> Monday to Saturday, 9:00 AM - 6:00 PM IST</li>

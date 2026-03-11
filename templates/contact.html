@@ -1,6 +1,6 @@
 {% extends "base_gadget.html" %}
 {% load static %}{% load product_filters %}
-{% block title %}Contact — Zanha Design{% endblock %}
+{% block title %}Contact — Zanha Jewels{% endblock %}
 {% block content %}
 {% block extra_css %}
 <style>
@@ -40,8 +40,8 @@
                 <div class="contact-info-item">
                     <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="info">
-                        <h6>Our Store</h6>
-                        <p>Zanha Design — Your trusted store for gadgets and electronics.</p>
+                        <h6>Our Studio</h6>
+                        <p>Zanha Jewels — Your trusted destination for timeless jewellery.</p>
                     </div>
                 </div>
                 <div class="contact-info-item">
@@ -62,7 +62,11 @@
                     <div class="icon-wrap"><i class="fas fa-envelope"></i></div>
                     <div class="info">
                         <h6>Email</h6>
-                        <p><a href="mailto:support@hellogads.com" style="color:#555;">support@hellogads.com</a></p>
+                        <p>
+                            <a href="mailto:{{ site_email|default:'support@zanhajewels.com' }}" style="color:#555;">
+                                {{ site_email|default:"support@zanhajewels.com" }}
+                            </a>
+                        </p>
                     </div>
                 </div>
             </div>

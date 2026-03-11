@@ -1,7 +1,7 @@
 {% extends "base_gadget.html" %}
 {% load static %}{% load product_filters %}
-{% block title %}Zanha Design — Premium Gadgets{% endblock %}
-{% block meta_description %}Shop premium electronics, mobile accessories, headphones and more.{% endblock %}
+{% block title %}Zanha Jewels — Premium Jewellery{% endblock %}
+{% block meta_description %}Shop premium anti-tarnish jewellery — necklaces, bracelets, rings and more.{% endblock %}
 {% block content %}
 <section class="hero-section">
     <div class="header-carousel owl-carousel">
@@ -83,13 +83,47 @@
 
 
 
+{% if deal_of_day_products %}
+<!-- Deals of the Day -->
+<section class="tpc-section">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Deals of the Day</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid">
+            {% for product in deal_of_day_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if featured_products %}
+<!-- Featured Collection -->
+<section class="tpc-section">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Featured</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid">
+            {% for product in featured_products %}
+                {% include "partials/_product_card.html" with product=product %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 {% if bestseller_products %}
 <!-- Best Sellers -->
 <section class="tpc-section">
     <div class="container">
         <div class="tpc-section-header">
             <h2 class="tpc-section-title">Best Sellers</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View all</a>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
         </div>
         <div class="tpc-grid">
             {% for product in bestseller_products %}
@@ -100,26 +134,26 @@
 </section>
 {% endif %}
 
-{% comment %} {% if new_arrival_products %}
-<!-- New Arrivals -->
+{% if new_arrival_products %}
+<!-- Recently Added -->
 <section class="section-pad bg-bw-1">
     <div class="container">
         <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
             <div>
                 <span class="section-label">Just In</span>
-                <h2 class="section-title mb-0">New Arrivals</h2>
+                <h2 class="section-title mb-0">Recently Added</h2>
                 <div class="section-divider"></div>
             </div>
             <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="products-grid wow fadeInUp" data-wow-delay="0.2s">
+        <div class="tpc-grid wow fadeInUp" data-wow-delay="0.2s">
             {% for product in new_arrival_products %}
                 {% include "partials/_product_card.html" with product=product %}
             {% endfor %}
         </div>
     </div>
 </section>
-{% endif %} {% endcomment %}
+{% endif %}
 
 {% comment %} {% if top_rated_products %}
 <!-- Top Rated -->
@@ -175,24 +209,5 @@
     </div>
 </section>
 
-{% comment %} {% if featured_products %}
-<!-- Featured Collection -->
-<section class="section-pad">
-    <div class="container">
-        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
-            <div>
-                <span class="section-label">Hand-Picked</span>
-                <h2 class="section-title mb-0">Featured Collection</h2>
-                <div class="section-divider"></div>
-            </div>
-            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
-        </div>
-        <div class="products-grid wow fadeInUp" data-wow-delay="0.2s">
-            {% for product in featured_products %}
-                {% include "partials/_product_card.html" with product=product %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %} {% endcomment %}
+{% comment %} Legacy featured section (replaced by tpc-section Featured above) {% endcomment %}
 {% endblock %}

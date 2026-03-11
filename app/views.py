@@ -241,10 +241,11 @@ class HomeView(TemplateView):
             )
             context["bestseller_products"] = _build_product_cards(bestseller_qs, 8)
 
-            # --- New Arrivals ---
+            # --- Recently Added (New Arrivals) ---
             new_arrivals_qs = base_products_qs.order_by("-created_at")
+            # Show up to 26 products on the homepage
             context["new_arrival_products"] = _build_product_cards(
-                new_arrivals_qs, 8
+                new_arrivals_qs, 26
             )
 
             # --- Top Rated ---
