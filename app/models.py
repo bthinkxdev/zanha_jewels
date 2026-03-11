@@ -62,9 +62,14 @@ class ProductQuerySet(models.QuerySet):
 
     def available(self):
         from django.db.models import Q
-        return self.active().filter(
-            Q(variants__is_active=True, variants__stock_quantity__gt=0)
-        ).distinct()
+        return (
+            self.active()
+            .filter(
+                Q(variants__is_active=True, variants__stock_quantity__gt=0)
+                | Q(variants__isnull=True, base_stock__gt=0)
+            )
+            .distinct()
+        )
 
 
 class Product(TimeStampedModel):
@@ -98,6 +103,9 @@ class Product(TimeStampedModel):
         help_text="GST %% (0-28). Required when is_gst_applicable is True.",
     )
     hsn_code = models.CharField(max_length=20, blank=True, null=True)
+    # Simple product base fields (used only when the product has no variants)
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    base_stock = models.PositiveIntegerField(null=True, blank=True)
 
     objects = ProductQuerySet.as_manager()
 
@@ -155,21 +163,76 @@ class Product(TimeStampedModel):
     def has_any_sellable_stock(self):
         if getattr(self, "_has_sellable_stock", None) is not None:
             return self._has_sellable_stock
-        for v in self.variants.all():
-            if getattr(v, "is_active", True) and (getattr(v, "stock_quantity", 0) or 0) > 0:
-                self._has_sellable_stock = True
-                return True
-        self._has_sellable_stock = False
-        return False
+        # When variants exist, they are the source of truth
+        if self.variants.exists():
+            for v in self.variants.all():
+                if getattr(v, "is_active", True) and (getattr(v, "stock_quantity", 0) or 0) > 0:
+                    self._has_sellable_stock = True
+                    return True
+            self._has_sellable_stock = False
+            return False
+        # Simple product: fall back to base_stock
+        stock = getattr(self, "base_stock", None)
+        self._has_sellable_stock = bool(stock and stock > 0)
+        return self._has_sellable_stock
+
+    # --- Simple vs variant helpers ---
+    def has_variants(self):
+        return self.variants.exists()
+
+    def is_simple_product(self):
+        return not self.has_variants()
+
+    def get_price(self):
+        """
+        Returns the display price for this product.
+        When variants exist, uses the lowest active variant price.
+        Otherwise falls back to base_price.
+        """
+        if self.has_variants():
+            v = (
+                self.variants.filter(is_active=True)
+                .order_by("price")
+                .only("price")
+                .first()
+            )
+            return v.price if v else None
+        return self.base_price
+
+    def get_stock(self):
+        """
+        Returns total sellable stock for this product.
+        When variants exist, sums active variant stock.
+        Otherwise falls back to base_stock.
+        """
+        if self.has_variants():
+            return sum(
+                (v.stock_quantity or 0)
+                for v in self.variants.filter(is_active=True).only("stock_quantity")
+            )
+        return self.base_stock or 0
 
     def get_card_image_urls(self, limit=20):
         urls = []
         seen = set()
         try:
-            for v in self.variants.filter(is_active=True).order_by("display_order", "id"):
-                if len(urls) >= limit:
-                    break
-                for img in v.images.filter(image__isnull=False).exclude(image="").order_by("-is_primary", "display_order", "id")[:1]:
+            # If variants exist, variant images are the source of truth
+            if self.variants.exists():
+                for v in self.variants.filter(is_active=True).order_by("display_order", "id"):
+                    if len(urls) >= limit:
+                        break
+                    for img in v.images.filter(image__isnull=False).exclude(image="").order_by("-is_primary", "display_order", "id")[:1]:
+                        if img.image:
+                            url = img.image.url
+                            if url:
+                                url = self._normalize_card_image_url(url)
+                            if url and url not in seen:
+                                seen.add(url)
+                                urls.append(url)
+                                break
+            else:
+                # Simple product: use ProductImage records
+                for img in self.images.filter(image__isnull=False).exclude(image="").order_by("-is_primary", "display_order", "id")[:limit]:
                     if img.image:
                         url = img.image.url
                         if url:
@@ -177,9 +240,10 @@ class Product(TimeStampedModel):
                         if url and url not in seen:
                             seen.add(url)
                             urls.append(url)
-                            break
         except Exception:
             pass
+        # Hard limit to 3 images for simple products at call site via limit param;
+        # fallback to provided limit for other usage.
         return urls[:limit] if urls else []
 
     def __str__(self):
@@ -314,6 +378,27 @@ class VariantImage(TimeStampedModel):
         return f"{self.variant} image"
 
 
+class ProductImage(TimeStampedModel):
+    """
+    Base images for simple products (products without variants).
+    When variants exist for a product, VariantImage becomes the source of truth
+    and ProductImage records, if any, are ignored on the storefront.
+    """
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="products/base_images/")
+    is_primary = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["display_order", "-is_primary", "id"]
+        indexes = [
+            models.Index(fields=["product", "display_order"]),
+        ]
+
+    def __str__(self):
+        return f"{self.product} base image"
+
+
 class Cart(TimeStampedModel):
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -374,7 +459,7 @@ class CartItem(TimeStampedModel):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="cart_items")
     selected_variant = models.ForeignKey(
-        Variant, on_delete=models.PROTECT, related_name="cart_items"
+        Variant, on_delete=models.PROTECT, related_name="cart_items", null=True, blank=True
     )
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -384,6 +469,7 @@ class CartItem(TimeStampedModel):
             models.UniqueConstraint(
                 fields=["cart", "selected_variant"],
                 name="unique_cart_selected_variant",
+                condition=models.Q(selected_variant__isnull=False),
             ),
             models.CheckConstraint(condition=models.Q(quantity__gte=1), name="cartitem_qty_positive"),
         ]
@@ -400,6 +486,26 @@ class CartItem(TimeStampedModel):
     @property
     def line_total(self):
         return self.unit_price * self.quantity
+
+    def get_display_image_url(self):
+        """
+        Return the first image URL for this cart item (variant image or product base image for simple products).
+        Returns None if no image is available.
+        """
+        if self.selected_variant_id:
+            for img in self.selected_variant.images.filter(
+                image__isnull=False
+            ).exclude(image="").order_by("-is_primary", "display_order", "id")[:1]:
+                try:
+                    if img.image:
+                        return img.image.url
+                except Exception:
+                    pass
+            return None
+        if self.product_id:
+            urls = self.product.get_card_image_urls(limit=1)
+            return urls[0] if urls else None
+        return None
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
@@ -457,7 +563,7 @@ class OrderItem(TimeStampedModel):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="order_items")
     selected_variant = models.ForeignKey(
-        Variant, on_delete=models.PROTECT, related_name="order_items"
+        Variant, on_delete=models.PROTECT, related_name="order_items", null=True, blank=True
     )
     product_name = models.CharField(max_length=200)
     variant_snapshot = models.CharField(max_length=255)

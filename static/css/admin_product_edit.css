@@ -145,6 +145,25 @@
     font-weight: 500;
 }
 
+/* Disabled/locked toggle (e.g. Deal of day when feature is off) */
+.toggle-wrap.toggle-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.toggle-wrap.toggle-disabled .toggle-track {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+.toggle-wrap.toggle-disabled .toggle-label,
+.toggle-wrap.toggle-disabled .toggle-status {
+    color: #9ca3af;
+}
+.toggle-lock {
+    margin-left: 0.35rem;
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
 /* Basic section: Save button block */
 #basic-edit-form .btn-primary {
     margin-top: 0.5rem;

@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q, F, Sum, Count, Min
+from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -33,7 +34,14 @@ from .models import (
     Wishlist,
     Shipment,
 )
-from .services import CartError, CartService, OrderService, StockError
+from .services import (
+    CartError,
+    CartService,
+    OrderService,
+    StockError,
+    send_order_confirmation_email_async,
+)
+from .wishlist_utils import wishlist_enabled
 
 # Guest wishlist: session key and max items (variant ids)
 GUEST_WISHLIST_SESSION_KEY = "wishlist"
@@ -98,11 +106,12 @@ def _collection_card_items(request, paginate_by=12):
             | Q(product__category__name__icontains=query)
         )
     if sort == "price_asc":
-        qs = qs.order_by("price", "product__created_at")
+        qs = qs.order_by("price", "-product__created_at")
     elif sort == "price_desc":
         qs = qs.order_by("-price", "-product__created_at")
     else:
-        qs = qs.order_by("-product__created_at", "display_order", "id")
+        # Newest products first on the shop page
+        qs = qs.order_by("-product__created_at", "-product__id")
 
     seen_products = set()
     cards = []
@@ -130,27 +139,61 @@ class ProductListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        request = self.request
         context["categories"] = Category.objects.filter(is_active=True)
         context["products"] = context.get("card_items", [])
         context["page_title"] = "Shop All Products"
         context["active_page"] = "collection"
-        category_slug = self.request.GET.get("category")
+        category_slug = request.GET.get("category")
         if category_slug and category_slug != "all":
             category = Category.objects.filter(slug=category_slug).first()
             if category:
                 context["page_title"] = category.name
+        min_price = request.GET.get("min_price", "")
+        max_price = request.GET.get("max_price", "")
+        query = request.GET.get("q", "")
+        sort = request.GET.get("sort", "newest")
         context["filters"] = {
-            "category": self.request.GET.get("category", "all"),
-            "min_price": self.request.GET.get("min_price", ""),
-            "max_price": self.request.GET.get("max_price", ""),
-            "q": self.request.GET.get("q", ""),
-            "sort": self.request.GET.get("sort", "newest"),
+            "category": category_slug or "all",
+            "min_price": min_price,
+            "max_price": max_price,
+            "q": query,
+            "sort": sort,
         }
         context["sort_options"] = [
             ("newest", "Newest"),
             ("price_asc", "Price: Low to High"),
             ("price_desc", "Price: High to Low"),
         ]
+
+        # Simple products (no variants) with sellable stock for the collection page.
+        # These are listed alongside variant-based products but use base_price/base_stock.
+        simple_qs = (
+            Product.objects.active()
+            .filter(variants__isnull=True, base_stock__gt=0)
+            .select_related("category")
+            .prefetch_related("images")
+        )
+        if category_slug and category_slug != "all":
+            simple_qs = simple_qs.filter(category__slug=category_slug)
+        if min_price:
+            simple_qs = simple_qs.filter(base_price__gte=min_price)
+        if max_price:
+            simple_qs = simple_qs.filter(base_price__lte=max_price)
+        if query:
+            simple_qs = simple_qs.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(category__name__icontains=query)
+            )
+        if sort == "price_asc":
+            simple_qs = simple_qs.order_by("base_price", "created_at")
+        elif sort == "price_desc":
+            simple_qs = simple_qs.order_by("-base_price", "-created_at")
+        else:
+            simple_qs = simple_qs.order_by("-created_at", "name", "id")
+
+        context["simple_products"] = list(simple_qs)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -170,12 +213,22 @@ class HomeView(TemplateView):
             today = timezone.now().date()
 
             # --- Shop by Category (only categories with at least one sellable product) ---
+            # A category is considered "shop-able" if it has:
+            # - at least one product with a sellable variant, OR
+            # - at least one simple product (no variants) with base_stock > 0
             shop_categories_qs = (
-                Category.objects.filter(
-                    is_active=True,
-                    products__is_active=True,
-                    products__variants__is_active=True,
-                    products__variants__stock_quantity__gt=0,
+                Category.objects.filter(is_active=True)
+                .filter(
+                    Q(
+                        products__is_active=True,
+                        products__variants__is_active=True,
+                        products__variants__stock_quantity__gt=0,
+                    )
+                    | Q(
+                        products__is_active=True,
+                        products__variants__isnull=True,
+                        products__base_stock__gt=0,
+                    )
                 )
                 .distinct()
                 .order_by("name")[:8]
@@ -212,16 +265,21 @@ class HomeView(TemplateView):
                 products = []
                 for product in qs[:limit]:
                     variants = list(getattr(product, "sellable_variants", []) or [])
-                    if not variants:
-                        continue
-                    # Choose primary variant by lowest price, then display_order, then id
-                    primary_variant = min(
-                        variants,
-                        key=lambda v: (v.price, v.display_order, v.id),
-                    )
-                    product.primary_variant = primary_variant
-                    product.lowest_price = primary_variant.price
-                    products.append(product)
+                    if variants:
+                        # Variant product: choose primary variant by lowest price, then display_order, then id
+                        primary_variant = min(
+                            variants,
+                            key=lambda v: (v.price, v.display_order, v.id),
+                        )
+                        product.primary_variant = primary_variant
+                        product.lowest_price = primary_variant.price
+                        products.append(product)
+                    else:
+                        # Simple product (no variants). Include only if it has sellable base stock.
+                        if getattr(product, "base_stock", 0) and product.base_stock > 0:
+                            product.primary_variant = None
+                            product.lowest_price = product.base_price
+                            products.append(product)
                 return products
 
             # --- Deal of the Day ---
@@ -255,11 +313,19 @@ class HomeView(TemplateView):
             ).order_by("-average_rating", "-total_reviews", "-created_at")
             context["top_rated_products"] = _build_product_cards(top_rated_qs, 8)
 
-            # --- Budget Picks (₹499 and under, ordered by lowest variant price) ---
+            # --- Budget Picks (₹499 and under, ordered by lowest price: variant or base_price) ---
             budget_qs = (
                 Product.objects.available()
-                .filter(variants__price__lte=499)
-                .annotate(min_price=Min("variants__price"))
+                .filter(
+                    Q(variants__price__lte=499)
+                    | Q(variants__isnull=True, base_price__lte=499)
+                )
+                .annotate(
+                    min_price=Coalesce(
+                        Min("variants__price"),
+                        "base_price",
+                    )
+                )
                 .select_related("category")
                 .prefetch_related(
                     Prefetch(
@@ -409,6 +475,7 @@ class ProductDetailView(DetailView):
             .select_related("category")
             .prefetch_related(
                 "attributes__values",
+                "images",
                 Prefetch(
                     "variants",
                     queryset=Variant.objects.filter(
@@ -483,6 +550,12 @@ class ProductDetailView(DetailView):
             context["selected_variant"] = selected_variant
             context["attributes_grouped"] = attributes_grouped
 
+            # Simple product: image URLs and display data (no variant selection)
+            if product.is_simple_product():
+                context["product_display_image_urls"] = product.get_card_image_urls(limit=3)
+            else:
+                context["product_display_image_urls"] = []
+
             # Ordered attribute names for strict top-down selection (Level 0..N)
             context["ordered_attributes"] = [a["name"] for a in attributes_grouped]
 
@@ -524,14 +597,18 @@ class ProductDetailView(DetailView):
                 )
             context["variant_json"] = variant_json
 
-            # GST display for product detail (initial selected variant)
-            if selected_variant and getattr(product, "is_gst_applicable", False) and getattr(product, "gst_percentage", None) is not None:
+            # GST display for product detail (selected variant or simple product base_price)
+            base_price_for_gst = None
+            if selected_variant:
+                base_price_for_gst = selected_variant.price
+            elif product.is_simple_product() and product.base_price is not None:
+                base_price_for_gst = product.base_price
+            if base_price_for_gst is not None and getattr(product, "is_gst_applicable", False) and getattr(product, "gst_percentage", None) is not None:
                 from decimal import Decimal
                 gst_pct = product.gst_percentage
-                base = selected_variant.price
-                gst_amount = base * (gst_pct / Decimal("100"))
+                gst_amount = base_price_for_gst * (gst_pct / Decimal("100"))
                 context["product_detail_gst_amount"] = gst_amount
-                context["product_detail_total_with_gst"] = base + gst_amount
+                context["product_detail_total_with_gst"] = base_price_for_gst + gst_amount
                 context["product_gst_percentage"] = gst_pct
             else:
                 context["product_detail_gst_amount"] = None
@@ -556,7 +633,7 @@ class ProductDetailView(DetailView):
                 .filter(category=product.category)
                 .exclude(pk=product.pk)
                 .select_related("category")
-                .prefetch_related("variants__images")[:4]
+                .prefetch_related("variants__images", "images")[:4]
             )
             context["similar_variants"] = [
                 v for v in variants if selected_variant and v.id != selected_variant.id
@@ -654,6 +731,8 @@ class ProductReviewCreateView(LoginRequiredForActionMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, product_id: int, *args, **kwargs):
+        if not getattr(settings, "REVIEW_ENABLED", True):
+            raise Http404("Reviews are not enabled.")
         is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         if not request.user.is_authenticated:
             login_url = f"{reverse('auth:login')}?next={request.build_absolute_uri()}"
@@ -1062,6 +1141,11 @@ class WishlistToggleView(View):
     """POST: toggle variant in wishlist. Body: selected_variant_id. Guest uses session."""
 
     def post(self, request):
+        if not wishlist_enabled():
+            return JsonResponse(
+                {"success": False, "error": "Wishlist is currently disabled."},
+                status=403,
+            )
         is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         variant_id = None
         if request.content_type and "application/json" in request.content_type:
@@ -1119,6 +1203,11 @@ class RemoveFromWishlistView(View):
     """POST: remove one item from wishlist by selected_variant_id."""
 
     def post(self, request):
+        if not wishlist_enabled():
+            return JsonResponse(
+                {"success": False, "error": "Wishlist is currently disabled."},
+                status=403,
+            )
         variant_id = request.POST.get("selected_variant_id") or request.POST.get("variant_id")
         if request.content_type and "application/json" in request.content_type and request.body:
             try:
@@ -1148,6 +1237,8 @@ class WishlistIdsView(View):
     """GET: return wishlist selected_variant IDs for marking hearts. Guest: session variant_ids."""
 
     def get(self, request):
+        if not wishlist_enabled():
+            return JsonResponse({"variant_ids": []})
         if not request.user.is_authenticated:
             variant_ids = _get_guest_wishlist_ids(request)
             return JsonResponse({"variant_ids": variant_ids})
@@ -1170,6 +1261,10 @@ class WishlistPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if not wishlist_enabled():
+            context["wishlist_items"] = []
+            context["active_page"] = "collection"
+            return context
         if not self.request.user.is_authenticated:
             ids = _get_guest_wishlist_ids(self.request)
             if not ids:
@@ -1193,6 +1288,13 @@ class WishlistPageView(TemplateView):
                     self.selected_variant = v
             context["wishlist_items"] = [GuestWishlistItem(v) for v in variants]
             context["active_page"] = "wishlist"
+            try:
+                cart = CartService.get_or_create_cart(self.request)
+                context["cart_variant_ids"] = set(
+                    cart.items.values_list("selected_variant_id", flat=True)
+                )
+            except Exception:
+                context["cart_variant_ids"] = set()
             return context
         wishlist_items = (
             Wishlist.objects.filter(
@@ -1207,6 +1309,14 @@ class WishlistPageView(TemplateView):
         )
         context["wishlist_items"] = list(wishlist_items)
         context["active_page"] = "wishlist"
+        # Variant IDs currently in the cart so the template can swap the CTA
+        try:
+            cart = CartService.get_or_create_cart(self.request)
+            context["cart_variant_ids"] = set(
+                cart.items.values_list("selected_variant_id", flat=True)
+            )
+        except Exception:
+            context["cart_variant_ids"] = set()
         return context
 
 
@@ -1221,6 +1331,7 @@ class CartView(TemplateView):
                 "product", "selected_variant",
             ).prefetch_related(
                 "selected_variant__images",
+                "product__images",
             ).all()
             totals = CartService.compute_totals(cart)
             context.update(
@@ -1263,22 +1374,43 @@ class AddToCartView(View):
             return redirect("store:cart")
         data = form.cleaned_data
         product = get_object_or_404(Product, pk=data["product_id"])
-        sellable = None
 
-        if data.get("variant_id"):
-            variant = Variant.objects.filter(
-                product=product,
-                pk=data["variant_id"],
-                is_active=True,
-                stock_quantity__gt=0,
-            ).select_related("product").first()
+        sellable = None
+        variant_id = data.get("variant_id")
+
+        # Variant product path (existing behaviour)
+        if variant_id:
+            variant = (
+                Variant.objects.filter(
+                    product=product,
+                    pk=variant_id,
+                    is_active=True,
+                    stock_quantity__gt=0,
+                )
+                .select_related("product")
+                .first()
+            )
             if variant:
                 sellable = variant
+
+        # Simple product path: no variant selected and product has no variants
         if not sellable:
-            messages.error(request, "Please select a variant (e.g. model/color) or selected variant is unavailable.")
-            if is_ajax:
-                return JsonResponse({"success": False, "error": "Please select a variant or selected variant is unavailable."}, status=400)
-            return redirect("store:product_detail", slug=product.slug)
+            if product.variants.exists():
+                messages.error(
+                    request,
+                    "Please select a variant (e.g. model/color) or selected variant is unavailable.",
+                )
+                if is_ajax:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "Please select a variant or selected variant is unavailable.",
+                        },
+                        status=400,
+                    )
+                return redirect("store:product_detail", slug=product.slug)
+            # Simple product: delegate stock/price checks to CartService
+            sellable = product
 
         cart = CartService.get_or_create_cart(request)
         try:
@@ -1318,23 +1450,36 @@ class BuyNowView(View):
 
         data = form.cleaned_data
         product = get_object_or_404(Product, pk=data["product_id"])
-        variant = None
-        if data.get("variant_id"):
-            variant = Variant.objects.filter(
-                product=product,
-                pk=data["variant_id"],
-                is_active=True,
-                stock_quantity__gt=0,
-            ).select_related("product").first()
 
-        if not variant:
-            messages.error(request, "Please select a variant or the selected variant is unavailable.")
-            return redirect("store:product_detail", slug=product.slug)
+        sellable = None
+        variant_id = data.get("variant_id")
+
+        if variant_id:
+            sellable = (
+                Variant.objects.filter(
+                    product=product,
+                    pk=variant_id,
+                    is_active=True,
+                    stock_quantity__gt=0,
+                )
+                .select_related("product")
+                .first()
+            )
+
+        if not sellable:
+            # Simple product path (no variants) vs invalid variant selection
+            if product.variants.exists():
+                messages.error(
+                    request,
+                    "Please select a variant or the selected variant is unavailable.",
+                )
+                return redirect("store:product_detail", slug=product.slug)
+            sellable = product
 
         cart = CartService.get_or_create_cart(request)
         try:
             cart.items.all().delete()
-            CartService.add_item(cart, variant, data["quantity"])
+            CartService.add_item(cart, sellable, data["quantity"])
         except StockError as exc:
             messages.error(request, str(exc))
             return redirect("store:product_detail", slug=product.slug)
@@ -1422,6 +1567,7 @@ class CheckoutView(TemplateView):
                         "product", "selected_variant",
                     ).prefetch_related(
                         "selected_variant__images",
+                        "product__images",
                     ),
                     "totals": totals,
                     "form": CheckoutForm(initial=initial, user=user),
@@ -1484,6 +1630,7 @@ class OrderCreateView(FormView):
                 "product", "selected_variant",
             ).prefetch_related(
                 "selected_variant__images",
+                "product__images",
             ),
             "totals": totals,
             "addresses": addresses,
@@ -1508,6 +1655,8 @@ class OrderCreateView(FormView):
         except (CartError, StockError) as exc:
             messages.error(self.request, str(exc))
             return redirect("store:checkout")
+        # Best-effort customer confirmation email (async so it doesn't block)
+        send_order_confirmation_email_async(order)
         self.request.session["last_order_number"] = order.order_number
         return redirect("store:order_success", order_number=order.order_number)
 
@@ -1551,13 +1700,19 @@ class CreateRazorpayOrderView(View):
                     return JsonResponse({"status": "error", "message": "Cart is empty."}, status=400)
                 for item in items:
                     v = item.selected_variant
-                    if not v:
-                        return JsonResponse({"status": "error", "message": "Invalid cart item."}, status=400)
-                    if (v.stock_quantity or 0) < item.quantity:
-                        return JsonResponse(
-                            {"status": "error", "message": f"{item.product.name} is out of stock."},
-                            status=400,
-                        )
+                    if v:
+                        if (v.stock_quantity or 0) < item.quantity:
+                            return JsonResponse(
+                                {"status": "error", "message": f"{item.product.name} is out of stock."},
+                                status=400,
+                            )
+                    else:
+                        # Simple product: validate base_stock
+                        if not item.product_id or (item.product.base_stock or 0) < item.quantity:
+                            return JsonResponse(
+                                {"status": "error", "message": f"{item.product.name if item.product_id else 'Product'} is out of stock."},
+                                status=400,
+                            )
 
                 order = OrderService.create_order(cart, cleaned, user=user, clear_cart=False)
                 order.status = Order.Status.PLACED
@@ -1794,6 +1949,7 @@ class RazorpayPaymentVerifyView(View):
                 payment.save(update_fields=['status', 'processed_at', 'razorpay_payment_id', 'razorpay_signature'])
 
                 order = payment.order
+                old_status = order.status
                 order.status = Order.Status.CONFIRMED
                 order.save(update_fields=["status"])
                 for item in order.items.select_related("product", "selected_variant").all():
@@ -1810,6 +1966,13 @@ class RazorpayPaymentVerifyView(View):
 
                 if "pending_checkout_data" in request.session:
                     del request.session["pending_checkout_data"]
+
+                # Async customer notification on status change
+                try:
+                    if order.status == Order.Status.CONFIRMED and order.status != old_status:
+                        send_order_confirmation_email_async(order)
+                except Exception:
+                    pass
 
                 return JsonResponse({
                     'status': 'success',
@@ -1944,6 +2107,15 @@ class CartDrawerView(View):
                                 break
                         except Exception:
                             pass
+                else:
+                    # Simple product: use ProductImage / get_card_image_urls
+                    try:
+                        card_images = item.product.get_card_image_urls(limit=1)
+                        if card_images:
+                            url = card_images[0]
+                            image_url = request.build_absolute_uri(url) if url.startswith("/") else url
+                    except Exception:
+                        pass
 
                 # Variant display string (e.g. "Gold / 1.6 cm")
                 variant_display = ""
@@ -1953,18 +2125,30 @@ class CartDrawerView(View):
                     except Exception:
                         pass
 
+                # Unit price: variant price or simple product base_price
+                if item.selected_variant:
+                    unit_price = item.selected_variant.price
+                else:
+                    unit_price = item.unit_price
+
+                # Product URL: variant-specific or simple product
+                if item.product and item.selected_variant_id:
+                    product_url = request.build_absolute_uri(
+                        f"/products/{item.product.slug}/?variant={item.selected_variant_id}"
+                    )
+                elif item.product:
+                    product_url = request.build_absolute_uri(f"/products/{item.product.slug}/")
+                else:
+                    product_url = request.build_absolute_uri("/products/")
+
                 items_data.append({
                     "id":              item.id,
                     "name":            item.product.name if item.product else "",
                     "variant_display": variant_display,
-                    "unit_price":      str(item.selected_variant.price if item.selected_variant else 0),
+                    "unit_price":      str(unit_price or 0),
                     "quantity":        item.quantity,
                     "image":           image_url or "",
-                    "product_url":     request.build_absolute_uri(
-                        f"/products/{item.product.slug}/?variant={item.selected_variant_id}"
-                        if item.product and item.selected_variant_id
-                        else "/shop/"
-                    ),
+                    "product_url":     product_url,
                 })
 
             totals = CartService.compute_totals(cart)

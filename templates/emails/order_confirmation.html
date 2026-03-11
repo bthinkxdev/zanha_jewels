@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Order {{ order.order_number }} – {{ site_name }}</title>
+</head>
+<body style="margin:0;padding:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f7;padding:24px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e5ea;">
+                    
+                    <tr>
+                        <td style="padding:20px 24px;background:#000000;color:#ffffff;font-size:18px;font-weight:600;">
+                            {% if status_key == "placed" %}
+                                {{ site_name }} – Order Successfully Received
+                            {% elif status_key == "confirmed" %}
+                                {{ site_name }} – Your Order is Confirmed
+                            {% elif status_key == "shipped" %}
+                                {{ site_name }} – Your Order is On the Way
+                            {% elif status_key == "delivered" %}
+                                {{ site_name }} – Order Delivered Successfully
+                            {% elif status_key == "cancelled" %}
+                                {{ site_name }} – Order Cancellation Update
+                            {% else %}
+                                {{ site_name }} – Order Status Update
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:20px 24px;font-size:14px;color:#1c1c1e;">
+                            
+                            <p style="margin:0 0 12px;">
+                                Hello {{ order.address.full_name|default:order.user.get_full_name|default:"there" }},
+                            </p>
+
+                            {% if status_key == "placed" %}
+                                <p style="margin:0 0 16px;">
+                                    Thank you for choosing <strong>{{ site_name }}</strong>.  
+                                    We have successfully received your order and our team has started processing it.
+                                </p>
+
+                                <p style="margin:0 0 16px;">
+                                    Our team will now review and confirm the order. Once confirmed, we will begin preparing your items for shipment.
+                                </p>
+
+                            {% elif status_key == "confirmed" %}
+                                <p style="margin:0 0 16px;">
+                                    Great news! Your order with <strong>{{ site_name }}</strong> has been successfully confirmed.
+                                </p>
+
+                                <p style="margin:0 0 16px;">
+                                    Our team is currently preparing your items for dispatch. You will receive another notification once your order has been shipped.
+                                </p>
+
+                            {% elif status_key == "shipped" %}
+                                <p style="margin:0 0 16px;">
+                                    Your order has been shipped and is currently on its way to your delivery address.
+                                </p>
+
+                                <p style="margin:0 0 16px;">
+                                    Our delivery partner will soon reach your location. Please ensure someone is available at the delivery address to receive the package.
+                                </p>
+
+                            {% elif status_key == "delivered" %}
+                                <p style="margin:0 0 16px;">
+                                    Your order has been successfully delivered. We hope you enjoy your purchase and have a wonderful experience with <strong>{{ site_name }}</strong>.
+                                </p>
+
+                                <p style="margin:0 0 16px;">
+                                    If you have any feedback or need assistance, our support team will be happy to help.
+                                </p>
+
+                            {% elif status_key == "cancelled" %}
+                                <p style="margin:0 0 16px;">
+                                    Your order has been cancelled successfully.
+                                </p>
+
+                                <p style="margin:0 0 16px;">
+                                    If this cancellation was not requested by you, please contact our support team immediately so we can investigate and assist you.
+                                </p>
+
+                            {% else %}
+                                <p style="margin:0 0 16px;">
+                                    There has been an update regarding your order placed with <strong>{{ site_name }}</strong>.
+                                </p>
+                            {% endif %}
+
+                            <h3 style="font-size:15px;margin:0 0 8px;">Order Details</h3>
+
+                            <p style="margin:0 0 4px;">
+                                <strong>Order Number:</strong> {{ order.order_number }}
+                            </p>
+
+                            <p style="margin:0 0 4px;">
+                                <strong>Total Amount:</strong> ₹{{ order.total }}
+                            </p>
+
+                            <p style="margin:0 0 16px;">
+                                <strong>Current Status:</strong> {{ order.get_status_display }}
+                            </p>
+
+                            <h3 style="font-size:15px;margin:0 0 8px;">Shipping Address</h3>
+
+                            <p style="margin:0 0 16px;white-space:pre-line;">
+                                {{ order.address.full_name }}
+                                {{ order.address.address_line }}
+                                {{ order.address.city }}, {{ order.address.state }} - {{ order.address.pincode }}
+                            </p>
+
+                            {% if status_key in "placed confirmed shipped" %}
+                                <p style="margin:0 0 8px;font-size:13px;color:#555;">
+                                    We will continue to update you as your order moves through the next stages including confirmation, shipment, and final delivery.
+                                </p>
+
+                                <p style="margin:0;font-size:13px;color:#555;">
+                                    You can also check the latest order status anytime from your account dashboard.
+                                </p>
+                            {% endif %}
+
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:14px 24px;font-size:11px;color:#8e8e93;background:#f9f9fb;">
+                            This is an automated order notification from {{ site_name }}.  
+                            If you did not place this order, please contact our support team immediately so we can assist you.
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>+

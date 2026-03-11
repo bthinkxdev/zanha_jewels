@@ -44,14 +44,18 @@
                     <i class="fas fa-box"></i>
                     <span>Products</span>
                 </a>
+                {% if REVIEW_ENABLED %}
                 <a href="{% url 'admin_panel:review_list' %}" class="nav-item {% if active_menu == 'reviews' %}active{% endif %}">
                     <i class="fas fa-star-half-alt"></i>
                     <span>Ratings &amp; Reviews</span>
                 </a>
+                {% endif %}
+                {% if HOME_DEAL_OF_DAY_ENABLED %}
                 <a href="{% url 'admin_panel:deal_list' %}" class="nav-item {% if active_menu == 'deals' %}active{% endif %}">
                     <i class="fas fa-bolt"></i>
                     <span>Deals Of The Day</span>
                 </a>
+                {% endif %}
                 <a href="{% url 'admin_panel:category_list' %}" class="nav-item {% if active_menu == 'categories' %}active{% endif %}">
                     <i class="fas fa-tags"></i>
                     <span>Categories</span>

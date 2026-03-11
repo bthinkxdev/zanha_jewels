@@ -26,10 +26,8 @@
                                 <td data-label="Product">
                                     <div class="d-flex align-items-center gap-3">
                                         <a href="{% url 'store:product_detail' item.product.slug %}">
-                                            {% if item.selected_variant and item.selected_variant.images.all %}
-                                            <img class="cart-product-img" src="{{ item.selected_variant.images.first.image.url }}" alt="{{ item.product.name }}">
-                                            {% elif item.size_variant and item.size_variant.color_variant.images.all %}
-                                            <img class="cart-product-img" src="{{ item.size_variant.color_variant.images.first.image.url }}" alt="{{ item.product.name }}">
+                                            {% if item.get_display_image_url %}
+                                            <img class="cart-product-img" src="{{ item.get_display_image_url }}" alt="{{ item.product.name }}">
                                             {% else %}
                                             <img class="cart-product-img" src="{% static 'img/product-1.png' %}" alt="{{ item.product.name }}">
                                             {% endif %}

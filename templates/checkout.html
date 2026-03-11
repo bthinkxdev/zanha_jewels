@@ -17,8 +17,66 @@
             {{ form.use_new_address }}
 
             <div class="row g-5">
+                <div class="col-lg-5">
+                    <div class="order-summary-card wow fadeInRight" data-wow-delay="0.1s">
+                        <h5>Your Order</h5>
+                        {% for item in items %}
+                        <div class="order-line">
+                            {% if item.get_display_image_url %}
+                            <img src="{{ item.get_display_image_url }}" alt="{{ item.product.name }}">
+                            {% else %}
+                            <img src="{% static 'img/product-1.png' %}" alt="{{ item.product.name }}">
+                            {% endif %}
+                            <div class="line-info">
+                                <h6>{{ item.product.name }}</h6>
+                                <small>{{ item.variant_display }} · Qty: {{ item.quantity }}</small>
+                            </div>
+                            <div class="line-price">₹{{ item.line_total }}</div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="order-total-row">
+                            <span>Subtotal</span>
+                            <span id="subtotal-value" data-value="{{ totals.subtotal }}">₹{{ totals.subtotal|floatformat:0 }}</span>
+                        </div>
+                        {% if totals.gst_total and totals.gst_total > 0 %}
+                        <div class="order-total-row">
+                            <span>GST Total</span>
+                            <span>₹{{ totals.gst_total|floatformat:0 }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="order-total-row">
+                            <span>Shipping</span>
+                            <span id="shipping-value" data-value="{{ totals.shipping }}" style="font-weight:700;color:var(--clr-black);">
+                                {% if totals.shipping == 0 %}Free{% else %}₹{{ totals.shipping }}{% endif %}
+                            </span>
+                        </div>
+
+                        {% if DELIVERY_INTEGRATED %}
+                        <div class="order-total-row" id="codChargeRow" style="display:none;">
+                            <span>COD Handling Fee</span>
+                            <span id="codChargeValue">₹{{ cod_charge }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="order-grand-total">
+                            <span class="label">Total</span>
+                            <span class="amount" id="total-value" data-value="{{ totals.total }}">₹{{ totals.total|floatformat:0 }}</span>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2 mt-4 pt-3" style="border-top:1px solid var(--clr-grey-2);">
+                            <div class="d-flex align-items-center gap-2" style="font-size:var(--text-sm);color:var(--clr-black-4);">
+                                <i class="fas fa-lock" style="color:var(--clr-black);"></i> Secure checkout
+                            </div>
+                            <div class="d-flex align-items-center gap-2" style="font-size:var(--text-sm);color:var(--clr-black-4);">
+                                <i class="fas fa-shield-alt" style="color:var(--clr-black);"></i> Buyer protection
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-lg-7">
-                    {% if DELIVERY_INTEGRATED and addresses %}
+                    {% if addresses %}
                     <div class="checkout-card mb-4" id="savedAddresses">
                         <h5><i class="fas fa-map-marker-alt me-2"></i> Delivery Address</h5>
                         <div class="saved-addresses">
@@ -40,8 +98,8 @@
                     </div>
                     {% endif %}
 
-                    <div class="checkout-card" id="newAddressSection" {% if DELIVERY_INTEGRATED and addresses and not form.is_bound %}style="display:none;"{% endif %}>
-                        <h5>{% if DELIVERY_INTEGRATED and addresses %}New Address{% elif DELIVERY_INTEGRATED %}Delivery Address{% else %}Customer Details{% endif %}</h5>
+                    <div class="checkout-card" id="newAddressSection" {% if addresses and not form.is_bound %}style="display:none;"{% endif %}>
+                        <h5>{% if addresses %}New Address{% else %}Customer Details{% endif %}</h5>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label-bw">Full Name *</label>
@@ -162,71 +220,13 @@
 
                     <div id="checkoutErrorMessage" class="alert alert-danger mt-3" style="display:none;" role="alert"></div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-4 gap-3 flex-wrap">
-                        <a href="{% url 'store:cart' %}" class="btn btn-outline-dark px-4" style="min-height:48px;">
+                    <div class="checkout-primary-actions mt-4">
+                        <a href="{% url 'store:cart' %}?full=1" class="btn btn-outline-dark">
                             <i class="fas fa-arrow-left me-2"></i> Return to Cart
                         </a>
-                        <button type="submit" id="placeOrderBtn" class="btn btn-secondary px-5" style="min-height:52px;font-size:1rem;font-weight:700;">
+                        <button type="submit" id="placeOrderBtn" class="btn btn-secondary">
                             <i class="fas fa-lock me-2"></i> <span id="placeOrderBtnText">Place Order</span> — ₹<span id="placeOrderTotal">{{ totals.total|floatformat:0 }}</span>
                         </button>
-                    </div>
-                </div>
-
-                <div class="col-lg-5">
-                    <div class="order-summary-card wow fadeInRight" data-wow-delay="0.1s">
-                        <h5>Your Order</h5>
-                        {% for item in items %}
-                        <div class="order-line">
-                            {% if item.selected_variant and item.selected_variant.images.all %}
-                            <img src="{{ item.selected_variant.images.first.image.url }}" alt="{{ item.product.name }}">
-                            {% else %}
-                            <img src="{% static 'img/product-1.png' %}" alt="{{ item.product.name }}">
-                            {% endif %}
-                            <div class="line-info">
-                                <h6>{{ item.product.name }}</h6>
-                                <small>{{ item.variant_display }} · Qty: {{ item.quantity }}</small>
-                            </div>
-                            <div class="line-price">₹{{ item.line_total }}</div>
-                        </div>
-                        {% endfor %}
-
-                        <div class="order-total-row">
-                            <span>Subtotal</span>
-                            <span id="subtotal-value" data-value="{{ totals.subtotal }}">₹{{ totals.subtotal|floatformat:0 }}</span>
-                        </div>
-                        {% if totals.gst_total and totals.gst_total > 0 %}
-                        <div class="order-total-row">
-                            <span>GST Total</span>
-                            <span>₹{{ totals.gst_total|floatformat:0 }}</span>
-                        </div>
-                        {% endif %}
-                        <div class="order-total-row">
-                            <span>Shipping</span>
-                            <span id="shipping-value" data-value="{{ totals.shipping }}" style="font-weight:700;color:var(--clr-black);">
-                                {% if totals.shipping == 0 %}Free{% else %}₹{{ totals.shipping }}{% endif %}
-                            </span>
-                        </div>
-
-                        {% if DELIVERY_INTEGRATED %}
-                        <div class="order-total-row" id="codChargeRow" style="display:none;">
-                            <span>COD Handling Fee</span>
-                            <span id="codChargeValue">₹{{ cod_charge }}</span>
-                        </div>
-                        {% endif %}
-
-                        <div class="order-grand-total">
-                            <span class="label">Total</span>
-                            <span class="amount" id="total-value" data-value="{{ totals.total }}">₹{{ totals.total|floatformat:0 }}</span>
-                        </div>
-
-                        <div class="d-flex flex-column gap-2 mt-4 pt-3" style="border-top:1px solid var(--clr-grey-2);">
-                            <div class="d-flex align-items-center gap-2" style="font-size:var(--text-sm);color:var(--clr-black-4);">
-                                <i class="fas fa-lock" style="color:var(--clr-black);"></i> Secure checkout
-                            </div>
-                            <div class="d-flex align-items-center gap-2" style="font-size:var(--text-sm);color:var(--clr-black-4);">
-                                <i class="fas fa-shield-alt" style="color:var(--clr-black);"></i> Buyer protection
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

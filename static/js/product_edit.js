@@ -119,6 +119,8 @@
         var isGst = document.getElementById("basic-is_gst_applicable") ? document.getElementById("basic-is_gst_applicable").checked : false;
         var gstPctEl = document.getElementById("basic-gst_percentage");
         var hsnEl = document.getElementById("basic-hsn_code");
+        var basePriceEl = document.getElementById("basic-base_price");
+        var baseStockEl = document.getElementById("basic-base_stock");
         var gstPct = (gstPctEl && gstPctEl.value.trim() !== "") ? gstPctEl.value : null;
         if (gstPct !== null) {
             var num = parseFloat(gstPct);
@@ -133,6 +135,8 @@
             slug: (document.getElementById("basic-slug") && document.getElementById("basic-slug").value) || "",
             description: (document.getElementById("basic-description") && document.getElementById("basic-description").value) || "",
             brand: (document.getElementById("basic-brand") && document.getElementById("basic-brand").value) || "",
+            base_price: basePriceEl && basePriceEl.value.trim() !== "" ? basePriceEl.value.trim() : null,
+            base_stock: baseStockEl && baseStockEl.value.trim() !== "" ? parseInt(baseStockEl.value.trim(), 10) || 0 : null,
             is_featured: document.getElementById("basic-is_featured") ? document.getElementById("basic-is_featured").checked : false,
             is_bestseller: document.getElementById("basic-is_bestseller") ? document.getElementById("basic-is_bestseller").checked : false,
             is_deal_of_day: document.getElementById("basic-is_deal_of_day") ? document.getElementById("basic-is_deal_of_day").checked : false,
@@ -154,6 +158,8 @@
             cur.slug !== basicInitial.slug ||
             cur.description !== basicInitial.description ||
             (cur.brand || "") !== (basicInitial.brand || "") ||
+            (cur.base_price || "") !== (basicInitial.base_price || "") ||
+            (cur.base_stock || 0) !== (basicInitial.base_stock || 0) ||
             cur.is_featured !== basicInitial.is_featured ||
             cur.is_bestseller !== basicInitial.is_bestseller ||
             cur.is_deal_of_day !== basicInitial.is_deal_of_day ||
@@ -710,6 +716,176 @@
                 variantsList.innerHTML = '<p class="save-feedback err">Failed to load variants.</p>';
             });
     }
+
+    // --- Simple product base images (ProductImage) ---
+    (function setupSimpleProductImages() {
+        var section = document.getElementById("simple-product-settings");
+        if (!section) return;
+        var hasVariants = section.getAttribute("data-has-variants") === "true";
+        var maxImages = parseInt(section.querySelector("#simple-product-images").getAttribute("data-max-images") || "3", 10) || 3;
+        var productId = section.getAttribute("data-product-id");
+        var urlUpload = section.getAttribute("data-url-upload-base-image");
+        var urlDeleteTpl = section.getAttribute("data-url-delete-base-image");
+        var urlSetPrimaryTpl = section.getAttribute("data-url-set-primary-base-image");
+        var urlReorder = section.getAttribute("data-url-reorder-base-image");
+        var listEl = document.getElementById("simple-product-images-list");
+        var addBtn = document.getElementById("base-image-add-btn");
+
+        if (!productId || !urlUpload || !listEl || !addBtn) return;
+
+        function syncVisibility() {
+            if (hasVariants) {
+                section.classList.add("simple-product-disabled");
+                addBtn.disabled = true;
+            } else {
+                section.classList.remove("simple-product-disabled");
+                addBtn.disabled = listEl.querySelectorAll(".image-item").length >= maxImages;
+            }
+        }
+
+        syncVisibility();
+
+        // Upload handler
+        addBtn.addEventListener("click", function () {
+            if (addBtn.disabled) return;
+            var input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+            input.onchange = function () {
+                if (!input.files || !input.files[0]) return;
+                var fd = new FormData();
+                fd.append("image", input.files[0]);
+                fd.append("csrfmiddlewaretoken", csrf);
+                showLoader();
+                fetch(urlUpload, {
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                })
+                    .then(function (r) {
+                        return r.json();
+                    })
+                    .then(function (res) {
+                        if (res.success && res.image) {
+                            var img = res.image;
+                            var div = document.createElement("div");
+                            div.className = "image-item";
+                            div.setAttribute("data-image-id", img.id);
+                            div.innerHTML =
+                                (img.url
+                                    ? '<img class="image-thumb" src="' + escapeHtml(img.url) + '" alt="">'
+                                    : '<span class="image-thumb" style="width:72px;height:72px;background:#eee;border-radius:6px;display:block;"></span>') +
+                                (img.is_primary ? '<span class="image-primary-badge">Primary</span>' : "") +
+                                '<div class="image-actions">' +
+                                (img.is_primary
+                                    ? ""
+                                    : '<button type="button" class="btn btn-sm btn-outline base-image-set-primary" data-image-id="' +
+                                      img.id +
+                                      '">Primary</button>') +
+                                '<button type="button" class="btn btn-sm btn-danger base-image-delete" data-image-id="' +
+                                img.id +
+                                '"><i class="fas fa-times"></i></button>' +
+                                "</div>";
+                            listEl.appendChild(div);
+                            syncVisibility();
+                        } else {
+                            toast(
+                                (res.errors &&
+                                    ((res.errors.image && res.errors.image[0]) ||
+                                        (res.errors.__all__ && res.errors.__all__[0]))) ||
+                                    "Error uploading image.",
+                                "error"
+                            );
+                        }
+                    })
+                    .catch(function () {
+                        toast("Network error.", "error");
+                    })
+                    .finally(hideLoader);
+            };
+            input.click();
+        });
+
+        // Delete / set-primary handlers
+        app.addEventListener("click", function (e) {
+            var btn = e.target.closest("button");
+            if (!btn) return;
+
+            if (btn.classList.contains("base-image-delete")) {
+                var imageId = btn.getAttribute("data-image-id");
+                if (!imageId || !confirm("Remove this image?")) return;
+                var url = (urlDeleteTpl || "").replace("/0/", "/" + imageId + "/");
+                showLoader();
+                fetch(url, {
+                    method: "POST",
+                    headers: headers(false),
+                    credentials: "same-origin",
+                })
+                    .then(function (r) {
+                        return r.json();
+                    })
+                    .then(function (res) {
+                        if (res.success) {
+                            var item = listEl.querySelector('.image-item[data-image-id="' + imageId + '"]');
+                            if (item && item.parentNode) item.parentNode.removeChild(item);
+                            syncVisibility();
+                        } else {
+                            toast("Could not remove image.", "error");
+                        }
+                    })
+                    .catch(function () {
+                        toast("Network error.", "error");
+                    })
+                    .finally(hideLoader);
+                return;
+            }
+
+            if (btn.classList.contains("base-image-set-primary")) {
+                var imageId2 = btn.getAttribute("data-image-id");
+                if (!imageId2) return;
+                var url2 = (urlSetPrimaryTpl || "").replace("/0/", "/" + imageId2 + "/");
+                showLoader();
+                fetch(url2, {
+                    method: "POST",
+                    headers: headers(false),
+                    credentials: "same-origin",
+                })
+                    .then(function (r) {
+                        return r.json();
+                    })
+                    .then(function (res) {
+                        if (res.success) {
+                            listEl.querySelectorAll(".image-item").forEach(function (el) {
+                                el.querySelectorAll(".image-primary-badge").forEach(function (b) {
+                                    b.parentNode.removeChild(b);
+                                });
+                                el.querySelectorAll(".base-image-set-primary").forEach(function (b) {
+                                    b.style.display = "";
+                                });
+                            });
+                            var item2 = listEl.querySelector('.image-item[data-image-id="' + imageId2 + '"]');
+                            if (item2) {
+                                var badge = document.createElement("span");
+                                badge.className = "image-primary-badge";
+                                badge.textContent = "Primary";
+                                item2.insertBefore(badge, item2.firstChild.nextSibling);
+                                var btnPrimary = item2.querySelector(".base-image-set-primary");
+                                if (btnPrimary) btnPrimary.style.display = "none";
+                            }
+                        } else {
+                            toast("Could not set primary image.", "error");
+                        }
+                    })
+                    .catch(function () {
+                        toast("Network error.", "error");
+                    })
+                    .finally(hideLoader);
+                return;
+            }
+        });
+
+        // Optional: simple drag-based reorder can be added later; for now we expose API but not UI.
+    })();
 
     app.addEventListener("click", function (e) {
         var target = e.target.closest ? e.target.closest("button") : null;

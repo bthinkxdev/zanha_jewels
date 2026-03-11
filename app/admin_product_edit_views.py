@@ -12,6 +12,7 @@ from .models import (
     Product,
     ProductAttribute,
     ProductAttributeValue,
+    ProductImage,
     Variant,
     VariantAttributeValue,
     VariantImage,
@@ -76,6 +77,10 @@ class ProductEditView(DetailView):
         context["active_menu"] = "products"
         context["form_title"] = "Edit Product"
         context["basic_form"] = ProductBasicEditForm(instance=self.object)
+        # Prefetch simple product images (for products without variants)
+        context["base_images"] = list(
+            ProductImage.objects.filter(product=self.object).order_by("display_order", "-is_primary", "id")[:3]
+        )
         return context
 
 
@@ -538,6 +543,110 @@ class VariantImageReorderView(View):
         variant = get_object_or_404(Variant, pk=variant_id)
         for display_order, image_id in enumerate(order):
             VariantImage.objects.filter(variant=variant, pk=image_id).update(display_order=display_order)
+        return JsonResponse({"success": True})
+
+
+# --- Simple product images (ProductImage) ---
+
+
+class ProductImageUploadView(View):
+    """POST /admin/products/<int:product_id>/base-images/upload/ — multipart. Max 3 images. Only when product has no variants."""
+
+    def post(self, request, product_id):
+        product = get_object_or_404(Product, pk=product_id)
+        if product.variants.exists():
+            return JsonResponse(
+                {"success": False, "errors": {"__all__": ["Base images are ignored when variants exist."]}},
+                status=400,
+            )
+        if product.images.count() >= 3:
+            return JsonResponse(
+                {"success": False, "errors": {"image": ["You can upload a maximum of 3 images for a simple product."]}},
+                status=400,
+            )
+        image_file = request.FILES.get("image")
+        if not image_file:
+            return JsonResponse({"success": False, "errors": {"image": ["No file provided."]}}, status=400)
+        try:
+            _validate_image_file(image_file, required=True)
+        except forms.ValidationError as e:
+            return JsonResponse({"success": False, "errors": {"image": [str(m) for m in e.messages]}}, status=400)
+        is_primary = product.images.count() == 0
+        display_order = product.images.count()
+        img = ProductImage.objects.create(
+            product=product,
+            image=image_file,
+            is_primary=is_primary,
+            display_order=display_order,
+        )
+        return JsonResponse(
+            {
+                "success": True,
+                "image": {
+                    "id": img.id,
+                    "url": img.image.url if img.image else None,
+                    "is_primary": img.is_primary,
+                    "display_order": img.display_order,
+                },
+            }
+        )
+
+
+class ProductImageDeleteView(View):
+    """POST /admin/products/base-images/<int:image_id>/delete/."""
+
+    def post(self, request, image_id):
+        img = get_object_or_404(ProductImage, pk=image_id)
+        image_name = img.image.name if img.image else None
+        storage = img.image.storage if img.image else None
+        product = img.product
+        img.delete()
+        if image_name and storage:
+            try:
+                storage.delete(image_name)
+            except Exception:
+                pass
+        # Ensure remaining images have contiguous display_order and one primary
+        remaining = list(ProductImage.objects.filter(product=product).order_by("display_order", "-is_primary", "id"))
+        for idx, im in enumerate(remaining):
+            im.display_order = idx
+            im.save(update_fields=["display_order"])
+        if remaining and not any(im.is_primary for im in remaining):
+            first = remaining[0]
+            first.is_primary = True
+            first.save(update_fields=["is_primary"])
+        return JsonResponse({"success": True})
+
+
+class ProductImageSetPrimaryView(View):
+    """POST /admin/products/base-images/<int:image_id>/set-primary/."""
+
+    def post(self, request, image_id):
+        img = get_object_or_404(ProductImage, pk=image_id)
+        ProductImage.objects.filter(product=img.product).update(is_primary=False)
+        img.is_primary = True
+        img.save(update_fields=["is_primary"])
+        return JsonResponse({"success": True})
+
+
+class ProductImageReorderView(View):
+    """POST /admin/products/base-images/reorder/ — body: { product_id: int, order: [image_id, ...] }."""
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "errors": {"__all__": ["Invalid JSON"]}}, status=400)
+        product_id = data.get("product_id")
+        order = data.get("order")
+        if not product_id or not isinstance(order, list):
+            return JsonResponse(
+                {"success": False, "errors": {"__all__": ["product_id and order (list) required."]}},
+                status=400,
+            )
+        product = get_object_or_404(Product, pk=product_id)
+        for display_order, image_id in enumerate(order):
+            ProductImage.objects.filter(product=product, pk=image_id).update(display_order=display_order)
         return JsonResponse({"success": True})
 
 

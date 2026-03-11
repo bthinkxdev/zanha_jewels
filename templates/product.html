@@ -34,17 +34,34 @@
         <div class="row g-5">
             <!-- Gallery -->
             <div class="col-lg-6 gallery-section">
-                <div class="gallery-main wow fadeInLeft" data-wow-delay="0.1s">
-                    {% if selected_variant %}
-                        {% with imgs=selected_variant.images.all %}
-                        {% if imgs %}
-                        <img id="mainProductImg" src="{{ imgs.0.image.url }}" alt="{{ product.name }}">
+                <div class="gallery-main-wrap">
+                    <div class="gallery-main wow fadeInLeft" data-wow-delay="0.1s">
+                        {% if selected_variant %}
+                            {% with imgs=selected_variant.images.all %}
+                            {% if imgs %}
+                            <img id="mainProductImg" src="{{ imgs.0.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                            <img id="mainProductImg" src="{% static 'img/product-1.png' %}" alt="{{ product.name }}">
+                            {% endif %}
+                            {% endwith %}
+                        {% elif product.is_simple_product and product_display_image_urls %}
+                            <img id="mainProductImg" src="{{ product_display_image_urls.0 }}" alt="{{ product.name }}">
                         {% else %}
                         <img id="mainProductImg" src="{% static 'img/product-1.png' %}" alt="{{ product.name }}">
                         {% endif %}
-                        {% endwith %}
-                    {% else %}
-                    <img id="mainProductImg" src="{% static 'img/product-1.png' %}" alt="{{ product.name }}">
+                    </div>
+                    {% if WISHLIST_ENABLED and not product.is_simple_product %}
+                    <!-- Wishlist heart overlay (variant products only) -->
+                    <button type="button"
+                            id="productWishlistBtn"
+                            class="pdp-wishlist-btn {% if selected_variant and selected_variant.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+                            data-variant-id="{{ selected_variant.id|default:'' }}"
+                            aria-label="Add to wishlist"
+                            title="Add to wishlist">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </button>
                     {% endif %}
                 </div>
                 <div class="gallery-thumbs mt-3">
@@ -52,6 +69,12 @@
                         {% for img in selected_variant.images.all %}
                         <div class="gallery-thumb {% if forloop.first %}active{% endif %}">
                             <img src="{{ img.image.url }}" alt="{{ product.name }}" loading="lazy" data-full="{{ img.image.url }}">
+                        </div>
+                        {% endfor %}
+                    {% elif product.is_simple_product and product_display_image_urls %}
+                        {% for url in product_display_image_urls %}
+                        <div class="gallery-thumb {% if forloop.first %}active{% endif %}">
+                            <img src="{{ url }}" alt="{{ product.name }}" loading="lazy" data-full="{{ url }}">
                         </div>
                         {% endfor %}
                     {% endif %}
@@ -62,7 +85,7 @@
             <div class="col-lg-6 product-detail-info wow fadeInRight" data-wow-delay="0.1s">
                 <h1 class="product-detail-title">{{ product.name }}</h1>
 
-                {% if average_rating is not None %}
+                {% if REVIEW_ENABLED and average_rating is not None %}
                 <div class="product-detail-rating">
                     <span class="stars">{% for i in "12345" %}{% if forloop.counter <= average_rating %}★{% else %}<span class="star-empty">★</span>{% endif %}{% endfor %}</span>
                     <span class="rating-count">{{ average_rating|floatformat:1 }} / 5 &nbsp;&bull;&nbsp; {{ reviews|length }} reviews</span>
@@ -80,6 +103,16 @@
                         </div>
                         {% else %}
                         <span class="price-main">₹{{ selected_variant.price|floatformat:0 }}</span>
+                        {% endif %}
+                    {% elif product.is_simple_product and product.base_price is not None %}
+                        {% if product.is_gst_applicable and product_gst_percentage is not None %}
+                        <div class="price-breakdown">
+                            <div>Base Price: <span class="price-main">₹{{ product.base_price|floatformat:2 }}</span></div>
+                            <div>GST ({{ product_gst_percentage }}%): <span class="price-gst">₹{{ product_detail_gst_amount|floatformat:2 }}</span></div>
+                            <div class="price-total-line">Total: <span class="price-main">₹{{ product_detail_total_with_gst|floatformat:2 }}</span></div>
+                        </div>
+                        {% else %}
+                        <span class="price-main">₹{{ product.base_price|floatformat:0 }}</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -115,8 +148,8 @@
                 </div>
                 {% endif %}
 
-                <!-- Add to cart form -->
-                <form method="post" action="{% url 'store:cart_add' %}" id="addToCartForm" class="mb-3">
+                <!-- Add to cart form (AJAX via add-to-cart.js; no redirect) -->
+                <form method="post" action="{% url 'store:cart_add' %}" id="addToCartForm" class="product-add-form mb-3" data-simple-product="{{ product.is_simple_product|yesno:'true,false' }}" data-cart-url="{% url 'store:cart' %}">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="formVariantId" value="{{ selected_variant.id|default:'' }}">
@@ -128,14 +161,34 @@
                             <input type="number" id="qtyInput" value="1" min="1" max="99" readonly style="width:50px;text-align:center;">
                             <button class="btn-plus" type="button"><i class="fas fa-plus"></i></button>
                         </div>
-                        <button type="submit" class="btn-add-cart btn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>
-                            <i class="fas fa-shopping-bag me-2"></i> Add to Cart
+                        {% if product.is_simple_product and product.id in cart_simple_product_ids %}
+                        <a href="{% url 'store:cart' %}" class="btn btn-add-cart btn-view-cart">
+                            <i class="fas fa-shopping-cart me-2"></i> View Cart
+                        </a>
+                        {% elif not product.is_simple_product and selected_variant and selected_variant.id in cart_variant_ids %}
+                        <a href="{% url 'store:cart' %}" class="btn btn-add-cart btn-view-cart">
+                            <i class="fas fa-shopping-cart me-2"></i> View Cart
+                        </a>
+                        {% elif product.is_simple_product %}
+                        <button type="submit" class="btn-add-cart btn js-pdp-add-cart" {% if not product.base_stock or product.base_stock <= 0 %}disabled{% endif %}>
+                            <span class="btn-add-cart-text"><i class="fas fa-shopping-bag me-2"></i> Add to Cart</span>
                         </button>
+                        {% else %}
+                        <button type="submit" class="btn-add-cart btn js-pdp-add-cart" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>
+                            <span class="btn-add-cart-text"><i class="fas fa-shopping-bag me-2"></i> Add to Cart</span>
+                        </button>
+                        {% endif %}
                     </div>
 
+                    {% if product.is_simple_product %}
+                    <button type="button" class="btn-buy-now btn" id="buyNowBtn" {% if not product.base_stock or product.base_stock <= 0 %}disabled{% endif %}>
+                        Buy Now
+                    </button>
+                    {% else %}
                     <button type="button" class="btn-buy-now btn" id="buyNowBtn" {% if not selected_variant or selected_variant.stock_quantity <= 0 %}disabled{% endif %}>
                         Buy Now
                     </button>
+                    {% endif %}
                 </form>
 
                 {% comment %} <div class="d-flex flex-wrap gap-3 my-3">
@@ -175,7 +228,8 @@
         </div>
         {% endif %}-->
 
-        <!-- Reviews -->
+        <!-- Reviews (only when REVIEW_ENABLED) -->
+        {% if REVIEW_ENABLED %}
         {% if reviews %}
         <div class="row mt-4" id="reviews">
             <div class="col-12">
@@ -229,6 +283,7 @@
             </div>
         </div>
         {% endif %}
+        {% endif %}
 
         <!-- Related -->
         {% if related_products %}
@@ -237,6 +292,19 @@
                 <h3 class="mb-4">You May Also Like</h3>
                 <div class="products-grid">
                     {% for rel in related_products %}
+                    {% if rel.is_simple_product %}
+                    <div class="product-card">
+                        <div class="product-img-wrap">
+                            <a href="{% url 'store:product_detail' rel.slug %}">
+                                {% with imgs=rel.images.all %}{% if imgs %}<img src="{{ imgs.0.image.url }}" alt="{{ rel.name }}" loading="lazy">{% else %}<img src="{% static 'img/product-1.png' %}" alt="{{ rel.name }}" loading="lazy">{% endif %}{% endwith %}
+                            </a>
+                        </div>
+                        <div class="product-body">
+                            <a href="{% url 'store:product_detail' rel.slug %}" class="text-decoration-none"><h3 class="product-name">{{ rel.name }}</h3></a>
+                            <div class="product-price"><span class="price-current">₹{{ rel.base_price|floatformat:0 }}</span></div>
+                        </div>
+                    </div>
+                    {% else %}
                     {% with fv=rel.variants.all|first %}
                     {% if fv %}
                     <div class="product-card">
@@ -246,14 +314,13 @@
                             </a>
                         </div>
                         <div class="product-body">
-                            {% comment %} <div class="product-category">{{ rel.category.name|default:"" }}</div> {% endcomment %}
                             <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="text-decoration-none"><h3 class="product-name">{{ rel.name }}</h3></a>
                             <div class="product-price"><span class="price-current">₹{{ fv.price|floatformat:0 }}</span></div>
-                            {% comment %} <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="product-cta">View</a> {% endcomment %}
                         </div>
                     </div>
                     {% endif %}
                     {% endwith %}
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -479,41 +546,8 @@
             addToCartForm.submit();
         });
     }
-    //Wishlist
-    document.getElementById('productWishlistBtn').addEventListener('click', function() {
-        const btn = this;
-        const variantId = btn.getAttribute('data-variant-id');
-        const icon = btn.querySelector('i');
-        const textSpan = btn.querySelector('.wishlist-text');
-
-        if (!variantId) {
-            alert("Please select a product variant first.");
-            return;
-        }
-
-        fetch("/api/wishlist/toggle/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}", 
-                "X-Requested-With": "XMLHttpRequest"
-            },
-            body: JSON.stringify({ "variant_id": variantId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Toggle visual state
-                btn.classList.toggle('in-wishlist', data.added);
-                icon.classList.toggle('fas', data.added);
-                icon.classList.toggle('far', !data.added);
-                textSpan.innerText = data.added ? "In Wishlist" : "Add to Wishlist";
-            } else {
-                alert(data.error || "Something went wrong");
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
+    // (Wishlist handled in the active script block below)
+    {% if REVIEW_ENABLED %}
     // Review Form
     var reviewForm = document.getElementById('reviewForm');
     if (reviewForm) {
@@ -580,6 +614,7 @@
             });
         });
     }
+    {% endif %}
 })();
 </script>
 
@@ -613,6 +648,9 @@
     var addBtn = document.querySelector('.btn-add-cart');
     var buyNowBtn = document.getElementById('buyNowBtn');
     var wishlistBtn = document.getElementById('productWishlistBtn');
+    var addToCartForm = document.getElementById('addToCartForm');
+    var isSimpleProduct = addToCartForm && addToCartForm.getAttribute('data-simple-product') === 'true';
+    var buyNowUrl = '{% url "store:buy_now" %}';
 
     var qtyInput = document.getElementById('qtyInput');
     var formQuantity = document.getElementById('formQuantity');
@@ -1184,6 +1222,8 @@
         cascadeFrom(firstMissing);
     }
 
+    // Variant products only: attribute selection and initial variant state (simple products skip this)
+    if (!isSimpleProduct) {
     // Attach click handlers for attribute buttons (respecting level order, premium cascading)
     if (attributeGroups.length) {
         attributeGroups.forEach(function(group, levelIndex){
@@ -1218,14 +1258,16 @@
         });
     }
 
-    // Buy Now: submit same form to buy-now endpoint
-    var addToCartForm = document.getElementById('addToCartForm');
-    var buyNowUrl = '{% url "store:buy_now" %}';
+    // Initial state for variant products
+    initialiseSelectedFromDOM();
+    }
+
+    // Buy Now: submit same form to buy-now endpoint (variant or simple product)
     if (buyNowBtn && addToCartForm) {
         buyNowBtn.addEventListener('click', function(){
             if (buyNowBtn.disabled) return;
             var vid = formVariantId ? formVariantId.value : '';
-            if (!vid) {
+            if (!isSimpleProduct && !vid) {
                 alert('Please select a variant.');
                 return;
             }
@@ -1234,49 +1276,61 @@
         });
     }
 
-    // Wishlist toggle
+    // Wishlist toggle — SVG heart overlay button
     if (wishlistBtn) {
         wishlistBtn.addEventListener('click', function() {
             var btn = wishlistBtn;
             var variantId = btn.getAttribute('data-variant-id');
-            var icon = btn.querySelector('i');
-            var textSpan = btn.querySelector('.wishlist-text');
 
             if (!variantId) {
-                alert("Please select a product variant first.");
+                return; // Variant not yet resolved; button is visible but inactive
+            }
+
+            // Redirect guests to login
+            var isAuth = document.body.getAttribute('data-user-authenticated') === 'true';
+            if (!isAuth) {
+                var loginUrl = document.body.getAttribute('data-login-url') || '/auth/login/';
+                window.location.href = loginUrl + '?next=' + encodeURIComponent(window.location.href);
                 return;
             }
 
-            fetch("/api/wishlist/toggle/", {
+            var toggleUrl = document.body.getAttribute('data-wishlist-toggle-url') || '/api/wishlist/toggle/';
+            var csrf = (function() {
+                var m = document.cookie.match(/\bcsrftoken=([^;]+)/);
+                return m ? decodeURIComponent(m[1]) : '';
+            })();
+
+            fetch(toggleUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}",
+                    "X-CSRFToken": csrf,
                     "X-Requested-With": "XMLHttpRequest"
                 },
-                body: JSON.stringify({ "variant_id": variantId })
+                body: JSON.stringify({ "variant_id": parseInt(variantId, 10) })
             })
             .then(function(response){ return response.json(); })
             .then(function(data){
                 if (data.success) {
                     btn.classList.toggle('in-wishlist', data.added);
-                    if (icon) {
-                        icon.classList.toggle('fas', data.added);
-                        icon.classList.toggle('far', !data.added);
+                    // Keep global badge in sync
+                    if (typeof data.count === 'number') {
+                        document.querySelectorAll('.js-wishlist-count').forEach(function(el) {
+                            if (data.count > 0) { el.textContent = data.count; el.style.display = ''; }
+                            else { el.textContent = ''; el.style.display = 'none'; }
+                        });
                     }
-                    if (textSpan) {
-                        textSpan.innerText = data.added ? "In Wishlist" : "Add to Wishlist";
-                    }
-                } else {
-                    alert(data.error || "Something went wrong");
+                } else if (data.login_required && data.login_url) {
+                    window.location.href = data.login_url;
                 }
             })
             .catch(function(error){
-                console.error('Error:', error);
+                console.error('Wishlist error:', error);
             });
         });
     }
 
+    {% if REVIEW_ENABLED %}
     // Review Form (unchanged behaviour)
     var reviewForm = document.getElementById('reviewForm');
     if (reviewForm) {
@@ -1351,9 +1405,7 @@
             });
         });
     }
-
-    // Initial state
-    initialiseSelectedFromDOM();
+    {% endif %}
 })();
 </script>
 {% endblock %}

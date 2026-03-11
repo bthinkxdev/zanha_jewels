@@ -25,11 +25,13 @@
             <span class="tpc-badge">Featured</span>
         {% endif %} {% endcomment %}
 
-        {% comment %} <button type="button"
+        {% if WISHLIST_ENABLED %}
+        <button type="button"
                 class="tpc-wishlist js-wishlist-toggle {% if v.id in wishlist_variant_ids %}in-wishlist{% endif %}"
-                data-variant-id="{{ v.id }}" title="Wishlist">
+                data-variant-id="{{ v.id }}" title="Wishlist" aria-label="Wishlist">
             <i class="far fa-heart"></i>
-        </button> {% endcomment %}
+        </button>
+        {% endif %}
 
     </div>
     {% endwith %}
@@ -48,7 +50,12 @@
         </div>
         {% endif %} {% endcomment %}
 
-        <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form">
+        {% if v.id in cart_variant_ids %}
+        <a href="{% url 'store:cart' %}" class="tpc-add-btn tpc-view-cart">
+            <i class="fas fa-shopping-cart me-1"></i> View Cart
+        </a>
+        {% else %}
+        <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form product-add-form">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <input type="hidden" name="variant_id" value="{{ v.id }}">
@@ -57,6 +64,52 @@
                 <i class="fas fa-shopping-bag me-1"></i> Add to cart
             </button>
         </form>
+        {% endif %}
+    </div>
+
+</div>
+{% elif product.is_simple_product and product.base_price %}
+<div class="thauya-product-card">
+
+    {% with card_images=product.get_card_image_urls|slice:":3" %}
+    <div class="tpc-gallery js-product-card-slider"
+         {% if card_images %}data-card-images='[{% for url in card_images %}"{{ url }}"{% if not forloop.last %},{% endif %}{% endfor %}]'{% endif %}>
+
+        <a href="{% url 'store:product_detail' product.slug %}" class="tpc-img-link">
+            {% if card_images %}
+                <img src="{{ card_images.0 }}" alt="{{ product.name }}"
+                     class="tpc-img card-slider-img" loading="eager">
+            {% else %}
+                <img src="{% static 'img/product-1.png' %}" alt="{{ product.name }}"
+                     class="tpc-img card-slider-img" loading="lazy">
+            {% endif %}
+        </a>
+
+        {# Wishlist for simple products is not yet variant-backed; hide until backend supports it. #}
+
+    </div>
+    {% endwith %}
+
+    <div class="tpc-body">
+        <a href="{% url 'store:product_detail' product.slug %}" class="tpc-name-link">
+            <p class="tpc-name">{{ product.name }}</p>
+        </a>
+        <p class="tpc-price">₹{{ product.base_price|floatformat:0 }}</p>
+
+        {% if product.id in cart_simple_product_ids %}
+        <a href="{% url 'store:cart' %}" class="tpc-add-btn tpc-view-cart">
+            <i class="fas fa-shopping-cart me-1"></i> View Cart
+        </a>
+        {% else %}
+        <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form product-add-form">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="tpc-add-btn">
+                <i class="fas fa-shopping-bag me-1"></i> Add to cart
+            </button>
+        </form>
+        {% endif %}
     </div>
 
 </div>

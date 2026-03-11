@@ -155,11 +155,26 @@ class BannerForm(forms.ModelForm):
 
 
 # --- Product EDIT: basic fields only (no variant fields on Product) ---
+# Includes simple-product base fields; variants remain the source of truth
+# whenever they exist for a given product.
 BASIC_EDIT_FIELDS = [
-    "category", "name", "slug", "description", "brand",
-    "is_featured", "is_bestseller", "is_deal_of_day",
-    "deal_of_day_start", "deal_of_day_end", "is_active",
-    "is_gst_applicable", "gst_percentage", "hsn_code",
+    "category",
+    "name",
+    "slug",
+    "description",
+    "brand",
+    # Simple product base fields (used only when product has no variants)
+    "base_price",
+    "base_stock",
+    "is_featured",
+    "is_bestseller",
+    "is_deal_of_day",
+    "deal_of_day_start",
+    "deal_of_day_end",
+    "is_active",
+    "is_gst_applicable",
+    "gst_percentage",
+    "hsn_code",
 ]
 
 
@@ -174,6 +189,23 @@ class ProductBasicEditForm(forms.ModelForm):
             "slug": forms.TextInput(attrs={"class": "form-control", "placeholder": "product-slug"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
             "brand": forms.TextInput(attrs={"class": "form-control", "placeholder": "Brand"}),
+            "base_price": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "step": "0.01",
+                    "min": "0",
+                    "placeholder": "0.00",
+                    "id": "basic-base_price",
+                }
+            ),
+            "base_stock": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": "0",
+                    "placeholder": "0",
+                    "id": "basic-base_stock",
+                }
+            ),
             "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "is_bestseller": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "is_deal_of_day": forms.CheckboxInput(attrs={"class": "form-check-input"}),

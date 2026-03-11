@@ -8,14 +8,9 @@ from .delivery_utils import delivery_enabled
 
 class CartAddForm(forms.Form):
     product_id = forms.IntegerField(min_value=1)
-    variant_id = forms.IntegerField(min_value=1, help_text="Variant ID (required)")
+    # For variant products this must be provided; for simple products it can be omitted.
+    variant_id = forms.IntegerField(min_value=1, required=False, help_text="Variant ID (optional for simple products)")
     quantity = forms.IntegerField(min_value=1)
-
-    def clean(self):
-        cleaned = super().clean()
-        if cleaned.get("variant_id"):
-            return cleaned
-        raise forms.ValidationError("Please select a variant.")
 
 
 class CartUpdateForm(forms.Form):

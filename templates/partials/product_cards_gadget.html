@@ -23,6 +23,9 @@
             <span class="price-old">₹{{ variant.original_price|floatformat:0 }}</span>
             {% endif %}
         </div>
+        {% if variant.id in cart_variant_ids %}
+        <a href="{% url 'store:cart' %}" class="product-cta w-100 border-0 d-inline-block text-center text-decoration-none">View Cart</a>
+        {% else %}
         <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form d-inline-block w-100">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ variant.product_id }}">
@@ -30,6 +33,7 @@
             <input type="hidden" name="quantity" value="1">
             <button type="submit" class="product-cta w-100 border-0">Add to Cart</button>
         </form>
+        {% endif %}
     </div>
 </div>
 {% endif %}

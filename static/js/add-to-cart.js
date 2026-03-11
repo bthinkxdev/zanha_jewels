@@ -61,10 +61,11 @@
             if (!url) return;
             var body = new FormData(form);
             var btn = form.querySelector('button[type="submit"]');
+            var origHtml = btn ? btn.innerHTML : "";
             if (btn) {
                 btn.disabled = true;
-                var origText = btn.textContent;
-                btn.textContent = "Adding…";
+                btn.classList.add("btn-adding");
+                btn.innerHTML = '<span class="btn-adding-text"><i class="fas fa-spinner fa-spin me-2"></i> Adding...</span>';
             }
 
             var headers = { "X-Requested-With": "XMLHttpRequest" };
@@ -79,25 +80,47 @@
             })
                 .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
                 .then(function(result) {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.textContent = origText || "Add to Cart";
-                    }
                     if (result.ok && result.data.success) {
                         if (typeof result.data.cart_count === "number") {
                             updateCartCount(result.data.cart_count);
                             triggerCartGleam();
                         }
                         document.dispatchEvent(new CustomEvent('cart:updated', { detail: result.data }));
-                        showToast("Added to cart");
+                        if (btn) {
+                            btn.classList.remove("btn-adding");
+                            btn.classList.add("btn-added");
+                            btn.innerHTML = '<span class="btn-added-icon"><i class="fas fa-check"></i></span>';
+                            var cartUrl = form.getAttribute("data-cart-url") || (document.body && document.body.getAttribute("data-cart-url")) || "/cart/";
+                            setTimeout(function() {
+                                btn.classList.remove("btn-added");
+                                var viewCart = document.createElement("a");
+                                viewCart.href = cartUrl;
+                                viewCart.className = (btn.className || "").replace(/\s*js-pdp-add-cart\s*/, " ").trim() + " btn-view-cart";
+                                viewCart.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> View Cart';
+                                viewCart.setAttribute("aria-label", "View cart");
+                                viewCart.addEventListener("click", function(e) {
+                                    if (window.cartDrawer && typeof window.cartDrawer.open === "function") {
+                                        e.preventDefault();
+                                        window.cartDrawer.open();
+                                    }
+                                });
+                                if (btn.parentNode) btn.parentNode.replaceChild(viewCart, btn);
+                            }, 800);
+                        }
                     } else {
+                        if (btn) {
+                            btn.classList.remove("btn-adding");
+                            btn.disabled = false;
+                            btn.innerHTML = origHtml;
+                        }
                         showToast(result.data.error || "Could not add to cart", true);
                     }
                 })
                 .catch(function() {
                     if (btn) {
+                        btn.classList.remove("btn-adding");
                         btn.disabled = false;
-                        btn.textContent = origText || "Add to Cart";
+                        btn.innerHTML = origHtml;
                     }
                     showToast("Network error. Try again.", true);
                 });

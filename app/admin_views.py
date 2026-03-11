@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.db import connection, transaction
 from django.db.models import Count, Max, Sum, Q, F, ProtectedError
 from django.db.models.functions import TruncDate
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -72,6 +72,10 @@ from .admin_product_edit_views import (
     VariantImageDeleteView as BaseVariantImageDeleteView,
     VariantImageSetPrimaryView as BaseVariantImageSetPrimaryView,
     VariantImageReorderView as BaseVariantImageReorderView,
+    ProductImageUploadView as BaseProductImageUploadView,
+    ProductImageDeleteView as BaseProductImageDeleteView,
+    ProductImageSetPrimaryView as BaseProductImageSetPrimaryView,
+    ProductImageReorderView as BaseProductImageReorderView,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,6 +84,7 @@ from .services.shiprocket_service import (
     ShiprocketAPIError,
     create_shipment_for_order,
 )
+from .services import send_order_confirmation_email_async
 from .delivery_utils import delivery_enabled
 
 class StaffRequiredMixin(UserPassesTestMixin):
@@ -177,6 +182,22 @@ class VariantImageSetPrimaryView(StaffRequiredMixin, BaseVariantImageSetPrimaryV
 
 
 class VariantImageReorderView(StaffRequiredMixin, BaseVariantImageReorderView):
+    pass
+
+
+class ProductImageUploadView(StaffRequiredMixin, BaseProductImageUploadView):
+    pass
+
+
+class ProductImageDeleteView(StaffRequiredMixin, BaseProductImageDeleteView):
+    pass
+
+
+class ProductImageSetPrimaryView(StaffRequiredMixin, BaseProductImageSetPrimaryView):
+    pass
+
+
+class ProductImageReorderView(StaffRequiredMixin, BaseProductImageReorderView):
     pass
 
 
@@ -556,9 +577,9 @@ class ProductListView(StaffRequiredMixin, ListView):
         context["filter_category"] = self.request.GET.get("category", "")
         context["filter_status"] = self.request.GET.get("status", "")
         for product in context["products"]:
-            variants = list(product.variants.all())
-            product.inventory_count = sum(v.stock_quantity for v in variants)
-            product.display_price = min((v.price for v in variants), default=None)
+            # Use helpers so both simple products and variant products are handled.
+            product.inventory_count = product.get_stock()
+            product.display_price = product.get_price()
         return context
 
 
@@ -739,6 +760,7 @@ class OrderUpdateStatusView(StaffRequiredMixin, View):
     def post(self, request, order_number):
         order = get_object_or_404(Order, order_number=order_number)
         new_status = request.POST.get("status")
+        old_status = order.status
         
         if new_status not in dict(Order.Status.choices):
             messages.error(request, "Invalid status.")
@@ -775,6 +797,18 @@ class OrderUpdateStatusView(StaffRequiredMixin, View):
         order.status = new_status
         order.save(update_fields=["status"])
         messages.success(request, f"Order status updated to {order.get_status_display()}.")
+
+        # Customer notification on key status changes (best-effort, async)
+        try:
+            if new_status in (
+                Order.Status.CONFIRMED,
+                Order.Status.SHIPPED,
+                Order.Status.DELIVERED,
+                Order.Status.CANCELLED,
+            ) and new_status != old_status:
+                send_order_confirmation_email_async(order)
+        except Exception:
+            pass
         
         return redirect("admin_panel:order_detail", order_number=order_number)
 
@@ -1027,6 +1061,17 @@ class DealOfDayListView(StaffRequiredMixin, TemplateView):
     """Admin view to manage Deal Of The Day products separately from the product form."""
     template_name = "admin/deals_list.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Optionally lock this screen based on the HOME_DEAL_OF_DAY_ENABLED flag
+        so that when the feature is disabled in settings, the menu item is
+        hidden and direct URL access is redirected.
+        """
+        if not getattr(settings, "HOME_DEAL_OF_DAY_ENABLED", True):
+            messages.error(request, "Deal Of The Day management is disabled in settings.")
+            return redirect("admin_panel:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         qs = Product.objects.select_related("category").order_by(
             "category__name", "name"
@@ -1147,6 +1192,11 @@ class ReviewListView(StaffRequiredMixin, TemplateView):
 
     template_name = "admin/review_list.html"
     paginate_by = 25
+
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, "REVIEW_ENABLED", True):
+            raise Http404("Reviews are not enabled.")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = Review.objects.select_related("product", "user", "order").filter(

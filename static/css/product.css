@@ -31,6 +31,10 @@
     justify-content: center;
     position: relative;
 }
+/* Make sure the wishlist overlay button is NOT clipped by the image */
+.gallery-main-wrap .pdp-wishlist-btn {
+    /* Positioned relative to gallery-main-wrap, sits above the gallery-main */
+}
 
 .gallery-section .gallery-main img {
     width: 100%;
@@ -492,7 +496,7 @@
     font-size: 0.85rem;
 }
 
-/* Wishlist button */
+/* Wishlist button (legacy, used on card overlays) */
 .product-wishlist {
     background: none;
     border: none;
@@ -513,6 +517,74 @@
 }
 .product-wishlist i {
     font-size: 1rem;
+}
+
+/* ============================================================
+   PRODUCT DETAIL — Gallery wishlist heart overlay
+   ============================================================ */
+
+/* Wrapper to hold gallery-main + the absolute wishlist button */
+.gallery-main-wrap {
+    position: relative;
+}
+
+/* The floating heart button — top-right corner of main image */
+.pdp-wishlist-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+    transition: background 0.2s ease, transform 0.18s ease, box-shadow 0.2s ease;
+}
+.pdp-wishlist-btn:hover {
+    background: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+.pdp-wishlist-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: #0d1a3c;
+    fill: none;
+    transition: stroke 0.2s ease, fill 0.2s ease;
+    pointer-events: none;
+    display: block;
+}
+.pdp-wishlist-btn:hover svg {
+    stroke: #e03030;
+}
+.pdp-wishlist-btn.in-wishlist svg {
+    fill: #e03030;
+    stroke: #e03030;
+}
+.pdp-wishlist-btn:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 575px) {
+    .pdp-wishlist-btn {
+        top: 10px;
+        right: 10px;
+        width: 38px;
+        height: 38px;
+    }
+    .pdp-wishlist-btn svg {
+        width: 17px;
+        height: 17px;
+    }
 }
 
 /* ============================================================
@@ -729,4 +801,25 @@
         width: 52px;
         height: 52px;
     }
+}
+
+/* ── Add to cart button animation (product detail + any .product-add-form) ── */
+.btn-add-cart.btn-adding,
+.product-add-form .btn-adding {
+    pointer-events: none;
+    opacity: 0.9;
+}
+.btn-add-cart.btn-added,
+.product-add-form .btn-added {
+    pointer-events: none;
+    background: #198754 !important;
+    border-color: #198754 !important;
+    color: #fff !important;
+}
+.product-detail-main .btn-view-cart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    white-space: nowrap;
 }

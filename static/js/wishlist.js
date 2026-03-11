@@ -86,11 +86,44 @@
                     if (data.success) {
                         btn.classList.toggle("in-wishlist", data.added);
                         if (typeof data.count === "number") updateHeaderCount(data.count);
-                        // If on wishlist page and we removed, remove the row
-                        var row = variantId
-                            ? document.querySelector(".wishlist-item[data-variant-id=\"" + variantId + "\"]")
-                            : document.querySelector(".wishlist-item[data-product-id=\"" + productId + "\"]");
-                        if (row && !data.added) row.remove();
+
+                        if (!data.added) {
+                            // Try new wl-card pattern first, fall back to legacy wishlist-item
+                            var card = null;
+                            if (variantId) {
+                                card = document.getElementById("wl-card-" + variantId)
+                                    || document.querySelector(".wishlist-item[data-variant-id=\"" + variantId + "\"]");
+                            } else if (productId) {
+                                card = document.querySelector(".wishlist-item[data-product-id=\"" + productId + "\"]");
+                            }
+
+                            if (card) {
+                                // Animate out
+                                card.style.transition = "opacity 0.28s ease, transform 0.28s ease";
+                                card.style.opacity = "0";
+                                card.style.transform = "scale(0.88)";
+                                setTimeout(function() {
+                                    card.remove();
+                                    // Update summary count label
+                                    var remaining = document.querySelectorAll("#wishlistGrid .wl-card").length;
+                                    var countEl = document.querySelector(".wl-count-label strong");
+                                    if (countEl) {
+                                        countEl.textContent = remaining;
+                                        var parent = countEl.parentNode;
+                                        if (parent) {
+                                            parent.innerHTML = parent.innerHTML.replace(
+                                                /saved item[s]?/,
+                                                "saved item" + (remaining !== 1 ? "s" : "")
+                                            );
+                                        }
+                                    }
+                                    if (remaining === 0) {
+                                        // Reload to show the styled empty state
+                                        window.location.reload();
+                                    }
+                                }, 300);
+                            }
+                        }
                     }
                 })
                 .catch(function() {

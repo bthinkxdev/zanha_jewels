@@ -48,7 +48,7 @@
                     <div class="icon-wrap"><i class="fas fa-phone-alt"></i></div>
                     <div class="info">
                         <h6>Phone</h6>
-                        <p><a href="tel:{{ site_phone|default:'' }}" style="color:#555;">{{ site_phone|default:"+91 88919 23189" }}</a></p>
+                        <p><a href="tel:{{ site_phone }}" style="color:#555;">{{ site_phone }}</a></p>
                     </div>
                 </div>
                 <div class="contact-info-item">
@@ -63,8 +63,8 @@
                     <div class="info">
                         <h6>Email</h6>
                         <p>
-                            <a href="mailto:{{ site_email|default:'support@zanhajewels.com' }}" style="color:#555;">
-                                {{ site_email|default:"support@zanhajewels.com" }}
+                            <a href="mailto:{{ site_email }}" style="color:#555;">
+                                {{ site_email }}
                             </a>
                         </p>
                     </div>

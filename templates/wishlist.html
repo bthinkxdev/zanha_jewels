@@ -1,34 +1,359 @@
 {% extends "base_gadget.html" %}
 {% load static %}
 {% block title %}My Wishlist — Zanha Jewels{% endblock %}
-{% block meta_description %}Your saved items.{% endblock %}
+{% block meta_description %}Your saved favourites at Zanha Jewels. Add them to cart before they're gone.{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Wishlist page ─────────────────────────────────────── */
+
+/* Summary bar */
+.wl-summary {
+    background: var(--clr-cream);
+    border-bottom: 1px solid var(--clr-cream-2);
+    padding: 12px 0;
+}
+.wl-summary-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.wl-count-label {
+    font-size: var(--text-sm);
+    color: var(--clr-grey-5);
+    letter-spacing: 0.04em;
+}
+.wl-count-label strong {
+    color: var(--clr-navy);
+    font-weight: 600;
+}
+.wl-clear-btn {
+    background: none;
+    border: none;
+    font-size: var(--text-xs);
+    color: var(--clr-grey-4);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    padding: 4px 0;
+    text-transform: uppercase;
+    transition: color var(--transition);
+}
+.wl-clear-btn:hover { color: #c00; }
+
+/* Section */
+.wl-section {
+    background: var(--clr-off-white);
+    padding: 48px 0 72px;
+}
+
+/* Card grid – reuses the site tpc-grid */
+.wl-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px 20px;
+}
+@media (max-width: 1199px) { .wl-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 767px)  { .wl-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; } }
+@media (max-width: 359px)  { .wl-grid { grid-template-columns: 1fr; } }
+
+/* Card – same pattern as thauya-product-card */
+.wl-card {
+    background: var(--clr-white);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--transition-slow), transform var(--transition-slow);
+}
+.wl-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+/* Gallery */
+.wl-gallery {
+    position: relative;
+    width: 100%;
+    padding-top: 110%; /* square-ish portrait */
+    overflow: hidden;
+    background: var(--clr-grey-1);
+}
+.wl-gallery a.wl-img-link {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
+.wl-gallery img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    transition: transform 0.55s ease;
+}
+.wl-card:hover .wl-gallery img { transform: scale(1.04); }
+
+/* Discount badge */
+.wl-badge-sale {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: var(--clr-navy-deep);
+    color: var(--clr-cream);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+    z-index: 2;
+}
+
+/* Remove (heart) button */
+.wl-remove-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.9);
+    color: #e00550;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: var(--transition);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+}
+.wl-remove-btn:hover {
+    background: #fff;
+    color: #c0003a;
+    transform: scale(1.12);
+}
+.wl-remove-btn .fas { line-height: 1; }
+
+/* Quick-view overlay */
+.wl-quick {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--clr-navy);
+    color: var(--clr-cream);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 9px 8px;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 2;
+    text-decoration: none;
+}
+.wl-card:hover .wl-quick,
+.wl-card:focus-within .wl-quick {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Body */
+.wl-body {
+    padding: 12px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+.wl-category {
+    font-size: var(--text-xs);
+    color: var(--clr-beige-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.wl-name-link { text-decoration: none; }
+.wl-name {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--clr-navy);
+    margin: 0;
+    line-height: 1.4;
+}
+.wl-name:hover { color: var(--clr-beige-dark); }
+.wl-variant {
+    font-size: var(--text-xs);
+    color: var(--clr-grey-4);
+    margin: 0;
+}
+.wl-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    margin-top: 2px;
+}
+.wl-price-current {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--clr-navy);
+}
+.wl-price-old {
+    font-size: var(--text-xs);
+    color: var(--clr-grey-4);
+    text-decoration: line-through;
+}
+/* CTA row — reuses global tpc-form / tpc-add-btn tokens, with slightly brighter, softer pill buttons */
+.wl-body .tpc-form { margin-top: auto; padding-top: 10px; }
+
+.wl-body .tpc-add-btn {
+    background: linear-gradient(135deg, var(--clr-navy-light), var(--clr-navy)); /* a bit brighter */
+    border-radius: 16px;
+}
+.wl-body .tpc-add-btn:hover {
+    background: linear-gradient(135deg, var(--clr-navy), var(--clr-navy-deep));
+}
+
+/* "View Cart" — outlined variant of tpc-add-btn */
+.wl-body .tpc-add-btn.wl-in-cart {
+    background: transparent;
+    color: var(--clr-navy);
+    border: 1.5px solid var(--clr-navy);
+    border-radius: 16px;
+    text-decoration: none;
+}
+.wl-body .tpc-add-btn.wl-in-cart:hover {
+    background: var(--clr-navy);
+    color: var(--clr-cream);
+}
+
+/* ── Empty state ───────────────────────────────────────── */
+.wl-empty {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 56px 16px 72px;
+    text-align: center;
+}
+.wl-empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--clr-cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+.wl-empty-icon svg {
+    width: 34px;
+    height: 34px;
+    stroke: var(--clr-beige-dark);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.wl-empty-title {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--clr-navy);
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
+}
+.wl-empty-text {
+    font-size: var(--text-sm);
+    color: var(--clr-grey-5);
+    line-height: 1.7;
+    margin-bottom: 28px;
+}
+.wl-empty-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--clr-navy);
+    color: var(--clr-cream);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 13px 32px;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background var(--transition), transform var(--transition);
+}
+.wl-empty-cta:hover {
+    background: var(--clr-navy-light);
+    color: var(--clr-cream);
+    transform: translateY(-2px);
+}
+
+
+/* Mobile: smaller padding body */
+@media (max-width: 575px) {
+    .wl-body { padding: 10px 8px 12px; gap: 3px; }
+    .wl-body .tpc-add-btn { min-height: 38px; font-size: 0.75rem; padding: 9px 10px; }
+    .wl-section { padding: 28px 0 56px; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
+
+<!-- Page Header -->
 <div class="page-header">
     <div class="container text-center">
-        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.1s">My Wishlist</h1>
+        <h1 class="page-header-title wow fadeInUp" data-wow-delay="0.05s">My Wishlist</h1>
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+            <ol class="breadcrumb justify-content-center wow fadeInUp" data-wow-delay="0.15s">
                 <li class="breadcrumb-item"><a href="{% url 'store:home' %}">Home</a></li>
-                <li class="breadcrumb-item active">Wishlist</li>
+                <li class="breadcrumb-item active" aria-current="page">Wishlist</li>
             </ol>
         </nav>
     </div>
 </div>
 
-<section class="section-pad">
+{% if wishlist_items %}
+<!-- Summary bar -->
+<div class="wl-summary">
     <div class="container">
+        <div class="wl-summary-inner">
+            <span class="wl-count-label">
+                <strong>{{ wishlist_items|length }}</strong>
+                saved item{{ wishlist_items|length|pluralize }}
+            </span>
+            <a href="{% url 'store:product_list' %}" class="wl-count-label" style="color:var(--clr-beige-dark);text-decoration:none;font-size:var(--text-xs);letter-spacing:.06em;text-transform:uppercase;">
+                Continue Shopping <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Wishlist Section -->
+<section class="wl-section">
+    <div class="container">
+
         {% if wishlist_items %}
-        <div class="products-grid wow fadeInUp" data-wow-delay="0.1s">
+        <div class="wl-grid wow fadeInUp" data-wow-delay="0.1s" id="wishlistGrid">
             {% for item in wishlist_items %}
             {% with v=item.selected_variant p=v.product %}
-            <div class="product-card wishlist-item" data-variant-id="{{ v.id }}">
-                <div class="product-img-wrap">
-                    {% if p.discount_percent %}<span class="product-badge badge-sale">−{{ p.discount_percent }}%</span>{% endif %}
-                    {% if p.slug %}
-                    <a href="{% url 'store:product_detail' p.slug %}?variant={{ v.id }}">
-                    {% else %}
-                    <a href="{% url 'store:product_list' %}">
+            <div class="wl-card" id="wl-card-{{ v.id }}" data-variant-id="{{ v.id }}">
+
+                <!-- Gallery -->
+                <div class="wl-gallery">
+                    {% if p.discount_percent %}
+                    <span class="wl-badge-sale">−{{ p.discount_percent }}%</span>
                     {% endif %}
+
+                    <a class="wl-img-link"
+                       href="{% if p.slug %}{% url 'store:product_detail' p.slug %}?variant={{ v.id }}{% else %}{% url 'store:product_list' %}{% endif %}"
+                       aria-label="{{ p.name }}">
                         {% with imgs=v.images.all %}
                         {% if imgs %}
                         <img src="{{ imgs.0.image.url }}" alt="{{ p.name }}" loading="lazy">
@@ -37,51 +362,93 @@
                         {% endif %}
                         {% endwith %}
                     </a>
-                    <button type="button" class="product-wishlist js-wishlist-toggle in-wishlist" data-variant-id="{{ v.id }}" title="Remove from wishlist" aria-label="Remove from wishlist">
+
+                    {% if WISHLIST_ENABLED %}
+                    <button type="button"
+                            class="wl-remove-btn js-wishlist-toggle in-wishlist js-wl-remove"
+                            data-variant-id="{{ v.id }}"
+                            title="Remove from wishlist"
+                            aria-label="Remove {{ p.name }} from wishlist">
                         <i class="fas fa-heart"></i>
                     </button>
-                    {% if p.slug %}
-                    <a href="{% url 'store:product_detail' p.slug %}?variant={{ v.id }}" class="product-quick-add">View Detail <i class="fas fa-arrow-right ms-1"></i></a>
-                    {% else %}
-                    <a href="{% url 'store:product_list' %}" class="product-quick-add">View Detail <i class="fas fa-arrow-right ms-1"></i></a>
                     {% endif %}
+
+                    <a class="wl-quick"
+                       href="{% if p.slug %}{% url 'store:product_detail' p.slug %}?variant={{ v.id }}{% else %}{% url 'store:product_list' %}{% endif %}">
+                        View Detail <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
                 </div>
-                <div class="product-body">
-                    <div class="product-category">{{ p.category.name|default:"" }}</div>
-                    {% if p.slug %}
-                    <a href="{% url 'store:product_detail' p.slug %}?variant={{ v.id }}" class="text-decoration-none"><h3 class="product-name">{{ p.name }}</h3></a>
-                    {% else %}
-                    <a href="{% url 'store:product_list' %}" class="text-decoration-none"><h3 class="product-name">{{ p.name }}</h3></a>
+
+                <!-- Body -->
+                <div class="wl-body">
+                    {% if p.category %}
+                    <span class="wl-category">{{ p.category.name }}</span>
                     {% endif %}
-                    <p class="mb-1" style="font-size:var(--text-xs);color:var(--clr-grey-5);">{{ v.get_attribute_values_display|default:"" }}</p>
-                    <div class="product-price">
-                        <span class="price-current">₹{{ v.price|floatformat:0 }}</span>
+
+                    <a class="wl-name-link"
+                       href="{% if p.slug %}{% url 'store:product_detail' p.slug %}?variant={{ v.id }}{% else %}{% url 'store:product_list' %}{% endif %}">
+                        <h3 class="wl-name">{{ p.name }}</h3>
+                    </a>
+
+                    {% with disp=v.get_attribute_values_display %}
+                    {% if disp %}
+                    <p class="wl-variant">{{ disp }}</p>
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="wl-price-row">
+                        <span class="wl-price-current">₹{{ v.price|floatformat:0 }}</span>
                         {% if v.original_price and v.original_price > v.price %}
-                        <span class="price-old">₹{{ v.original_price|floatformat:0 }}</span>
+                        <span class="wl-price-old">₹{{ v.original_price|floatformat:0 }}</span>
                         {% endif %}
                     </div>
-                    <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form d-inline-block w-100">
+
+                    {% if v.id in cart_variant_ids %}
+                    <div class="tpc-form">
+                        <a href="{% url 'store:cart' %}" class="tpc-add-btn wl-in-cart">
+                            <i class="fas fa-check me-1"></i> View Cart
+                        </a>
+                    </div>
+                    {% else %}
+                    <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form product-add-form">
                         {% csrf_token %}
                         <input type="hidden" name="product_id" value="{{ p.id }}">
                         <input type="hidden" name="variant_id" value="{{ v.id }}">
                         <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="product-cta w-100 border-0">Add to Cart</button>
+                        <button type="submit" class="tpc-add-btn">
+                            <i class="fas fa-shopping-bag me-1"></i> Add to cart
+                        </button>
                     </form>
+                    {% endif %}
                 </div>
+
             </div>
             {% endwith %}
             {% endfor %}
         </div>
+
         {% else %}
-        <div class="text-center py-5">
-            <div class="mb-4" style="font-size:4rem;opacity:0.5;">❤️</div>
-            <h2 class="mb-3" style="font-family:var(--font-heading);font-weight:700;">Your Wishlist is Empty</h2>
-            <p class="mb-4" style="color:var(--clr-grey-5);">Save items you love by clicking the heart on product cards or product pages.</p>
-            <a href="{% url 'store:product_list' %}" class="btn btn-secondary px-4 py-3">
-                Browse Collection <i class="fas fa-arrow-right ms-2"></i>
+
+        <!-- Empty state -->
+        <div class="wl-empty wow fadeInUp" data-wow-delay="0.1s">
+            <div class="wl-empty-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+            </div>
+            <h2 class="wl-empty-title">Your Wishlist is Empty</h2>
+            <p class="wl-empty-text">
+                Tap the heart icon on any product to save it here.<br>
+                Your favourites are one tap away.
+            </p>
+            <a href="{% url 'store:product_list' %}" class="wl-empty-cta">
+                Browse Collection <i class="fas fa-arrow-right"></i>
             </a>
         </div>
+
         {% endif %}
+
     </div>
 </section>
+
 {% endblock %}

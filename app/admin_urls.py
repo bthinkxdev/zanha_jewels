@@ -69,6 +69,12 @@ urlpatterns = [
     path("variant-images/<int:image_id>/set-primary/", admin_views.VariantImageSetPrimaryView.as_view(), name="variant_image_set_primary"),
     path("variant-images/reorder/", admin_views.VariantImageReorderView.as_view(), name="variant_image_reorder"),
 
+    # Simple product base images
+    path("products/<int:product_id>/base-images/upload/", admin_views.ProductImageUploadView.as_view(), name="product_image_upload"),
+    path("products/base-images/<int:image_id>/delete/", admin_views.ProductImageDeleteView.as_view(), name="product_image_delete"),
+    path("products/base-images/<int:image_id>/set-primary/", admin_views.ProductImageSetPrimaryView.as_view(), name="product_image_set_primary"),
+    path("products/base-images/reorder/", admin_views.ProductImageReorderView.as_view(), name="product_image_reorder"),
+
     # Orders
     path("orders/", admin_views.OrderListView.as_view(), name="order_list"),
     path("orders/<slug:order_number>/", admin_views.OrderDetailView.as_view(), name="order_detail"),

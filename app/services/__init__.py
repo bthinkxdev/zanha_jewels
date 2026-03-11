@@ -7,6 +7,8 @@ from .cart_order import (
     StockError,
     send_order_notification_email,
     send_order_notification_email_async,
+    send_order_confirmation_email,
+    send_order_confirmation_email_async,
 )
 
 __all__ = [
@@ -17,4 +19,6 @@ __all__ = [
     "StockError",
     "send_order_notification_email",
     "send_order_notification_email_async",
+    "send_order_confirmation_email",
+    "send_order_confirmation_email_async",
 ]

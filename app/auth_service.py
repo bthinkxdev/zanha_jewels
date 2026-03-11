@@ -106,7 +106,7 @@ class OTPService:
             'otp': otp,
             'expiry_minutes': cls.OTP_EXPIRY_MINUTES,
             'site_name': 'Zanha Design',
-            'support_email': settings.DEFAULT_FROM_EMAIL,
+            'support_email': getattr(settings, 'SITE_EMAIL', settings.DEFAULT_FROM_EMAIL),
         }
         
         # Render email templates

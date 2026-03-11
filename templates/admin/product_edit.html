@@ -112,6 +112,68 @@
                 </div>
             </div>
 
+            <!-- SIMPLE PRODUCT SETTINGS -->
+            <div class="edit-section simple-product-section" id="simple-product-settings"
+                 data-has-variants="{% if product.variants.exists %}true{% else %}false{% endif %}"
+                 data-product-id="{{ product.pk }}"
+                 data-url-upload-base-image="{% url 'admin_panel:product_image_upload' product.pk %}"
+                 data-url-delete-base-image="{% url 'admin_panel:product_image_delete' 0 %}"
+                 data-url-set-primary-base-image="{% url 'admin_panel:product_image_set_primary' 0 %}"
+                 data-url-reorder-base-image="{% url 'admin_panel:product_image_reorder' %}">
+                <h5 class="section-subheading">Simple product settings</h5>
+                <p class="section-hint">
+                    When this product has no variants, these fields control price and stock.
+                    If you add variants, variant prices and stock become the source of truth and these fields are ignored.
+                </p>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label" for="basic-base_price">Base price (₹)</label>
+                        <input type="number" class="form-control" id="basic-base_price"
+                               step="0.01" min="0"
+                               value="{{ product.base_price|default_if_none:'' }}" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="basic-base_stock">Base stock</label>
+                        <input type="number" class="form-control" id="basic-base_stock"
+                               min="0"
+                               value="{{ product.base_stock|default_if_none:'' }}" placeholder="0">
+                    </div>
+                </div>
+                <p class="section-hint">
+                    You can upload up to 3 base images for simple products below. Once variants exist, variant images take over.
+                </p>
+                <div id="simple-product-images" data-max-images="3">
+                    <div class="nested-block">
+                        <div class="nested-title">Base images</div>
+                        <div class="variant-images-list" id="simple-product-images-list">
+                            {% for img in base_images %}
+                                <div class="image-item" data-image-id="{{ img.id }}">
+                                    {% if img.image %}
+                                        <img class="image-thumb" src="{{ img.image.url }}" alt="{{ product.name }}">
+                                    {% else %}
+                                        <span class="image-thumb" style="width:72px;height:72px;background:#eee;border-radius:6px;display:block;"></span>
+                                    {% endif %}
+                                    {% if img.is_primary %}
+                                        <span class="image-primary-badge">Primary</span>
+                                    {% endif %}
+                                    <div class="image-actions">
+                                        {% if not img.is_primary %}
+                                        <button type="button" class="btn btn-sm btn-outline base-image-set-primary" data-image-id="{{ img.id }}">Primary</button>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-sm btn-danger base-image-delete" data-image-id="{{ img.id }}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary" id="base-image-add-btn">
+                            <i class="fas fa-image"></i> Add image
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Flags row -->
             <div class="toggle-grid">
                 <label class="toggle-wrap{% if product.is_active %} checked{% endif %}" for="basic-is_active">
@@ -120,23 +182,34 @@
                     <span class="toggle-label">Active</span>
                     <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_active %}On{% else %}Off{% endif %}</span>
                 </label>
+                {% if HOME_FEATURED_ENABLED %}
                 <label class="toggle-wrap{% if product.is_featured %} checked{% endif %}" for="basic-is_featured">
                     <input type="checkbox" class="toggle-input" id="basic-is_featured" {% if product.is_featured %}checked{% endif %}>
                     <span class="toggle-track"><span class="toggle-knob"></span></span>
                     <span class="toggle-label">Featured</span>
                     <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_featured %}On{% else %}Off{% endif %}</span>
                 </label>
+                {% endif %}
+                {% if HOME_BESTSELLER_ENABLED %}
                 <label class="toggle-wrap{% if product.is_bestseller %} checked{% endif %}" for="basic-is_bestseller">
                     <input type="checkbox" class="toggle-input" id="basic-is_bestseller" {% if product.is_bestseller %}checked{% endif %}>
                     <span class="toggle-track"><span class="toggle-knob"></span></span>
                     <span class="toggle-label">Bestseller</span>
                     <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_bestseller %}On{% else %}Off{% endif %}</span>
                 </label>
-                <label class="toggle-wrap{% if product.is_deal_of_day %} checked{% endif %}" for="basic-is_deal_of_day">
-                    <input type="checkbox" class="toggle-input" id="basic-is_deal_of_day" {% if product.is_deal_of_day %}checked{% endif %}>
+                {% endif %}
+                <label class="toggle-wrap{% if product.is_deal_of_day %} checked{% endif %}{% if not HOME_DEAL_OF_DAY_ENABLED %} toggle-disabled{% endif %}" for="basic-is_deal_of_day">
+                    <input type="checkbox" class="toggle-input" id="basic-is_deal_of_day" {% if product.is_deal_of_day %}checked{% endif %}{% if not HOME_DEAL_OF_DAY_ENABLED %} disabled{% endif %}>
                     <span class="toggle-track"><span class="toggle-knob"></span></span>
-                    <span class="toggle-label">Deal of day</span>
-                    <span class="toggle-status" data-on="On" data-off="Off">{% if product.is_deal_of_day %}On{% else %}Off{% endif %}</span>
+                    <span class="toggle-label">
+                        Deal of day
+                        {% if not HOME_DEAL_OF_DAY_ENABLED %}
+                            <i class="fas fa-lock toggle-lock" aria-hidden="true"></i>
+                        {% endif %}
+                    </span>
+                    <span class="toggle-status" data-on="On" data-off="Off">
+                        {% if product.is_deal_of_day %}On{% else %}Off{% endif %}{% if not HOME_DEAL_OF_DAY_ENABLED %} (Locked){% endif %}
+                    </span>
                 </label>
             </div>
 
@@ -149,6 +222,7 @@
         </div>
     </div>
 
+    {% if ALLOW_ATTRIBUTES_AND_VARIANTS %}
     <!-- ── SECTION 2: Attributes ── -->
     <div class="edit-section">
         <h4 class="section-heading"><span class="section-num">2</span> Attributes</h4>
@@ -234,6 +308,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- ── BOTTOM PAGE ACTIONS (desktop) + STICKY BACK BAR (mobile) ── -->
     <div class="pf-actions">

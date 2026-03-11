@@ -89,6 +89,8 @@ TEMPLATES = [
                 'app.context_processors.wishlist_context',
                 'app.context_processors.admin_message_badge',
                 'app.context_processors.delivery_settings',
+                'app.context_processors.home_section_flags',
+                'app.context_processors.admin_product_settings',
             ],
         },
     },
@@ -166,9 +168,15 @@ SESSION_COOKIE_SECURE = False  # Set True in production with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 
-# Delivery system toggle. When False, checkout behaves without shipping
-# address/charges and shipment integration is disabled in code.
+
 DELIVERY_INTEGRATED = False
+WISHLIST_ENABLED = False
+HOME_DEAL_OF_DAY_ENABLED = False
+HOME_FEATURED_ENABLED = False
+HOME_BESTSELLER_ENABLED = True
+HOME_RECENTLY_ADDED_ENABLED = False
+ALLOW_ATTRIBUTES_AND_VARIANTS = False
+REVIEW_ENABLED = config("REVIEW_ENABLED", default=False, cast=bool)
 
 # Delivery charge: constant ₹80 for all orders (1 rupee to 1 lakh or any amount)
 FLAT_DELIVERY_CHARGE = 80
@@ -198,9 +206,11 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 ADMIN_NOTIFICATION_EMAILS = ['adithyamc@bthinkx.com']
 
-# Site contact (used site-wide: footer, invoice, WhatsApp FAB, etc.)
-SITE_PHONE = config("SITE_PHONE", default="+91 88919 23189")
+# Site contact (used site-wide: footer, contact page, invoice, WhatsApp FAB, etc.)
+SITE_PHONE = config("SITE_PHONE", default="+91 8891923189")
 SITE_WHATSAPP = config("SITE_WHATSAPP", default="918891923189")  # No + or spaces for wa.me
+SITE_EMAIL = config("SITE_EMAIL", default="support.zanhajewels@gmail.com")
+SITE_INSTAGRAM = config("SITE_INSTAGRAM", default="zanhajewels")  # Handle without @ for URLs
 
 # Razorpay Configuration
 RZP_CLIENT_ID = config('RZP_CLIENT_ID')

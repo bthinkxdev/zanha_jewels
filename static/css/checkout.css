@@ -1,5 +1,20 @@
 /* Checkout Page Styles */
 
+/* High-level layout wrapper (used on checkout page) */
+.checkout-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.3fr);
+    gap: 32px;
+    align-items: flex-start;
+}
+
+@media (max-width: 992px) {
+    .checkout-container {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
 .section-header-inline {
     display: flex;
     justify-content: space-between;
@@ -383,6 +398,50 @@
     background: #fff5f5;
     border: 1px solid #ffcdd2;
     color: #d32f2f;
+}
+
+/* iOS-style primary/secondary actions on checkout */
+.checkout-primary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkout-primary-actions .btn {
+    width: 100%;
+    border-radius: 999px !important;
+    font-size: var(--text-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    min-height: 50px;
+}
+
+.checkout-primary-actions .btn-outline-dark {
+    background: #f5f5f7 !important;
+    border-color: #d1d1d6 !important;
+    color: #1c1c1e !important;
+}
+
+.checkout-primary-actions .btn-outline-dark:hover {
+    background: #e5e5ea !important;
+    border-color: #c7c7cc !important;
+}
+
+.checkout-primary-actions .btn-secondary {
+    background: #000000 !important;
+    border-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+.checkout-primary-actions .btn-secondary:hover {
+    background: #111111 !important;
+    border-color: #111111 !important;
+}
+
+@media (min-width: 576px) {
+    .checkout-primary-actions {
+        flex-direction: row;
+    }
 }
 
 /* Responsive */

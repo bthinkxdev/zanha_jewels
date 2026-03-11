@@ -5,13 +5,14 @@
 {% block content %}
 <section class="hero-section">
     <div class="header-carousel owl-carousel">
+        {% comment %} Dynamic hero carousel from Banner model (manage in admin: Banners) {% endcomment %}
         {% if banners %}
             {% for banner in banners %}
             <div class="hero-carousel-item">
                 {% if banner.redirect_url %}
                 <a href="{{ banner.redirect_url }}">
                 {% endif %}
-                    <img src="{{ banner.image.url }}" alt="{{ banner.title|default:'Banner' }}" 
+                    <img src="{{ banner.image.url }}" alt="{{ banner.title|default:'Banner' }}"
                          class="hero-full-img" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
                 {% if banner.redirect_url %}
                 </a>
@@ -83,7 +84,7 @@
 
 
 
-{% if deal_of_day_products %}
+{% if HOME_DEAL_OF_DAY_ENABLED and deal_of_day_products %}
 <!-- Deals of the Day -->
 <section class="tpc-section">
     <div class="container">
@@ -100,7 +101,7 @@
 </section>
 {% endif %}
 
-{% if featured_products %}
+{% if HOME_FEATURED_ENABLED and featured_products %}
 <!-- Featured Collection -->
 <section class="tpc-section">
     <div class="container">
@@ -117,7 +118,7 @@
 </section>
 {% endif %}
 
-{% if bestseller_products %}
+{% if HOME_BESTSELLER_ENABLED and bestseller_products %}
 <!-- Best Sellers -->
 <section class="tpc-section">
     <div class="container">
@@ -134,7 +135,7 @@
 </section>
 {% endif %}
 
-{% if new_arrival_products %}
+{% if HOME_RECENTLY_ADDED_ENABLED and new_arrival_products %}
 <!-- Recently Added -->
 <section class="section-pad bg-bw-1">
     <div class="container">

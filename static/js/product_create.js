@@ -70,7 +70,10 @@
         }
     });
 
-    document.getElementById("btn-create-basic").addEventListener("click", function () {
+    var createBtn = document.getElementById("btn-create-basic");
+    if (!createBtn) return;
+
+    createBtn.addEventListener("click", function () {
         var catSel = wrapper.querySelector('select[name="category"]');
         var isGst = document.getElementById("basic-is_gst_applicable") && document.getElementById("basic-is_gst_applicable").checked;
         var gstPctEl = document.getElementById("basic-gst_percentage");
@@ -82,19 +85,28 @@
         if (!isGst) gstPctVal = null;
         var hsnEl = document.getElementById("basic-hsn_code");
         var hsnVal = (hsnEl && hsnEl.value.trim() !== "") ? hsnEl.value.trim() : null;
+        var featuredEl = document.getElementById("basic-is_featured");
+        var bestsellerEl = document.getElementById("basic-is_bestseller");
+        var dealEl = document.getElementById("basic-is_deal_of_day");
+        var activeEl = document.getElementById("basic-is_active");
+        var basePriceEl = document.getElementById("basic-base_price");
+        var baseStockEl = document.getElementById("basic-base_stock");
+
         var payload = {
             name: (document.getElementById("basic-name").value || "").trim(),
             slug: (document.getElementById("basic-slug").value || "").trim() || null,
             description: (document.getElementById("basic-description").value || "").trim(),
             brand: (document.getElementById("basic-brand").value || "").trim() || "",
-            is_featured: document.getElementById("basic-is_featured").checked,
-            is_bestseller: document.getElementById("basic-is_bestseller").checked,
-            is_deal_of_day: document.getElementById("basic-is_deal_of_day").checked,
-            is_active: document.getElementById("basic-is_active").checked,
+            is_featured: featuredEl ? featuredEl.checked : false,
+            is_bestseller: bestsellerEl ? bestsellerEl.checked : false,
+            is_deal_of_day: dealEl ? dealEl.checked : false,
+            is_active: activeEl ? activeEl.checked : true,
             category: catSel ? catSel.value : null,
             is_gst_applicable: isGst,
             gst_percentage: gstPctVal,
             hsn_code: hsnVal,
+            base_price: basePriceEl && basePriceEl.value.trim() !== "" ? basePriceEl.value.trim() : null,
+            base_stock: baseStockEl && baseStockEl.value.trim() !== "" ? parseInt(baseStockEl.value.trim(), 10) || 0 : null,
         };
         if (!payload.name) {
             toast("Name is required.", "error");

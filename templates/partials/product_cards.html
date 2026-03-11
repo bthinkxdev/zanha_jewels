@@ -4,23 +4,25 @@
     {% for card in products %}
         {% with item=card.0 is_jewellery=card.1 %}
         <article class="collection-product-card">
-            {% if is_jewellery %}
-                {% if item.is_featured and item.is_active %}
-                    <span class="collection-card-badge-featured">Featured</span>
+            {% if WISHLIST_ENABLED %}
+                {% if is_jewellery %}
+                    {% if item.is_featured and item.is_active %}
+                        <span class="collection-card-badge-featured">Featured</span>
+                    {% endif %}
+                <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_product_ids %}in-wishlist{% endif %}"
+                        data-product-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+                {% else %}
+                    {% if item.product.is_featured and item.product.is_active %}
+                        <span class="collection-card-badge-featured">Featured</span>
+                    {% endif %}
+                <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+                        data-variant-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
                 {% endif %}
-            <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_product_ids %}in-wishlist{% endif %}"
-                    data-product-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
-            {% else %}
-                {% if item.product.is_featured and item.product.is_active %}
-                    <span class="collection-card-badge-featured">Featured</span>
-                {% endif %}
-            <button type="button" class="product-card-wishlist js-wishlist-toggle {% if item.id in wishlist_variant_ids %}in-wishlist{% endif %}"
-                    data-variant-id="{{ item.id }}" aria-label="Add to wishlist" title="Add to wishlist">
+                    <svg class="wishlist-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                </button>
             {% endif %}
-                <svg class="wishlist-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-            </button>
             <a href="{% if is_jewellery %}{% url 'store:product_detail' item.slug %}{% else %}{% url 'store:product_detail' item.product.slug %}?variant={{ item.id }}{% endif %}" class="collection-card-link">
                 {% if is_jewellery %}
                 <div class="collection-card-image product-card-image-slider">
