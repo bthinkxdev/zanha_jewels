@@ -795,8 +795,15 @@ def auto_create_shipment_on_confirmed(sender, instance: Order, created: bool, up
     """
     When an order is marked CONFIRMED, automatically create a Shipment and
     trigger Shiprocket fulfillment if a shipment does not already exist.
+
+    This behavior is skipped entirely when DELIVERY_INTEGRATED is disabled.
     """
     try:
+        from .delivery_utils import delivery_enabled
+
+        if not delivery_enabled():
+            return
+
         if instance.status != Order.Status.CONFIRMED:
             return
         # Only react when status was part of the save or on generic saves

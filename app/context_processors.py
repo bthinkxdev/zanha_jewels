@@ -2,6 +2,7 @@ from django.conf import settings
 
 from .models import Wishlist, ContactMessage
 from .services import CartService
+from .delivery_utils import delivery_enabled
 
 
 def site_contact_context(request):
@@ -30,10 +31,11 @@ def cart_context(request):
 def wishlist_context(request):
     wishlist_count = 0
     wishlist_variant_ids = []
-    if getattr(request, "user", None) and request.user.is_authenticated:
+    user = getattr(request, "user", None)
+    if user and user.is_authenticated:
         wishlist_variant_ids = list(
             Wishlist.objects.filter(
-                user=request.user,
+                user=user,
                 selected_variant__is_active=True,
                 selected_variant__product__is_active=True,
             ).values_list("selected_variant_id", flat=True)
@@ -55,4 +57,14 @@ def admin_message_badge(request):
     if user and user.is_authenticated and user.is_staff:
         count = ContactMessage.objects.filter(is_resolved=False).count()
     return {"admin_unresolved_messages": count}
+
+
+def delivery_settings(request):
+    """
+    Expose DELIVERY_INTEGRATED to all templates for conditional delivery UI.
+    """
+    return {
+        "DELIVERY_INTEGRATED": delivery_enabled(),
+    }
+
 

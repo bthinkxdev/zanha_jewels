@@ -3,6 +3,7 @@ from django.core.validators import EmailValidator, RegexValidator
 from django.contrib.auth.models import User
 
 from .models import Address, ContactMessage, NewsletterSubscription, Review
+from .delivery_utils import delivery_enabled
 
 
 class CartAddForm(forms.Form):
@@ -59,8 +60,10 @@ class CheckoutForm(forms.Form):
             use_new_address = cleaned_data.get('use_new_address')
             is_guest = not self.user
 
-            # Guest: must use new address and email is required
-            if is_guest:
+            delivery_on = delivery_enabled()
+
+            # Guest: must use new address and email is required when delivery is enabled
+            if is_guest and delivery_on:
                 use_new_address = True
                 cleaned_data['use_new_address'] = True
                 selected_address = None
@@ -95,19 +98,19 @@ class CheckoutForm(forms.Form):
                     except Exception as e:
                         raise forms.ValidationError("Failed to retrieve addresses. Please try again.")
                 
-                # Validate new address fields
-                if use_new_address:
+                # Validate new address fields (only when delivery integration is enabled)
+                if use_new_address and delivery_on:
                     required_fields = ['full_name', 'phone', 'address_line', 'city', 'state', 'pincode']
                     if is_guest:
                         required_fields = ['full_name', 'email', 'phone', 'address_line', 'city', 'state', 'pincode']
                     for field in required_fields:
                         if not cleaned_data.get(field):
                             self.add_error(field, 'This field is required.')
-                    
+
                     # Validate phone number if provided
                     if cleaned_data.get('phone'):
                         self._validate_phone(cleaned_data.get('phone'))
-                    
+
                     # Validate pincode if provided
                     if cleaned_data.get('pincode'):
                         self._validate_pincode(cleaned_data.get('pincode'))

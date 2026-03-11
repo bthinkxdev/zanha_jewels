@@ -120,7 +120,8 @@
     </div>
 </div>
 
-<!-- Shipment -->
+{% if DELIVERY_INTEGRATED %}
+<!-- Shipment (only when delivery integration is enabled) -->
 <div class="card mt-3">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">Shipment</h3>
@@ -239,6 +240,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 <!-- Order Items -->
 <div class="card mt-3">

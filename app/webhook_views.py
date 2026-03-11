@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
 from .models import Shipment, Order
+from .delivery_utils import delivery_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,9 @@ class ShiprocketWebhookView(View):
 
     def post(self, request, *args, **kwargs):
         try:
+            # If delivery integration is disabled, ignore incoming webhooks gracefully.
+            if not delivery_enabled():
+                return JsonResponse({"error": "Delivery integration disabled"}, status=403)
             try:
                 payload = json.loads(request.body.decode("utf-8") or "{}")
             except (TypeError, ValueError, json.JSONDecodeError):

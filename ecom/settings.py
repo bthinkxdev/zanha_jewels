@@ -88,6 +88,7 @@ TEMPLATES = [
                 'app.context_processors.cart_context',
                 'app.context_processors.wishlist_context',
                 'app.context_processors.admin_message_badge',
+                'app.context_processors.delivery_settings',
             ],
         },
     },
@@ -164,6 +165,10 @@ SESSION_SAVE_EVERY_REQUEST = False
 SESSION_COOKIE_SECURE = False  # Set True in production with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+
+# Delivery system toggle. When False, checkout behaves without shipping
+# address/charges and shipment integration is disabled in code.
+DELIVERY_INTEGRATED = False
 
 # Delivery charge: constant ₹80 for all orders (1 rupee to 1 lakh or any amount)
 FLAT_DELIVERY_CHARGE = 80

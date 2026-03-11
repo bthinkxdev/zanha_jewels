@@ -171,9 +171,19 @@ class CartService:
         try:
             subtotal = sum(item.line_total for item in cart.items.select_related("product"))
             gst_total = cart.gst_total
+
+            # Import inside function to avoid circulars during app loading
+            from ..delivery_utils import delivery_enabled
+
             FREE_SHIPPING_THRESHOLD = getattr(settings, "FREE_SHIPPING_ABOVE", 999)
             delivery_charge = getattr(settings, "FLAT_DELIVERY_CHARGE", 100)
-            shipping = 0 if subtotal >= FREE_SHIPPING_THRESHOLD else delivery_charge
+
+            if delivery_enabled():
+                shipping = 0 if subtotal >= FREE_SHIPPING_THRESHOLD else delivery_charge
+            else:
+                # When delivery integration is disabled, treat shipping as zero
+                shipping = 0
+
             total = subtotal + gst_total + shipping
             return CartTotals(subtotal=subtotal, gst_total=gst_total, shipping=shipping, total=total)
         except Exception:

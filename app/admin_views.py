@@ -80,6 +80,7 @@ from .services.shiprocket_service import (
     ShiprocketAPIError,
     create_shipment_for_order,
 )
+from .delivery_utils import delivery_enabled
 
 class StaffRequiredMixin(UserPassesTestMixin):
     """Mixin to require staff/admin access"""
@@ -845,6 +846,9 @@ class OrderShipmentRefreshTrackingView(StaffRequiredMixin, View):
     """POST: fetch latest tracking from Shiprocket by AWB and update shipment."""
 
     def post(self, request, order_number):
+        if not delivery_enabled():
+            messages.error(request, "Shipment tracking is disabled.")
+            return redirect("admin_panel:order_detail", order_number=order_number)
         order = get_object_or_404(Order, order_number=order_number)
         shipment = getattr(order, "shipment", None)
 
@@ -1284,6 +1288,9 @@ class ReviewListView(StaffRequiredMixin, TemplateView):
 
 class ShipmentRetryView(StaffRequiredMixin, View):
     def post(self, request, order_number):
+        if not delivery_enabled():
+            messages.error(request, "Shipment creation is disabled.")
+            return redirect("admin_panel:order_detail", order_number=order_number)
         order = get_object_or_404(Order, order_number=order_number)
         shipment = getattr(order, "shipment", None)
 
@@ -1319,6 +1326,9 @@ class ShipmentRetryView(StaffRequiredMixin, View):
 
 class ShipmentCancelView(StaffRequiredMixin, View):
     def post(self, request, order_number):
+        if not delivery_enabled():
+            messages.error(request, "Shipment cancellation is disabled.")
+            return redirect("admin_panel:order_detail", order_number=order_number)
         order = get_object_or_404(Order, order_number=order_number)
         shipment = getattr(order, "shipment", None)
 

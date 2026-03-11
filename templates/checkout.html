@@ -18,7 +18,7 @@
 
             <div class="row g-5">
                 <div class="col-lg-7">
-                    {% if addresses %}
+                    {% if DELIVERY_INTEGRATED and addresses %}
                     <div class="checkout-card mb-4" id="savedAddresses">
                         <h5><i class="fas fa-map-marker-alt me-2"></i> Delivery Address</h5>
                         <div class="saved-addresses">
@@ -40,8 +40,8 @@
                     </div>
                     {% endif %}
 
-                    <div class="checkout-card" id="newAddressSection" {% if addresses and not form.is_bound %}style="display:none;"{% endif %}>
-                        <h5>{% if addresses %}New Address{% else %}Delivery Address{% endif %}</h5>
+                    <div class="checkout-card" id="newAddressSection" {% if DELIVERY_INTEGRATED and addresses and not form.is_bound %}style="display:none;"{% endif %}>
+                        <h5>{% if DELIVERY_INTEGRATED and addresses %}New Address{% elif DELIVERY_INTEGRATED %}Delivery Address{% else %}Customer Details{% endif %}</h5>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label-bw">Full Name *</label>
@@ -54,22 +54,50 @@
                                 {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-12">
-                                <label class="form-label-bw">Address *</label>
+                                <label class="form-label-bw">
+                                    {% if DELIVERY_INTEGRATED %}Address *{% else %}Address{% endif %}
+                                </label>
                                 <textarea name="address_line" class="form-control-bw" rows="2" placeholder="Address" style="min-height:80px;resize:vertical;">{{ form.address_line.value|default:'' }}</textarea>
                                 {% if form.address_line.errors %}<div class="text-danger small mt-1">{{ form.address_line.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label-bw">City *</label>
+                                <label class="form-label-bw">{% if DELIVERY_INTEGRATED %}City *{% else %}City{% endif %}</label>
                                 <input type="text" name="city" class="form-control-bw" value="{{ form.city.value|default:'' }}" placeholder="City">
                                 {% if form.city.errors %}<div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label-bw">Pincode *</label>
+                                <label class="form-label-bw">{% if DELIVERY_INTEGRATED %}Pincode *{% else %}Pincode{% endif %}</label>
+                                {% if DELIVERY_INTEGRATED %}
+                                <div class="d-flex gap-2">
+                                    <input type="text" 
+                                           name="pincode" 
+                                           id="id_pincode"
+                                           class="form-control-bw flex-grow-1" 
+                                           value="{{ stored_pincode|default:form.pincode.value|default:'' }}" 
+                                           placeholder="6-digit pincode"
+                                           maxlength="6"
+                                           pattern="[0-9]{6}"
+                                           inputmode="numeric"
+                                           data-verified="">
+                                    <button type="button" 
+                                            id="checkPincodeBtn" 
+                                            class="btn btn-outline-dark whitespace-nowrap"
+                                            style="min-width:80px;">
+                                        Check
+                                    </button>
+                                </div>
+                                <div id="pincodeStatus" class="mt-1 small"></div>
+                                {% else %}
                                 <input type="text" name="pincode" class="form-control-bw" value="{{ form.pincode.value|default:'' }}" placeholder="Pincode">
+                                {% endif %}
                                 {% if form.pincode.errors %}<div class="text-danger small mt-1">{{ form.pincode.errors.0 }}</div>{% endif %}
                             </div>
+
+                            {% if DELIVERY_INTEGRATED %}
+                            <div class="col-12" id="shippingInfo" style="display: none;"></div>
+                            {% endif %}
                             <div class="col-md-6">
-                                <label class="form-label-bw">State *</label>
+                                <label class="form-label-bw">{% if DELIVERY_INTEGRATED %}State *{% else %}State{% endif %}</label>
                                 <input type="text" name="state" class="form-control-bw" value="{{ form.state.value|default:'' }}" placeholder="State">
                                 {% if form.state.errors %}<div class="text-danger small mt-1">{{ form.state.errors.0 }}</div>{% endif %}
                             </div>
@@ -79,7 +107,7 @@
                                 {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
                             </div>
                         </div>
-                        {% if addresses %}
+                        {% if DELIVERY_INTEGRATED and addresses %}
                         <button type="button" class="btn btn-outline-dark btn-sm mt-3" id="cancelNewAddressBtn">Cancel</button>
                         {% endif %}
                     </div>
@@ -93,6 +121,9 @@
                                     <div class="payment-checkbox"><span class="checkmark">✓</span></div>
                                     <div class="payment-details">
                                         <strong>Cash on Delivery</strong>
+                                        {% if DELIVERY_INTEGRATED %}
+                                        <small id="codChargeDisplay" class="text-warning" style="display:none;"></small>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </label>
@@ -107,6 +138,26 @@
                             </label>
                         </div>
                         <input type="hidden" name="payment" id="id_payment" value="cod">
+                        
+                        {% if DELIVERY_INTEGRATED %}
+                        <div class="mt-3 pt-3" style="border-top: 1px solid var(--clr-grey-2);">
+                            <div id="openBoxContainer">
+                                <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
+                                    <input type="checkbox" name="is_open_box" id="id_is_open_box" class="form-checkbox mt-1">
+                                    <div>
+                                        <strong style="font-size:var(--text-sm);">Request Open Box Delivery</strong>
+                                        <p style="font-size:var(--text-xs);color:var(--clr-black-4);margin:2px 0 0;">
+                                            Delivery agent waits while you open and inspect the package before accepting.
+                                        </p>
+                                    </div>
+                                </label>
+                                <div id="openBoxWarning" class="text-warning small mt-1" style="display: none;"></div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="shipping_charge" name="shipping_charge" value="0">
+                        <input type="hidden" id="cod_charge" name="cod_charge" value="0">
+                        {% endif %}
                     </div>
 
                     <div id="checkoutErrorMessage" class="alert alert-danger mt-3" style="display:none;" role="alert"></div>
@@ -139,14 +190,33 @@
                         </div>
                         {% endfor %}
 
-                        <div class="order-total-row"><span>Subtotal</span><span>₹{{ totals.subtotal }}</span></div>
+                        <div class="order-total-row">
+                            <span>Subtotal</span>
+                            <span id="subtotal-value" data-value="{{ totals.subtotal }}">₹{{ totals.subtotal|floatformat:0 }}</span>
+                        </div>
                         {% if totals.gst_total and totals.gst_total > 0 %}
-                        <div class="order-total-row"><span>GST Total</span><span>₹{{ totals.gst_total }}</span></div>
+                        <div class="order-total-row">
+                            <span>GST Total</span>
+                            <span>₹{{ totals.gst_total|floatformat:0 }}</span>
+                        </div>
                         {% endif %}
-                        <div class="order-total-row"><span>Shipping</span><span style="font-weight:700;color:var(--clr-black);">{% if totals.shipping == 0 %}Free{% else %}₹{{ totals.shipping }}{% endif %}</span></div>
+                        <div class="order-total-row">
+                            <span>Shipping</span>
+                            <span id="shipping-value" data-value="{{ totals.shipping }}" style="font-weight:700;color:var(--clr-black);">
+                                {% if totals.shipping == 0 %}Free{% else %}₹{{ totals.shipping }}{% endif %}
+                            </span>
+                        </div>
+
+                        {% if DELIVERY_INTEGRATED %}
+                        <div class="order-total-row" id="codChargeRow" style="display:none;">
+                            <span>COD Handling Fee</span>
+                            <span id="codChargeValue">₹{{ cod_charge }}</span>
+                        </div>
+                        {% endif %}
+
                         <div class="order-grand-total">
                             <span class="label">Total</span>
-                            <span class="amount">₹{{ totals.total }}</span>
+                            <span class="amount" id="total-value" data-value="{{ totals.total }}">₹{{ totals.total|floatformat:0 }}</span>
                         </div>
 
                         <div class="d-flex flex-column gap-2 mt-4 pt-3" style="border-top:1px solid var(--clr-grey-2);">
@@ -176,4 +246,104 @@
     window.STORE_RAZORPAY_CANCEL_URL = "{% url 'store:razorpay_cancel' %}";
 })();
 </script>
+
+{% if DELIVERY_INTEGRATED %}
+<script>
+(function() {
+    try {
+        // Get elements safely
+        const subtotalEl = document.getElementById('subtotal-value');
+        const shippingEl = document.getElementById('shipping-value');
+        const totalEl = document.getElementById('total-value');
+        const placeOrderTotal = document.getElementById('placeOrderTotal');
+        const codChargeRow = document.getElementById('codChargeRow');
+        const codChargeValue = document.getElementById('codChargeValue');
+        const codChargeDisplay = document.getElementById('codChargeDisplay');
+        
+        // Get values with safe defaults
+        const subtotal = subtotalEl ? parseFloat(subtotalEl.dataset.value || 0) : 0;
+        const baseShipping = shippingEl ? parseFloat(shippingEl.dataset.value || 0) : 0;
+        const baseCODCharge = {{ cod_charge|default:0 }};
+        
+        console.log('Checkout initialized', {subtotal, baseShipping, baseCODCharge});
+        
+        function updateTotals() {
+            try {
+                const selectedPayment = document.querySelector('input[name="payment_method"]:checked')?.value || 'cod';
+                const shippingHidden = document.getElementById('shipping_charge');
+                const codHidden = document.getElementById('cod_charge');
+                
+                const dynamicShipping = shippingHidden ? parseFloat(shippingHidden.value || 0) : baseShipping;
+                const dynamicCOD = codHidden ? parseFloat(codHidden.value || 0) : baseCODCharge;
+                const codFee = selectedPayment === 'cod' ? dynamicCOD : 0;
+                const total = subtotal + dynamicShipping + codFee;
+                
+                // Update displays safely
+                if (shippingEl) {
+                    shippingEl.textContent = dynamicShipping === 0 ? 'Free' : '₹' + dynamicShipping.toFixed(0);
+                }
+                
+                if (codChargeRow) {
+                    codChargeRow.style.display = (selectedPayment === 'cod' && dynamicCOD > 0) ? 'flex' : 'none';
+                }
+                
+                if (codChargeValue) {
+                    codChargeValue.textContent = '₹' + dynamicCOD.toFixed(0);
+                }
+                
+                if (codChargeDisplay) {
+                    if (selectedPayment === 'cod' && dynamicCOD > 0) {
+                        codChargeDisplay.textContent = '+ ₹' + dynamicCOD.toFixed(0) + ' COD charges apply';
+                        codChargeDisplay.style.display = 'block';
+                    } else {
+                        codChargeDisplay.style.display = 'none';
+                    }
+                }
+                
+                if (totalEl) {
+                    totalEl.textContent = '₹' + total.toFixed(0);
+                    totalEl.dataset.value = total;
+                }
+                
+                if (placeOrderTotal) {
+                    placeOrderTotal.textContent = total.toFixed(0);
+                }
+            } catch (e) {
+                console.error('Error in updateTotals:', e);
+            }
+        }
+        
+        // Attach event listeners
+        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+            radio.addEventListener('change', updateTotals);
+        });
+        
+        document.addEventListener('shippingRatesUpdated', updateTotals);
+        
+        // Run once
+        updateTotals();
+    } catch (e) {
+        console.error('Error initializing checkout:', e);
+    }
+})();
+</script>
+
+{% if stored_pincode %}
+<script>
+(function() {
+    try {
+        const pincodeInput = document.getElementById('id_pincode');
+        const checkBtn = document.getElementById('checkPincodeBtn');
+        if (pincodeInput && pincodeInput.value && checkBtn) {
+            setTimeout(function() {
+                checkBtn.click();
+            }, 500);
+        }
+    } catch (e) {
+        console.error('Error in auto pincode check:', e);
+    }
+})();
+</script>
+{% endif %}
+{% endif %}
 {% endblock %}
