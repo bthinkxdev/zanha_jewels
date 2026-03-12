@@ -272,6 +272,7 @@
                 <label class="form-label">SKU</label>
                 <input type="text" id="add-variant-sku" class="form-control" placeholder="Optional — e.g. PROD-RED-L">
             </div>
+            {% if DELIVERY_INTEGRATED %}
             <p class="section-hint" style="margin-top: 0.875rem;">Shipping dimensions (for Shiprocket). Weight in kg, dimensions in cm.</p>
             <div class="grid-2" style="margin-top: 0.25rem;">
                 <div class="form-group">
@@ -291,6 +292,7 @@
                     <input type="number" id="add-variant-height" class="form-control" step="0.01" min="0" value="0" placeholder="0">
                 </div>
             </div>
+            {% endif %}
             <label class="toggle-wrap checked" for="add-variant-is_active" style="margin-bottom: 0.75rem;">
                 <input type="checkbox" class="toggle-input" id="add-variant-is_active" checked>
                 <span class="toggle-track"><span class="toggle-knob"></span></span>

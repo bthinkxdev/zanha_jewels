@@ -209,8 +209,8 @@ ADMIN_NOTIFICATION_EMAILS = ['adithyamc@bthinkx.com']
 # Site contact (used site-wide: footer, contact page, invoice, WhatsApp FAB, etc.)
 SITE_PHONE = config("SITE_PHONE", default="+91 8891923189")
 SITE_WHATSAPP = config("SITE_WHATSAPP", default="918891923189")  # No + or spaces for wa.me
-SITE_EMAIL = config("SITE_EMAIL", default="support.zanhajewels@gmail.com")
-SITE_INSTAGRAM = config("SITE_INSTAGRAM", default="zanhajewels")  # Handle without @ for URLs
+SITE_EMAIL = config("SITE_EMAIL", default="zanhajewels@gmail.com")
+SITE_INSTAGRAM = config("SITE_INSTAGRAM", default="zanha_jewels")  # Handle without @ for URLs
 
 # Razorpay Configuration
 RZP_CLIENT_ID = config('RZP_CLIENT_ID')

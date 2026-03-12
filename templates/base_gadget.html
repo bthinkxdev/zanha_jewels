@@ -63,7 +63,7 @@
         <div class="row align-items-center py-2">
             <div class="col-auto">
                 <a href="{% url 'store:home' %}" class="text-decoration-none">
-                    <span class="brand-text">Zanha Jewels</span>
+                    <img src="{% static 'images/logo.png' %}" alt="Zanha Jewels" height="48">
                 </a>
             </div>
 
@@ -172,7 +172,7 @@
             <div class="col-6 col-md-3">
                 <div class="service-item">
                     <i class="fas fa-undo-alt"></i>
-                    <div><h6>Easy Returns</h6><p>Hassle-free returns</p></div>
+                    <div><h6>Damaged Item Returns</h6><p>Returns accepted only for damaged items</p></div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
@@ -195,14 +195,14 @@
     <div class="container">
         <div class="row g-5 pb-5">
             <div class="col-md-6 col-lg-4">
-                <span class="footer-brand-text">Zanha Jewels</span>
+                <img src="{% static 'images/logo.png' %}" alt="Zanha Jewels" style="height:60px;width:auto;mix-blend-mode:lighten;">
                 <p class="mt-3" style="color:rgba(245,239,230,0.45);font-size:.8125rem;line-height:1.8;">
                     Crafted with elegance. Your destination for premium jewellery and accessories.
                 </p>
                 <div class="social-links">
                     <a href="https://www.instagram.com/{{ site_instagram }}/" target="_blank" rel="noopener" class="social-link" title="Instagram @{{ site_instagram }}" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    {% comment %} <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a> {% endcomment %}
+                    <a href="https://wa.me/{{ site_whatsapp }}" target="_blank" rel="noopener" class="social-link" title="WhatsApp {{ site_whatsapp }}" aria-label="WhatsApp"> <i class="fab fa-whatsapp"></i></a>
                 </div>
             </div>
             <div class="col-md-6 col-lg-2">
