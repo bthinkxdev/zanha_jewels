@@ -51,9 +51,11 @@
         {% endif %} {% endcomment %}
 
         {% if v.id in cart_variant_ids %}
-        <a href="{% url 'store:cart' %}" class="tpc-add-btn tpc-view-cart">
-            <i class="fas fa-shopping-cart me-1"></i> View Cart
-        </a>
+        <div class="tpc-form">
+            <button type="button" onclick="window.location='{% url 'store:cart' %}'" class="tpc-add-btn">
+                <i class="fas fa-shopping-cart me-1"></i> View Cart
+            </button>
+        </div>
         {% else %}
         <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form product-add-form">
             {% csrf_token %}
@@ -85,7 +87,14 @@
             {% endif %}
         </a>
 
-        {# Wishlist for simple products is not yet variant-backed; hide until backend supports it. #}
+        {% if WISHLIST_ENABLED %}
+        <button type="button"
+                class="tpc-wishlist js-wishlist-toggle"
+                data-product-id="{{ product.id }}"
+                title="Wishlist" aria-label="Wishlist">
+            <i class="far fa-heart"></i>
+        </button>
+        {% endif %}
 
     </div>
     {% endwith %}
@@ -97,9 +106,11 @@
         <p class="tpc-price">₹{{ product.base_price|floatformat:0 }}</p>
 
         {% if product.id in cart_simple_product_ids %}
-        <a href="{% url 'store:cart' %}" class="tpc-add-btn tpc-view-cart">
-            <i class="fas fa-shopping-cart me-1"></i> View Cart
-        </a>
+        <div class="tpc-form">
+            <button type="button" onclick="window.location='{% url 'store:cart' %}'" class="tpc-add-btn">
+                <i class="fas fa-shopping-cart me-1"></i> View Cart
+            </button>
+        </div>
         {% else %}
         <form method="post" action="{% url 'store:cart_add' %}" class="tpc-form product-add-form">
             {% csrf_token %}

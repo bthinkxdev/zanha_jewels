@@ -351,6 +351,7 @@
 
     $(document).on('change', '.quantity input', function () {
         updateCartTotal();
+        $('#formQuantity').val($(this).val());
     });
 
 
