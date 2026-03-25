@@ -175,7 +175,7 @@ HOME_DEAL_OF_DAY_ENABLED = False
 HOME_FEATURED_ENABLED = False
 HOME_BESTSELLER_ENABLED = True
 HOME_RECENTLY_ADDED_ENABLED = False
-ALLOW_ATTRIBUTES_AND_VARIANTS = False
+ALLOW_ATTRIBUTES_AND_VARIANTS = True
 REVIEW_ENABLED = config("REVIEW_ENABLED", default=False, cast=bool)
 
 # Delivery charge: constant ₹80 for all orders (1 rupee to 1 lakh or any amount)
