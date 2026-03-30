@@ -115,6 +115,14 @@
     padding: 24px 90px 24px 172px;
 }
 
+/* Mobile/tablet: horizontal rhythm lives here so title, price & CTAs never hug the viewport */
+.pdp-details-inner {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
 /* Category label — small, muted, uppercase */
 .product-detail-info .product-category {
     font-family: 'Muli', sans-serif;
@@ -144,16 +152,6 @@
         font-size: 42px !important;
     }
 }
-@media (max-width: 767px) {
-    .product-detail-info .product-detail-title {
-        font-size: 32px !important;
-        line-height: 1.1 !important;
-    }
-    .product-detail-info {
-        padding-left: 0;
-    }
-}
-
 /* Rating — below title, small */
 .product-detail-info .product-detail-rating {
     margin-bottom: 20px;
@@ -174,11 +172,23 @@
 .product-detail-info .product-detail-price {
     display: flex !important;
     align-items: baseline !important;
+    flex-wrap: wrap !important;
     gap: 10px !important;
     padding: 20px 0 20px !important;
     border-top: 1px solid #e8e4df !important;
     border-bottom: none !important;
     margin-bottom: 0 !important;
+    min-width: 0 !important;
+    overflow-x: visible !important;
+}
+
+.product-detail-info .product-detail-price .price-block {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: baseline !important;
+    gap: 8px 12px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
 }
 
 .product-detail-info .product-detail-price .price-main {
@@ -239,15 +249,58 @@
         max-width: 100% !important;
         padding: 20px 0 0 0 !important;
     }
+    .pdp-details-inner {
+        padding-top: 4px;
+        padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+    }
+    .product-detail-info .product-detail-title {
+        margin-bottom: 1.25rem !important;
+    }
+    .product-detail-info .product-detail-rating {
+        margin-bottom: 1.25rem !important;
+    }
+    .product-detail-info .product-detail-price {
+        padding: 1.125rem 0 1.25rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    #pdp-price-pending {
+        margin: 0.125rem 0 0 !important;
+        line-height: 1.45 !important;
+        padding-right: 4px;
+    }
+    .pdp-details-inner #variantAttributeGroups {
+        margin-top: 0.625rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    .pdp-details-inner #variantAttributeGroups > .mb-2 > span {
+        margin-bottom: 0.625rem !important;
+    }
+    .pdp-details-inner .mb-3:has(#variantOptions) {
+        margin-top: 0.5rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    #addToCartForm.product-add-form {
+        margin-top: 0.375rem !important;
+        margin-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: 4px !important;
+    }
     .product-cta-row {
-        gap: 8px !important;
+        gap: 10px !important;
+        min-width: 0 !important;
+        margin-top: 0.125rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    .product-cta-row .btn-add-cart,
+    .product-cta-row .btn-view-cart {
+        min-width: 0 !important;
     }
     .qty-selector {
         width: 110px !important;
     }
     .btn-buy-now {
         width: 100% !important;
-        margin-top: 8px;
+        margin-top: 14px !important;
+        margin-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
     }
 }
 
@@ -772,14 +825,46 @@
    ============================================================ */
 @media (max-width: 991px) {
     .product-detail-main {
-        padding: 24px 0 56px;
+        padding: 28px 0 44px;
+    }
+    .product-detail-main > .container {
+        max-width: 100%;
+    }
+    .product-detail-main .row.g-5 > .col-lg-6 {
+        min-width: 0;
+    }
+    /* Match gallery + copy to the same horizontal rhythm */
+    .product-detail-main .gallery-section {
+        padding-left: max(22px, min(5.5vw, 28px), env(safe-area-inset-left, 0px));
+        padding-right: max(22px, min(5.5vw, 28px), env(safe-area-inset-right, 0px));
+        box-sizing: border-box;
     }
     .product-detail-info {
         padding: 24px 0 0 0 !important;
         margin-top: 8px;
     }
+    .pdp-details-inner {
+        padding-left: max(22px, min(5.5vw, 28px), env(safe-area-inset-left, 0px));
+        padding-right: max(22px, min(5.5vw, 28px), env(safe-area-inset-right, 0px));
+    }
+    .gallery-section .gallery-thumbs {
+        margin-top: 18px !important;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
     .product-detail-info .product-detail-title {
-        font-size: 36px !important;
+        font-size: clamp(1.5rem, 3.5vw + 0.85rem, 2.125rem) !important;
+        line-height: 1.18 !important;
+    }
+}
+
+/* Phones: tighter title (must follow 991 rules in cascade) */
+@media (max-width: 767px) {
+    .product-detail-info .product-detail-title {
+        font-size: clamp(1.375rem, 4.2vw + 0.75rem, 1.75rem) !important;
+        line-height: 1.22 !important;
+        letter-spacing: -0.01em !important;
+        overflow-wrap: anywhere;
     }
 }
 

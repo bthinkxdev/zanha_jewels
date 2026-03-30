@@ -495,8 +495,7 @@ class ProductDetailView(DetailView):
         try:
             context = super().get_context_data(**kwargs)
             product = context["product"]
-            # Only sellable variants (active + stock > 0) for detail page + selection tree
-            variants_qs = (
+            sellable_qs = (
                 product.variants.filter(
                     is_active=True,
                     stock_quantity__gt=0,
@@ -504,9 +503,16 @@ class ProductDetailView(DetailView):
                 .prefetch_related("attribute_values__attribute", "images")
                 .order_by("display_order", "id")
             )
-            variants = list(variants_qs)
+            variants = list(sellable_qs)
+            # If nothing is in stock, still load active variants so PDP can show price (CTAs stay disabled)
+            if not variants and product.variants.filter(is_active=True).exists():
+                variants = list(
+                    product.variants.filter(is_active=True)
+                    .prefetch_related("attribute_values__attribute", "images")
+                    .order_by("display_order", "id")
+                )
 
-            # Selected variant: from ?variant= (if sellable) or first sellable
+            # Selected variant: from ?variant= if in current list, else first in list
             selected_variant = None
             variant_param = self.request.GET.get("variant")
             if variant_param:
@@ -522,7 +528,7 @@ class ProductDetailView(DetailView):
             if not selected_variant and variants:
                 selected_variant = variants[0]
 
-            # Only consider attribute values that actually appear on at least one sellable variant
+            # Attribute values that appear on at least one variant in the current PDP list
             used_value_ids = set()
             for v in variants:
                 for av_id in v.attribute_values.values_list("id", flat=True):
@@ -589,15 +595,19 @@ class ProductDetailView(DetailView):
                         "id": v.id,
                         "price": str(v.price),
                         "original_price": str(v.original_price) if v.original_price else "",  # ← ADD
-                        "discount_percent": v.discount_percent, 
+                        "discount_percent": v.discount_percent,
                         "stock": v.stock_quantity,
                         "stock_quantity": v.stock_quantity,
                         "attributes": attr_map,
+                        "attribute_value_ids": list(
+                            v.attribute_values.order_by("id").values_list("id", flat=True)
+                        ),
                         "image": primary_image_url,
                         "is_gst_applicable": bool(product.is_gst_applicable),
                         "gst_percentage": str(product.gst_percentage) if product.is_gst_applicable and product.gst_percentage is not None else None,
                     }
                 )
+            context["variant_json"] = variant_json
             if product.is_simple_product():
                 context["product_base_original_price"] = product.base_original_price
                 context["product_discount_percent"] = product.discount_percent
