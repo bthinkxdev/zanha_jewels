@@ -294,6 +294,8 @@ def _variant_payload(v):
         "id": v.id,
         "attribute_values": values,
         "price": str(v.price),
+        "original_price": str(v.original_price) if v.original_price else "",  # ← ADD
+        "discount_percent": v.discount_percent, 
         "stock_quantity": v.stock_quantity,
         "sku": v.sku or "",
         "is_active": v.is_active,
@@ -390,10 +392,21 @@ class VariantCreateApiView(View):
         length = _decimal_from_data(data, "length", 0)
         breadth = _decimal_from_data(data, "breadth", 0)
         height = _decimal_from_data(data, "height", 0)
+        from decimal import Decimal, InvalidOperation
+        original_price_raw = data.get("original_price")
+        original_price = None
+        if original_price_raw not in (None, "", "null"):
+            try:
+                op = Decimal(str(original_price_raw).strip())
+                if op >= 0:
+                    original_price = op
+            except (InvalidOperation, TypeError, ValueError):
+                pass
         with transaction.atomic():
             v = Variant.objects.create(
                 product=product,
                 price=price,
+                original_price=original_price,
                 stock_quantity=stock_quantity,
                 sku=sku,
                 display_order=display_order,
@@ -425,6 +438,19 @@ class VariantUpdateApiView(View):
                     update_kw["price"] = p
             except Exception:
                 pass
+        
+        if "original_price" in data:
+            raw = data.get("original_price")
+            if raw in (None, "", "null"):
+                update_kw["original_price"] = None
+            else:
+                try:
+                    from decimal import Decimal
+                    op = Decimal(str(raw).strip())
+                    if op >= 0:
+                        update_kw["original_price"] = op
+                except Exception:
+                    pass 
         if "stock_quantity" in data:
             try:
                 q = int(data["stock_quantity"])

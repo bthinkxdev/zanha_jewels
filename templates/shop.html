@@ -91,7 +91,9 @@
             {% if not is_jewellery %}
             <div class="product-card">
                 <div class="product-img-wrap">
-                    {% if variant.product.discount_percent %}<span class="product-badge badge-sale">−{{ variant.product.discount_percent }}%</span>{% endif %}
+                    {% if variant.original_price and variant.original_price > variant.price %}
+<span class="product-badge badge-sale">−{{ variant.discount_percent }}%</span>
+{% endif %}
                     {% comment %} {% if variant.product.is_bestseller %}<span class="product-badge badge-new">Bestseller</span>{% endif %} {% endcomment %}
                     <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}">
                         {% with imgs=variant.images.all %}
@@ -161,12 +163,15 @@
                         <h3 class="product-name">{{ product.name }}</h3>
                     </a>
                     <div class="product-price">
-                        {% if product.base_price %}
-                        <span class="price-current">₹{{ product.base_price|floatformat:0 }}</span>
-                        {% else %}
-                        <span class="price-current">Price on request</span>
-                        {% endif %}
-                    </div>
+    {% if product.base_price %}
+    <span class="price-current">₹{{ product.base_price|floatformat:0 }}</span>
+    {% else %}
+    <span class="price-current">Price on request</span>
+    {% endif %}
+    {% if product.base_original_price and product.base_original_price > product.base_price %}
+    <span class="price-old">₹{{ product.base_original_price|floatformat:0 }}</span>
+    {% endif %}
+</div>
                     {% if product.id in cart_simple_product_ids %}
                     <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
                     {% else %}

@@ -588,14 +588,22 @@ class ProductDetailView(DetailView):
                     {
                         "id": v.id,
                         "price": str(v.price),
+                        "original_price": str(v.original_price) if v.original_price else "",  # ← ADD
+                        "discount_percent": v.discount_percent, 
                         "stock": v.stock_quantity,
+                        "stock_quantity": v.stock_quantity,
                         "attributes": attr_map,
                         "image": primary_image_url,
                         "is_gst_applicable": bool(product.is_gst_applicable),
                         "gst_percentage": str(product.gst_percentage) if product.is_gst_applicable and product.gst_percentage is not None else None,
                     }
                 )
-            context["variant_json"] = variant_json
+            if product.is_simple_product():
+                context["product_base_original_price"] = product.base_original_price
+                context["product_discount_percent"] = product.discount_percent
+            else:
+                context["product_base_original_price"] = None
+                context["product_discount_percent"] = 0
 
             # GST display for product detail (selected variant or simple product base_price)
             base_price_for_gst = None

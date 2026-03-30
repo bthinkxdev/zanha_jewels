@@ -97,22 +97,58 @@
                     {% if selected_variant %}
                         {% if product.is_gst_applicable and product_gst_percentage is not None %}
                         <div class="price-breakdown">
+                            {% if selected_variant.original_price and selected_variant.original_price > selected_variant.price %}
+                            <div style="margin-bottom:.35rem;">
+                                <span class="price-mrp">₹{{ selected_variant.original_price|floatformat:0 }}</span>
+                                {% if selected_variant.discount_percent > 0 %}
+                                <span class="price-off-badge">{{ selected_variant.discount_percent }}% OFF</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                             <div>Base Price: <span class="price-main">₹{{ selected_variant.price|floatformat:2 }}</span></div>
                             <div>GST ({{ product_gst_percentage }}%): <span class="price-gst">₹{{ product_detail_gst_amount|floatformat:2 }}</span></div>
                             <div class="price-total-line">Total: <span class="price-main">₹{{ product_detail_total_with_gst|floatformat:2 }}</span></div>
                         </div>
                         {% else %}
-                        <span class="price-main">₹{{ selected_variant.price|floatformat:0 }}</span>
+                        <div class="price-block">
+                            {% if selected_variant.original_price and selected_variant.original_price > selected_variant.price %}
+                            <span class="price-mrp" id="price-mrp">₹{{ selected_variant.original_price|floatformat:0 }}</span>
+                            {% else %}
+                            <span class="price-mrp" id="price-mrp" style="display:none;"></span>
+                            {% endif %}
+                            <span class="price-main price-selling" id="price-selling">₹{{ selected_variant.price|floatformat:0 }}</span>
+                            {% if selected_variant.discount_percent > 0 %}
+                            <span class="price-off-badge" id="price-badge">{{ selected_variant.discount_percent }}% OFF</span>
+                            {% else %}
+                            <span class="price-off-badge" id="price-badge" style="display:none;"></span>
+                            {% endif %}
+                        </div>
                         {% endif %}
                     {% elif product.is_simple_product and product.base_price is not None %}
                         {% if product.is_gst_applicable and product_gst_percentage is not None %}
                         <div class="price-breakdown">
+                            {% if product.base_original_price and product.base_original_price > product.base_price %}
+                            <div style="margin-bottom:.35rem;">
+                                <span class="price-mrp">₹{{ product.base_original_price|floatformat:0 }}</span>
+                                {% if product.discount_percent > 0 %}
+                                <span class="price-off-badge">{{ product.discount_percent }}% OFF</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                             <div>Base Price: <span class="price-main">₹{{ product.base_price|floatformat:2 }}</span></div>
                             <div>GST ({{ product_gst_percentage }}%): <span class="price-gst">₹{{ product_detail_gst_amount|floatformat:2 }}</span></div>
                             <div class="price-total-line">Total: <span class="price-main">₹{{ product_detail_total_with_gst|floatformat:2 }}</span></div>
                         </div>
                         {% else %}
-                        <span class="price-main">₹{{ product.base_price|floatformat:0 }}</span>
+                        <div class="price-block">
+                            {% if product.base_original_price and product.base_original_price > product.base_price %}
+                            <span class="price-mrp">₹{{ product.base_original_price|floatformat:0 }}</span>
+                            {% endif %}
+                            <span class="price-main price-selling">₹{{ product.base_price|floatformat:0 }}</span>
+                            {% if product.discount_percent > 0 %}
+                            <span class="price-off-badge">{{ product.discount_percent }}% OFF</span>
+                            {% endif %}
+                        </div>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -210,7 +246,7 @@
         
             </div>
 
-        <!-- Description / Specs 
+        <!-- Description / Specs -->
         {% if product.description %}
         <div class="row mt-5 pt-3">
             <div class="col-lg-8">
@@ -226,7 +262,7 @@
                 </div>
             </div>
         </div>
-        {% endif %}-->
+        {% endif %}
 
         <!-- Reviews (only when REVIEW_ENABLED) -->
         {% if REVIEW_ENABLED %}
@@ -301,7 +337,15 @@
                         </div>
                         <div class="product-body">
                             <a href="{% url 'store:product_detail' rel.slug %}" class="text-decoration-none"><h3 class="product-name">{{ rel.name }}</h3></a>
-                            <div class="product-price"><span class="price-current">₹{{ rel.base_price|floatformat:0 }}</span></div>
+                            <div class="product-price">
+                                {% if rel.base_original_price and rel.base_original_price > rel.base_price %}
+                                    <span class="price-mrp">₹{{ rel.base_original_price|floatformat:0 }}</span>
+                                {% endif %}
+                                <span class="price-current">₹{{ rel.base_price|floatformat:0 }}</span>
+                                {% if rel.discount_percent > 0 %}
+                                    <span class="price-off-badge" style="font-size:.65rem;">{{ rel.discount_percent }}% OFF</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     {% else %}
@@ -315,7 +359,15 @@
                         </div>
                         <div class="product-body">
                             <a href="{% url 'store:product_detail' rel.slug %}?variant={{ fv.id }}" class="text-decoration-none"><h3 class="product-name">{{ rel.name }}</h3></a>
-                            <div class="product-price"><span class="price-current">₹{{ fv.price|floatformat:0 }}</span></div>
+                            <div class="product-price">
+                                {% if fv.original_price and fv.original_price > fv.price %}
+                                    <span class="price-mrp">₹{{ fv.original_price|floatformat:0 }}</span>
+                                {% endif %}
+                                <span class="price-current">₹{{ fv.price|floatformat:0 }}</span>
+                                {% if fv.discount_percent > 0 %}
+                                    <span class="price-off-badge" style="font-size:.65rem;">{{ fv.discount_percent }}% OFF</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -730,7 +782,43 @@
                     '</div>';
             } else {
                 var priceText = isNaN(priceNumber) ? variant.price : priceNumber.toFixed(0);
-                priceBlock.innerHTML = '<span class="price-main">₹' + priceText + '</span>';
+                var origPrice = variant.original_price ? parseFloat(variant.original_price) : 0;
+                var discPct   = variant.discount_percent || 0;
+                var hasDiscount = origPrice > 0 && origPrice > priceNumber;
+
+                // Update individual elements if they exist (avoids innerHTML flash)
+                var mrpEl   = document.getElementById('price-mrp');
+                var sellEl  = document.getElementById('price-selling');
+                var badgeEl = document.getElementById('price-badge');
+
+                if (sellEl) {
+                    // Elements exist — update in place (no flicker)
+                    sellEl.textContent = '₹' + priceText;
+                    if (hasDiscount) {
+                        if (mrpEl)   { mrpEl.textContent = '₹' + origPrice.toFixed(0); mrpEl.style.display = ''; }
+                        if (badgeEl && discPct > 0) { badgeEl.textContent = discPct + '% OFF'; badgeEl.style.display = ''; }
+                        else if (badgeEl) { badgeEl.style.display = 'none'; }
+                    } else {
+                        if (mrpEl)   mrpEl.style.display = 'none';
+                        if (badgeEl) badgeEl.style.display = 'none';
+                    }
+                } else {
+                    // Fallback: build innerHTML from scratch
+                    var html = '<div class="price-block">';
+                    if (hasDiscount) {
+                        html += '<span class="price-mrp" id="price-mrp">₹' + origPrice.toFixed(0) + '</span>';
+                    } else {
+                        html += '<span class="price-mrp" id="price-mrp" style="display:none;"></span>';
+                    }
+                    html += '<span class="price-main price-selling" id="price-selling">₹' + priceText + '</span>';
+                    if (hasDiscount && discPct > 0) {
+                        html += '<span class="price-off-badge" id="price-badge">' + discPct + '% OFF</span>';
+                    } else {
+                        html += '<span class="price-off-badge" id="price-badge" style="display:none;"></span>';
+                    }
+                    html += '</div>';
+                    priceBlock.innerHTML = html;
+                }
             }
         }
 
@@ -738,7 +826,7 @@
             formVariantId.value = variant.id;
         }
 
-        var inStock = variant.stock > 0;
+        var inStock = ((variant.stock != null ? variant.stock : variant.stock_quantity) || 0) > 0;
         if (addBtn) {
             addBtn.disabled = !inStock;
         }
@@ -770,9 +858,15 @@
             if (!selVal) {
                 return false;
             }
-            if (variant.attributes[attrName] !== selVal) {
-                return false;
+            var vKeys = Object.keys(variant.attributes);
+            var matched = false;
+            for (var k = 0; k < vKeys.length; k++) {
+                if (vKeys[k].toLowerCase() === attrName.toLowerCase() && variant.attributes[vKeys[k]] === selVal) {
+                    matched = true;
+                    break;
+                }
             }
+            if (!matched) return false;
         }
         return true;
     }
@@ -802,19 +896,24 @@
             for (var i = 0; i < attributeGroups.length; i++) {
                 var group = attributeGroups[i];
                 var attrName = group.getAttribute('data-attribute-name');
-                if (!attrName) {
-                    ok = false;
-                    break;
-                }
+                if (!attrName) { ok = false; break; }
                 var val = selected[attrName];
-                if (!val || v.attributes[attrName] !== val) {
+                if (!val) { ok = false; break; }
+                // Case-insensitive key lookup in variant attributes
+                var vAttrKeys = Object.keys(v.attributes);
+                var matchedKey = null;
+                for (var k = 0; k < vAttrKeys.length; k++) {
+                    if (vAttrKeys[k].toLowerCase() === attrName.toLowerCase()) {
+                        matchedKey = vAttrKeys[k];
+                        break;
+                    }
+                }
+                if (!matchedKey || v.attributes[matchedKey] !== val) {
                     ok = false;
                     break;
                 }
             }
-            if (ok) {
-                return v;
-            }
+            if (ok) return v;
         }
         return null;
     }

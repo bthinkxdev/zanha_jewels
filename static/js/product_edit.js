@@ -136,6 +136,10 @@
             description: (document.getElementById("basic-description") && document.getElementById("basic-description").value) || "",
             brand: (document.getElementById("basic-brand") && document.getElementById("basic-brand").value) || "",
             base_price: basePriceEl && basePriceEl.value.trim() !== "" ? basePriceEl.value.trim() : null,
+            base_original_price: (function() {
+                var el = document.getElementById("basic-base_original_price");
+                return el && el.value.trim() !== "" ? el.value.trim() : null;
+            })(),
             base_stock: baseStockEl && baseStockEl.value.trim() !== "" ? parseInt(baseStockEl.value.trim(), 10) || 0 : null,
             is_featured: document.getElementById("basic-is_featured") ? document.getElementById("basic-is_featured").checked : false,
             is_bestseller: document.getElementById("basic-is_bestseller") ? document.getElementById("basic-is_bestseller").checked : false,
@@ -160,6 +164,7 @@
             (cur.brand || "") !== (basicInitial.brand || "") ||
             (cur.base_price || "") !== (basicInitial.base_price || "") ||
             (cur.base_stock || 0) !== (basicInitial.base_stock || 0) ||
+            (cur.base_original_price || "") !== (basicInitial.base_original_price || "") ||
             cur.is_featured !== basicInitial.is_featured ||
             cur.is_bestseller !== basicInitial.is_bestseller ||
             cur.is_deal_of_day !== basicInitial.is_deal_of_day ||
@@ -616,8 +621,11 @@
                         '<span class="variant-combo">' +
                         escapeHtml(combo) +
                         "</span>" +
-                        '<span class="variant-price">₹' +
-                        escapeHtml(v.price) +
+                        '<span class="variant-price">₹' + escapeHtml(v.price) +
+                            (v.original_price && parseFloat(v.original_price) > parseFloat(v.price)
+                                ? ' <span style="font-size:.75em;color:#9ca3af;text-decoration:line-through;font-weight:400;">₹' + escapeHtml(v.original_price) + '</span>' +
+                                ' <span style="font-size:.72em;background:#dc2626;color:#fff;padding:1px 5px;border-radius:3px;font-weight:600;">' + (v.discount_percent || 0) + '% OFF</span>'
+                                : '') +
                         "</span>" +
                         '<span class="variant-stock">' +
                         (v.stock_quantity || 0) +
@@ -644,9 +652,10 @@
                         '<div class="variant-fields-row">' +
                         '<div class="variant-field"><label class="variant-field-label">Price (₹)</label><input type="number" class="form-control variant-price-inp" step="0.01" min="0" value="' +
                         escapeHtml(v.price) +
-                        '" data-variant-id="' +
-                        v.id +
-                        '"></div>' +
+                        '" data-variant-id="' + v.id + '"></div>' +
+                        '<div class="variant-field"><label class="variant-field-label">Original/MRP (₹)</label><input type="number" class="form-control variant-original_price-inp" step="0.01" min="0" value="' +
+                        escapeHtml(v.original_price || "") +
+                        '" placeholder="No discount" data-variant-id="' + v.id + '"></div>' + 
                         '<div class="variant-field"><label class="variant-field-label">Stock</label><input type="number" class="form-control variant-stock-inp" min="0" value="' +
                         (v.stock_quantity || 0) +
                         '" data-variant-id="' +
@@ -934,6 +943,8 @@
 
                     var activeToggle = document.getElementById("add-variant-is_active");
                     var activeWrap = activeToggle && activeToggle.closest(".toggle-wrap");
+                    var addOrigInp = document.getElementById("add-variant-original_price");
+                    if (addOrigInp) addOrigInp.value = "";
                     if (activeToggle) activeToggle.checked = true;
                     if (activeWrap) {
                         activeWrap.classList.add("checked");
@@ -971,9 +982,21 @@
             var lengthInp = document.getElementById("add-variant-length");
             var breadthInp = document.getElementById("add-variant-breadth");
             var heightInp = document.getElementById("add-variant-height");
+            var addVariantOriginalPrice = document.getElementById("add-variant-original_price");
+            var originalPriceVal = addVariantOriginalPrice && addVariantOriginalPrice.value.trim() !== ""
+                ? addVariantOriginalPrice.value.trim()
+                : null;
+
+            // Client-side guard
+            if (originalPriceVal && parseFloat(originalPriceVal) <= parseFloat(priceVal)) {
+                toast("Original/MRP must be greater than the selling price.", "error");
+                return;
+            }
+
             var payload = {
                 attribute_value_ids: attribute_value_ids,
                 price: priceVal,
+                original_price: originalPriceVal,   // ← NEW
                 stock_quantity: parseInt((addVariantStock && addVariantStock.value) || 0, 10) || 0,
                 sku: (addVariantSku && addVariantSku.value || "").trim() || null,
                 is_active: document.getElementById("add-variant-is_active") ? document.getElementById("add-variant-is_active").checked : true,
@@ -1054,7 +1077,9 @@
             var breadthInp = card.querySelector(".variant-breadth-inp");
             var heightInp = card.querySelector(".variant-height-inp");
             var payload = {};
+            var origInp = card.querySelector(".variant-original_price-inp");
             if (priceInp) payload.price = priceInp.value;
+            if (origInp) payload.original_price = origInp.value.trim() !== "" ? origInp.value.trim() : null;
             if (stockInp) payload.stock_quantity = parseInt(stockInp.value, 10) || 0;
             if (skuInp) payload.sku = (skuInp.value || "").trim() || null;
             if (orderInp) payload.display_order = parseInt(orderInp.value, 10) || 0;

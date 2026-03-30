@@ -129,14 +129,35 @@
                     <div class="form-group">
                         <label class="form-label" for="basic-base_price">Base price (₹)</label>
                         <input type="number" class="form-control" id="basic-base_price"
-                               step="0.01" min="0"
-                               value="{{ product.base_price|default_if_none:'' }}" placeholder="0.00">
+                            step="0.01" min="0"
+                            value="{{ product.base_price|default_if_none:'' }}" placeholder="0.00">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="basic-base_original_price">
+                            Original / MRP (₹)
+                            <span style="font-weight:400;color:#9ca3af;font-size:.8rem;">(optional)</span>
+                        </label>
+                        <input type="number" class="form-control" id="basic-base_original_price"
+                            step="0.01" min="0"
+                            value="{{ product.base_original_price|default_if_none:'' }}"
+                            placeholder="Leave blank if no discount">
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-top:-.25rem;">
                     <div class="form-group">
                         <label class="form-label" for="basic-base_stock">Base stock</label>
                         <input type="number" class="form-control" id="basic-base_stock"
-                               min="0"
-                               value="{{ product.base_stock|default_if_none:'' }}" placeholder="0">
+                            min="0"
+                            value="{{ product.base_stock|default_if_none:'' }}" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <!-- discount preview — purely informational, no input needed -->
+                        {% if product.base_original_price and product.base_price and product.base_original_price > product.base_price %}
+                        <label class="form-label">Discount</label>
+                        <div style="padding:.6rem .9rem;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;font-size:.875rem;font-weight:600;color:#dc2626;">
+                            {{ product.discount_percent }}% OFF
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 <p class="section-hint">
@@ -264,8 +285,21 @@
                     <input type="number" id="add-variant-price" class="form-control" step="0.01" min="0" placeholder="0.00">
                 </div>
                 <div class="form-group">
+                    <label class="form-label">
+                        Original / MRP (₹)
+                        <span style="font-weight:400;color:#9ca3af;font-size:.8rem;">(optional)</span>
+                    </label>
+                    <input type="number" id="add-variant-original_price" class="form-control"
+                        step="0.01" min="0" placeholder="Leave blank if no discount">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
                     <label class="form-label">Stock</label>
                     <input type="number" id="add-variant-stock" class="form-control" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <!-- spacer -->
                 </div>
             </div>
             <div class="form-group">

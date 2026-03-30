@@ -105,6 +105,13 @@ class Product(TimeStampedModel):
     hsn_code = models.CharField(max_length=20, blank=True, null=True)
     # Simple product base fields (used only when the product has no variants)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    base_original_price = models.DecimalField(
+                        max_digits=10,
+                        decimal_places=2,
+                        null=True,
+                        blank=True,
+                        help_text="MRP/Original price for simple products. Used for discount display.",
+                    )
     base_stock = models.PositiveIntegerField(null=True, blank=True)
 
     objects = ProductQuerySet.as_manager()
@@ -159,6 +166,18 @@ class Product(TimeStampedModel):
                 return "https://" + url[len(base) + 1:]
             return url
         return "https://" + url.lstrip("/")
+    
+    @property
+    def discount_percent(self):
+        if not self.base_original_price or not self.base_price:
+            return 0
+        if self.base_original_price <= self.base_price:
+            return 0
+        try:
+            discount = ((self.base_original_price - self.base_price) / self.base_original_price) * 100
+            return round(discount)
+        except (TypeError, ValueError, ZeroDivisionError):
+            return 0
 
     def has_any_sellable_stock(self):
         if getattr(self, "_has_sellable_stock", None) is not None:
@@ -303,6 +322,13 @@ class Variant(TimeStampedModel):
         blank=True,
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    original_price = models.DecimalField(
+                    max_digits=10,
+                    decimal_places=2,
+                    null=True,
+                    blank=True,
+                    help_text="MRP/Original price for discount display on this variant.",
+                )
     stock_quantity = models.PositiveIntegerField(default=0)
     # Physical dimensions for shipping (weight in kg, dimensions in cm)
     weight = models.DecimalField(max_digits=6, decimal_places=3, default=0, validators=[MinValueValidator(0)])
@@ -339,6 +365,18 @@ class Variant(TimeStampedModel):
     def __str__(self):
         display = self.get_attribute_values_display()
         return f"{self.product.name} — {display}" if display else f"{self.product.name} (variant #{self.pk})"
+    
+    @property
+    def discount_percent(self):
+        if not self.original_price or not self.price:
+            return 0
+        if self.original_price <= self.price:
+            return 0
+        try:
+            discount = ((self.original_price - self.price) / self.original_price) * 100
+            return round(discount)
+        except (TypeError, ValueError, ZeroDivisionError):
+            return 0
 
 
 class VariantAttributeValue(TimeStampedModel):

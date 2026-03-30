@@ -165,6 +165,7 @@ BASIC_EDIT_FIELDS = [
     "brand",
     # Simple product base fields (used only when product has no variants)
     "base_price",
+    "base_original_price",
     "base_stock",
     "is_featured",
     "is_bestseller",
@@ -198,6 +199,15 @@ class ProductBasicEditForm(forms.ModelForm):
                     "id": "basic-base_price",
                 }
             ),
+            "base_original_price": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "step": "0.01",
+                    "min": "0",
+                    "placeholder": "MRP / Original price (optional)",
+                    "id": "basic-base_original_price",
+                }
+            ),
             "base_stock": forms.NumberInput(
                 attrs={
                     "class": "form-control",
@@ -226,6 +236,7 @@ class ProductBasicEditForm(forms.ModelForm):
         self.fields["deal_of_day_end"].required = False
         self.fields["gst_percentage"].required = False
         self.fields["hsn_code"].required = False
+        self.fields["base_original_price"].required = False
         active = Category.objects.filter(is_active=True)
         if self.instance and self.instance.pk and self.instance.category_id:
             current = self.instance.category
@@ -250,4 +261,13 @@ class ProductBasicEditForm(forms.ModelForm):
         else:
             if gst_pct is not None:
                 cleaned["gst_percentage"] = None
+        base_price = cleaned.get("base_price")
+        base_original_price = cleaned.get("base_original_price")
+        if base_original_price and not base_price:
+            self.add_error("base_price", "Selling price is required when original price is set.")
+        if base_original_price and base_price and base_original_price <= base_price:
+            self.add_error(
+                "base_original_price",
+                "Original/MRP price must be greater than the selling price."
+            )
         return cleaned
