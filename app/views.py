@@ -194,7 +194,23 @@ class ProductListView(ListView):
             simple_qs = simple_qs.order_by("-created_at", "name", "id")
 
         context["simple_products"] = list(simple_qs)
-        context["total_product_count"] = len(context.get("card_items", [])) + len(context["simple_products"])  # ← add this
+        context["total_product_count"] = len(context.get("card_items", [])) + len(context["simple_products"])
+        try:
+            cart = CartService.get_or_create_cart(self.request)
+            cart_items = list(cart.items.values("product_id", "selected_variant_id"))
+            context["cart_variant_ids"] = set(
+                item["selected_variant_id"] for item in cart_items if item["selected_variant_id"]
+            )
+            context["cart_product_ids"] = set(
+                item["product_id"] for item in cart_items
+            )
+            context["cart_simple_product_ids"] = set(
+                item["product_id"] for item in cart_items if not item["selected_variant_id"]
+            )
+        except Exception:
+            context["cart_variant_ids"] = set()
+            context["cart_product_ids"] = set()
+            context["cart_simple_product_ids"] = set()
         return context
 
     def get(self, request, *args, **kwargs):
@@ -394,6 +410,23 @@ class HomeView(TemplateView):
                     logger.error(f"Error building home wishlist: {wl_exc}", exc_info=True)
             context["home_wishlist_variants"] = home_wishlist_variants
             context["home_wishlist_products"] = home_wishlist_products
+            
+            try:
+                cart = CartService.get_or_create_cart(self.request)
+                cart_items = list(cart.items.values("product_id", "selected_variant_id"))
+                context["cart_variant_ids"] = set(
+                    item["selected_variant_id"] for item in cart_items if item["selected_variant_id"]
+                )
+                context["cart_product_ids"] = set(
+                    item["product_id"] for item in cart_items
+                )
+                context["cart_simple_product_ids"] = set(
+                    item["product_id"] for item in cart_items if not item["selected_variant_id"]
+                )
+            except Exception:
+                context["cart_variant_ids"] = set()
+                context["cart_product_ids"] = set()
+                context["cart_simple_product_ids"] = set()
 
             return context
         except Exception as e:

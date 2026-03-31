@@ -122,7 +122,7 @@
                         <span class="price-old">₹{{ variant.original_price|floatformat:0 }}</span>
                         {% endif %}
                     </div>
-                    {% if variant.id in cart_variant_ids %}
+                    {% if variant.id in cart_variant_ids or variant.product_id in cart_product_ids %}
                     <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
                     {% else %}
                     <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form">

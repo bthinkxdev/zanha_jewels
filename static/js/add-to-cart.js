@@ -51,6 +51,21 @@
         }, 550);
     }
 
+    function replaceWithViewCart(btn, cartUrl) {
+        var viewCart = document.createElement("a");
+        viewCart.href = cartUrl;
+        viewCart.className = (btn.className || "").replace(/\s*js-pdp-add-cart\s*/, " ").trim() + " btn-view-cart";
+        viewCart.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> View Cart';
+        viewCart.setAttribute("aria-label", "View cart");
+        viewCart.addEventListener("click", function(e) {
+            if (window.cartDrawer && typeof window.cartDrawer.open === "function") {
+                e.preventDefault();
+                window.cartDrawer.open();
+            }
+        });
+        if (btn.parentNode) btn.parentNode.replaceChild(viewCart, btn);
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         document.body.addEventListener("submit", function(e) {
             var form = e.target;
@@ -85,7 +100,17 @@
                             updateCartCount(result.data.cart_count);
                             triggerCartGleam();
                         }
-                        document.dispatchEvent(new CustomEvent('cart:updated', { detail: result.data }));
+
+                        var productId = body.get('product_id');
+                        var variantId = body.get('variant_id');
+                        form.setAttribute('data-cart-added', '1'); // mark to skip in listener
+                        document.dispatchEvent(new CustomEvent('cart:updated', {
+                            detail: Object.assign({}, result.data, {
+                                added_product_id: productId,
+                                added_variant_id: variantId
+                            })
+                        }));
+
                         if (btn) {
                             btn.classList.remove("btn-adding");
                             btn.classList.add("btn-added");
@@ -93,18 +118,7 @@
                             var cartUrl = form.getAttribute("data-cart-url") || (document.body && document.body.getAttribute("data-cart-url")) || "/cart/";
                             setTimeout(function() {
                                 btn.classList.remove("btn-added");
-                                var viewCart = document.createElement("a");
-                                viewCart.href = cartUrl;
-                                viewCart.className = (btn.className || "").replace(/\s*js-pdp-add-cart\s*/, " ").trim() + " btn-view-cart";
-                                viewCart.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> View Cart';
-                                viewCart.setAttribute("aria-label", "View cart");
-                                viewCart.addEventListener("click", function(e) {
-                                    if (window.cartDrawer && typeof window.cartDrawer.open === "function") {
-                                        e.preventDefault();
-                                        window.cartDrawer.open();
-                                    }
-                                });
-                                if (btn.parentNode) btn.parentNode.replaceChild(viewCart, btn);
+                                replaceWithViewCart(btn, cartUrl);
                             }, 800);
                         }
                     } else {
@@ -125,5 +139,33 @@
                     showToast("Network error. Try again.", true);
                 });
         });
+
+        // ── Sync all other matching cards across sections ────────────
+        document.addEventListener('cart:updated', function(e) {
+            var detail = (e && e.detail) || {};
+            var variantId = detail.added_variant_id ? String(detail.added_variant_id) : null;
+            var productId = detail.added_product_id ? String(detail.added_product_id) : null;
+            if (!variantId && !productId) return;
+
+            var cartUrl = (document.body && document.body.getAttribute('data-cart-url')) || '/cart/';
+
+            document.querySelectorAll('form.product-add-form').forEach(function(form) {
+                // Skip the form that was just submitted (already handled above)
+                if (form.getAttribute('data-cart-added') === '1') return;
+
+                var fVariant = (form.querySelector('[name="variant_id"]') || {}).value || null;
+                var fProduct = (form.querySelector('[name="product_id"]') || {}).value || null;
+
+                var isMatch = (productId && fProduct && fProduct === productId);
+
+                if (!isMatch) return;
+
+                var btn = form.querySelector('button[type="submit"]');
+                if (!btn) return;
+
+                replaceWithViewCart(btn, cartUrl);
+            });
+        });
+
     });
 })();
