@@ -173,7 +173,7 @@
                     <div class="checkout-card mt-4">
                         <h5><i class="fas fa-credit-card me-2"></i> Payment Method</h5>
                         <div class="payment-options">
-                            <label class="payment-option {% if form.payment.value == 'cod' or not form.is_bound %}selected{% endif %}">
+                            {% comment %} <label class="payment-option {% if form.payment.value == 'cod' or not form.is_bound %}selected{% endif %}">
                                 <input type="radio" name="payment_method" value="cod" {% if form.payment.value == 'cod' or not form.is_bound %}checked{% endif %}>
                                 <div class="payment-option-content">
                                     <div class="payment-checkbox"><span class="checkmark">✓</span></div>
@@ -184,7 +184,7 @@
                                         {% endif %}
                                     </div>
                                 </div>
-                            </label>
+                            </label> {% endcomment %}
                             <label class="payment-option {% if form.payment.value == 'razorpay' and form.is_bound %}selected{% endif %}">
                                 <input type="radio" name="payment_method" value="razorpay" {% if form.payment.value == 'razorpay' and form.is_bound %}checked{% endif %}>
                                 <div class="payment-option-content">

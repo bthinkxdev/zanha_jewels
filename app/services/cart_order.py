@@ -345,7 +345,7 @@ class CartService:
             gst_total = cart.gst_total
 
             FREE_SHIPPING_THRESHOLD = getattr(settings, "FREE_SHIPPING_ABOVE", 999)
-            delivery_charge = getattr(settings, "FLAT_DELIVERY_CHARGE", 80)
+            delivery_charge = getattr(settings, "FLAT_DELIVERY_CHARGE", 60)
 
             shipping = 0 if subtotal >= FREE_SHIPPING_THRESHOLD else delivery_charge
 

@@ -2175,7 +2175,7 @@ class CartDrawerView(View):
             return JsonResponse({
                 "success":    True,
                 "items":      items_data,
-                "total":      str(totals.total),
+                "total":      str(totals.subtotal),
                 "subtotal":   str(totals.subtotal),
                 "item_count": item_count,
             })

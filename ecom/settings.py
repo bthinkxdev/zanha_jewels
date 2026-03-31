@@ -179,7 +179,7 @@ ALLOW_ATTRIBUTES_AND_VARIANTS = True
 REVIEW_ENABLED = config("REVIEW_ENABLED", default=False, cast=bool)
 
 # Delivery charge: constant ₹80 for all orders (1 rupee to 1 lakh or any amount)
-FLAT_DELIVERY_CHARGE = 80
+FLAT_DELIVERY_CHARGE = 60
 MAX_CART_QTY = 10
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
