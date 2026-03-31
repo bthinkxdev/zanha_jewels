@@ -75,11 +75,7 @@
             <!-- Right: count -->
             <div class="toolbar-right">
                 <span class="results-count">
-                    {% if page_obj %}
-                        <strong>{{ page_obj.paginator.count }}</strong> products
-                    {% else %}
-                        <strong>{{ card_items|length }}</strong> products
-                    {% endif %}
+                    <strong>{{ total_product_count }}</strong> products
                 </span>
             </div>
         </div>

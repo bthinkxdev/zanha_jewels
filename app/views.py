@@ -194,6 +194,7 @@ class ProductListView(ListView):
             simple_qs = simple_qs.order_by("-created_at", "name", "id")
 
         context["simple_products"] = list(simple_qs)
+        context["total_product_count"] = len(context.get("card_items", [])) + len(context["simple_products"])  # ← add this
         return context
 
     def get(self, request, *args, **kwargs):
