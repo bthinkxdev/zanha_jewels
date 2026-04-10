@@ -248,7 +248,7 @@ class HomeView(TemplateView):
                     )
                 )
                 .distinct()
-                .order_by("name")[:8]
+                .order_by("name")
             )
             context["shop_categories"] = list(shop_categories_qs)
 
