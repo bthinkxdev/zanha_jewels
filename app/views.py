@@ -178,7 +178,7 @@ class HomeView(TemplateView):
                     products__variants__stock_quantity__gt=0,
                 )
                 .distinct()
-                .order_by("name")[:8]
+                .order_by("name")
             )
             context["shop_categories"] = list(shop_categories_qs)
 
