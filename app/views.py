@@ -5,6 +5,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q, F, Sum, Count, Min
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponseForbidden, JsonResponse
+from django.template.response import TemplateResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
@@ -121,6 +122,68 @@ def _collection_card_items(request, paginate_by=12):
         seen_products.add(v.product_id)
         cards.append((v, False))
     return cards
+
+
+def _home_sellable_variants_qs():
+    return (
+        Variant.objects.filter(
+            is_active=True,
+            stock_quantity__gt=0,
+        )
+        .prefetch_related("images")
+        .order_by("display_order", "id")
+    )
+
+
+def _home_base_products_qs():
+    """
+    Base queryset for homepage-like sections: active products + prefetched sellable variants.
+    Keeps the same model shape expected by `partials/_product_card.html` (product.primary_variant, product.lowest_price).
+    """
+    sellable_variants_qs = _home_sellable_variants_qs()
+    return (
+        Product.objects.available()
+        .select_related("category")
+        .prefetch_related(
+            Prefetch(
+                "variants",
+                queryset=sellable_variants_qs,
+                to_attr="sellable_variants",
+            )
+        )
+    )
+
+
+def _build_home_product_cards(products, limit):
+    """
+    Attach primary_variant and lowest_price to each Product using prefetched variants.
+    Accepts an iterable of Product objects (already prefetched).
+    """
+    out = []
+    for product in list(products)[:limit]:
+        variants = list(getattr(product, "sellable_variants", []) or [])
+        if variants:
+            primary_variant = min(
+                variants,
+                key=lambda v: (v.price, v.display_order, v.id),
+            )
+            product.primary_variant = primary_variant
+            product.lowest_price = primary_variant.price
+            out.append(product)
+        else:
+            if getattr(product, "base_stock", 0) and product.base_stock > 0 and getattr(product, "base_price", None) is not None:
+                product.primary_variant = None
+                product.lowest_price = product.base_price
+                out.append(product)
+    return out
+
+
+def _should_return_html(request):
+    fmt = (request.GET.get("format") or "").strip().lower()
+    if fmt == "html":
+        return True
+    accept = (request.headers.get("Accept") or "").lower()
+    return "text/html" in accept
 
 
 class ProductListView(ListView):
@@ -1071,6 +1134,15 @@ class NewArrivalsView(View):
                 limit = min(max(int(limit), 1), 30)
             except (TypeError, ValueError):
                 limit = 30
+            if _should_return_html(request):
+                qs = _home_base_products_qs().order_by("-created_at", "-id")
+                products = _build_home_product_cards(qs, limit)
+                return TemplateResponse(
+                    request,
+                    "partials/home_ajax_product_cards.html",
+                    {"products": products},
+                )
+
             qs = _active_variant_qs().order_by("-product__created_at", "display_order", "id")
             seen_products = set()
             variants = []
@@ -1108,8 +1180,21 @@ class TopSellingView(View):
             )
             ids_ordered = [x["product_id"] for x in product_ids_with_qty]
             if not ids_ordered:
+                if _should_return_html(request):
+                    return TemplateResponse(request, "partials/home_ajax_product_cards.html", {"products": []})
                 return JsonResponse({"products": []})
             preserved_order = dict((pk, i) for i, pk in enumerate(ids_ordered))
+
+            if _should_return_html(request):
+                prod_qs = _home_base_products_qs().filter(pk__in=ids_ordered)
+                products_sorted = sorted(list(prod_qs), key=lambda p: preserved_order.get(p.pk, 999))[: limit * 2]
+                products = _build_home_product_cards(products_sorted, limit)
+                return TemplateResponse(
+                    request,
+                    "partials/home_ajax_product_cards.html",
+                    {"products": products},
+                )
+
             qs = _active_variant_qs().filter(product_id__in=ids_ordered)
             seen_products = set()
             variants = []
@@ -1134,6 +1219,8 @@ class RecentlyViewedView(View):
         try:
             raw_ids = list(request.session.get("recently_viewed_variant_ids", []))
             if not raw_ids:
+                if _should_return_html(request):
+                    return TemplateResponse(request, "partials/home_ajax_product_cards.html", {"products": []})
                 return JsonResponse({"products": []})
             seen = set()
             unique_ids = []
@@ -1148,8 +1235,39 @@ class RecentlyViewedView(View):
                 unique_ids.append(pk_int)
             ids = unique_ids[-RECENTLY_VIEWED_VARIANTS_MAX:]
             if not ids:
+                if _should_return_html(request):
+                    return TemplateResponse(request, "partials/home_ajax_product_cards.html", {"products": []})
                 return JsonResponse({"products": []})
             preserved_order = dict((pk, i) for i, pk in enumerate(ids))
+
+            if _should_return_html(request):
+                # Use the viewed variant as the primary variant where possible.
+                variants = list(_active_variant_qs().filter(pk__in=ids))
+                v_by_id = {v.pk: v for v in variants}
+                products_qs = _home_base_products_qs().filter(pk__in=[v.product_id for v in variants])
+                ordered_products = []
+                seen = set()
+                for vid in ids:
+                    v = v_by_id.get(vid)
+                    if not v:
+                        continue
+                    pid = v.product_id
+                    if pid in seen:
+                        continue
+                    seen.add(pid)
+                    # fetch product object from products_qs list
+                    prod = next((p for p in list(products_qs) if p.pk == pid), None)
+                    if prod:
+                        # force primary variant to the viewed one when it is sellable
+                        prod.primary_variant = v
+                        prod.lowest_price = v.price
+                        ordered_products.append(prod)
+                return TemplateResponse(
+                    request,
+                    "partials/home_ajax_product_cards.html",
+                    {"products": ordered_products[:12]},
+                )
+
             qs = _active_variant_qs().filter(pk__in=ids)
             variants = sorted(list(qs), key=lambda v: preserved_order.get(v.pk, 999))
             payload = [_serialize_variant_for_json(v) for v in variants]
@@ -1194,6 +1312,18 @@ class YouMayLikeView(View):
                     )
                     candidates = list(base_qs.order_by("product__name", "display_order", "id")[:limit])
                     payload = [_serialize_variant_for_json(v) for v in candidates]
+
+            if _should_return_html(request):
+                # Basic HTML mode: use recently-viewed categories as candidates and render cards.
+                if not raw_ids:
+                    return TemplateResponse(request, "partials/home_ajax_product_cards.html", {"products": []})
+                viewed_variants = list(_active_variant_qs().filter(pk__in=raw_ids))
+                cat_ids = {v.product.category_id for v in viewed_variants if getattr(v.product, "category_id", None)}
+                if not cat_ids:
+                    return TemplateResponse(request, "partials/home_ajax_product_cards.html", {"products": []})
+                qs = _home_base_products_qs().filter(category_id__in=list(cat_ids)).order_by("-created_at")
+                products = _build_home_product_cards(qs, limit)
+                return TemplateResponse(request, "partials/home_ajax_product_cards.html", {"products": products})
 
             return JsonResponse({"products": payload})
         except Exception as e:

@@ -1,0 +1,5 @@
+{% load static %}{% load product_filters %}
+{% for product in products %}
+    {% include "partials/_product_card.html" with product=product %}
+{% endfor %}
+

@@ -299,66 +299,51 @@
         var container = section.querySelector(".js-home-ajax-products");
         if (!apiUrl || !container) return;
 
-        // New Arrivals: explicitly request up to 30 items
-        if (sectionType === "new-arrivals") {
+        // Request server-rendered HTML that uses the canonical `_product_card.html`.
+        // This preserves UI contract (no JS-built card DOM).
+        try {
             var urlObj = new URL(apiUrl, window.location.origin);
-            urlObj.searchParams.set("limit", "30");
+            urlObj.searchParams.set("format", "html");
+            if (sectionType === "new-arrivals") {
+                urlObj.searchParams.set("limit", "30");
+            }
             apiUrl = urlObj.toString();
-        }
+        } catch (e) {}
 
-        fetch(apiUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        fetch(apiUrl, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "Accept": "text/html"
+            }
+        })
             .then(function (response) {
-                if (!response.ok) return null;
-                return response.json();
+                if (!response || !response.ok) return "";
+                return response.text();
             })
-            .then(function (data) {
-                if (!data || !Array.isArray(data.products)) {
-                    section.classList.add("is-empty");
-                    return;
-                }
-                var products = data.products || [];
-                if (products.length === 0) {
+            .then(function (html) {
+                var out = (html || "").trim();
+                if (!out) {
                     section.classList.add("is-empty");
                     return;
                 }
                 section.classList.remove("is-empty");
-                var builder = getCardBuilder(sectionType);
+                container.innerHTML = out;
 
-                // Two-row horizontal layouts for some sections; New Arrivals now uses a vertical grid
-                container.innerHTML = "";
-                if (sectionType === "recently-viewed" || sectionType === "you-may-like") {
-                    var rowSize = (sectionType === "you-may-like") ? 8 : 10;
-                    var row1 = document.createElement("div");
-                    row1.className = "variant-row";
-                    products.slice(0, rowSize).forEach(function (p) {
-                        var node = builder(p);
-                        if (node) row1.appendChild(node);
-                    });
-                    if (row1.children.length) container.appendChild(row1);
-                    var row2Products = products.slice(rowSize, rowSize * 2);
-                    if (row2Products.length) {
-                        var row2 = document.createElement("div");
-                        row2.className = "variant-row";
-                        row2Products.forEach(function (p) {
-                            var node2 = builder(p);
-                            if (node2) row2.appendChild(node2);
-                        });
-                        if (row2.children.length) container.appendChild(row2);
-                    }
-                } else {
-                    products.forEach(function (p) {
-                        var node = builder(p);
-                        if (node) container.appendChild(node);
-                    });
-                }
-                // Ensure wishlist heart state is applied to any newly-added cards.
+                // Re-apply wishlist state to newly inserted cards (guest-safe).
                 applyWishlistState();
+
+                // Re-init any card slider logic used by `_product_card.html`.
                 if (typeof window.ProductCardSliderInit === "function") {
                     window.ProductCardSliderInit();
                 }
+
+                // Re-init WOW animations if present (best-effort, safe to call).
+                if (typeof window.WOW === "function") {
+                    try { new window.WOW().init(); } catch (e) {}
+                }
             })
             .catch(function () {
-                section.classList.add("is-empty");
+                // Graceful fallback: keep server-rendered fallback cards in place.
             });
     }
 
