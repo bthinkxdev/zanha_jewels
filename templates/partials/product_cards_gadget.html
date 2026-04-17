@@ -1,4 +1,7 @@
 {% load static %}{% load product_filters %}
+<div class="js-shop-fragment"
+     data-next-page="{% if page_obj and page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}"
+     data-has-next="{% if page_obj and page_obj.has_next %}true{% else %}false{% endif %}">
 {% for card in card_items %}
 {% with variant=card.0 is_jewellery=card.1 %}
 {% if not is_jewellery %}
@@ -39,3 +42,4 @@
 {% endif %}
 {% endwith %}
 {% endfor %}
+</div>

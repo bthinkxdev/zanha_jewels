@@ -81,7 +81,9 @@
         </div>
 
         <!-- Products Grid -->
-        <div class="wow fadeInUp" data-wow-delay="0.2s" id="shopProductGrid">
+        <div class="wow fadeInUp" data-wow-delay="0.2s" id="shopProductGrid"
+             data-next-page="{% if page_obj and page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}"
+             data-has-next="{% if page_obj and page_obj.has_next %}true{% else %}false{% endif %}">
             {% for card in card_items %}
             {% with variant=card.0 is_jewellery=card.1 %}
             {% if not is_jewellery %}
@@ -197,17 +199,17 @@
         <nav class="mt-5 d-flex justify-content-center" aria-label="Shop pagination">
             <ul class="pagination">
                 {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q|urlencode }}{% if filters.min_price %}&min_price={{ filters.min_price }}{% endif %}{% if filters.max_price %}&max_price={{ filters.max_price }}{% endif %}">Previous</a></li>
                 {% endif %}
                 {% for p in page_obj.paginator.page_range %}
                 {% if p == page_obj.number %}
                 <li class="page-item active"><span class="page-link">{{ p }}</span></li>
                 {% else %}
-                <li class="page-item"><a class="page-link" href="?page={{ p }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">{{ p }}</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ p }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q|urlencode }}{% if filters.min_price %}&min_price={{ filters.min_price }}{% endif %}{% if filters.max_price %}&max_price={{ filters.max_price }}{% endif %}">{{ p }}</a></li>
                 {% endif %}
                 {% endfor %}
                 {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q|urlencode }}{% if filters.min_price %}&min_price={{ filters.min_price }}{% endif %}{% if filters.max_price %}&max_price={{ filters.max_price }}{% endif %}">Next</a></li>
                 {% endif %}
             </ul>
         </nav>
@@ -246,6 +248,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/shop-infinite.js' %}" defer></script>
 <script>
 (function(){
     /* ── Filter offcanvas ── */
