@@ -252,16 +252,115 @@ class HomeView(TemplateView):
             )
             context["shop_categories"] = list(shop_categories_qs)
 
-            # --- Home product sections ---
-            # Performance: the home template now loads product cards via AJAX (/api/* endpoints).
-            # Keep these context keys for template compatibility but avoid heavyweight product queries here.
-            context["deal_of_day_products"] = []
-            context["deal_products"] = []
-            context["bestseller_products"] = []
-            context["new_arrival_products"] = []
-            context["top_rated_products"] = []
-            context["budget_products"] = []
-            context["featured_products"] = []
+            # --- Base product queryset for homepage sections (sellable products only) ---
+            sellable_variants_qs = (
+                Variant.objects.filter(
+                    is_active=True,
+                    stock_quantity__gt=0,
+                )
+                .prefetch_related("images")
+                .order_by("display_order", "id")
+            )
+
+            base_products_qs = (
+                Product.objects.available()
+                .select_related("category")
+                .prefetch_related(
+                    Prefetch(
+                        "variants",
+                        queryset=sellable_variants_qs,
+                        to_attr="sellable_variants",
+                    )
+                )
+            )
+
+            def _build_product_cards(qs, limit):
+                """
+                Attach primary_variant and lowest_price to each Product using prefetched variants.
+                Returns a list of products limited to `limit`.
+                """
+                products = []
+                for product in qs[:limit]:
+                    variants = list(getattr(product, "sellable_variants", []) or [])
+                    if variants:
+                        # Variant product: choose primary variant by lowest price, then display_order, then id
+                        primary_variant = min(
+                            variants,
+                            key=lambda v: (v.price, v.display_order, v.id),
+                        )
+                        product.primary_variant = primary_variant
+                        product.lowest_price = primary_variant.price
+                        products.append(product)
+                    else:
+                        # Simple product (no variants). Include only if it has sellable base stock.
+                        if getattr(product, "base_stock", 0) and product.base_stock > 0:
+                            product.primary_variant = None
+                            product.lowest_price = product.base_price
+                            products.append(product)
+                return products
+
+            # --- Deal of the Day ---
+            deal_qs = base_products_qs.filter(is_deal_of_day=True)
+            deal_qs = deal_qs.filter(
+                Q(deal_of_day_start__isnull=True) | Q(deal_of_day_start__lte=today),
+                Q(deal_of_day_end__isnull=True) | Q(deal_of_day_end__gte=today),
+            ).order_by("-created_at")
+            deal_of_day_products = _build_product_cards(deal_qs, 8)
+            context["deal_of_day_products"] = deal_of_day_products
+            # Backwards compatibility (older templates may still expect this key)
+            context["deal_products"] = deal_of_day_products
+
+            # --- Best Sellers ---
+            bestseller_qs = base_products_qs.filter(is_bestseller=True).order_by(
+                "-created_at"
+            )
+            context["bestseller_products"] = _build_product_cards(bestseller_qs, 8)
+
+            # --- Recently Added (New Arrivals) ---
+            new_arrivals_qs = base_products_qs.order_by("-created_at")
+            # Show up to 26 products on the homepage
+            context["new_arrival_products"] = _build_product_cards(
+                new_arrivals_qs, 26
+            )
+
+            # --- Top Rated ---
+            top_rated_qs = base_products_qs.filter(
+                average_rating__gte=4,
+                total_reviews__gt=0,
+            ).order_by("-average_rating", "-total_reviews", "-created_at")
+            context["top_rated_products"] = _build_product_cards(top_rated_qs, 8)
+
+            # --- Budget Picks (₹499 and under, ordered by lowest price: variant or base_price) ---
+            budget_qs = (
+                Product.objects.available()
+                .filter(
+                    Q(variants__price__lte=499)
+                    | Q(variants__isnull=True, base_price__lte=499)
+                )
+                .annotate(
+                    min_price=Coalesce(
+                        Min("variants__price"),
+                        "base_price",
+                    )
+                )
+                .select_related("category")
+                .prefetch_related(
+                    Prefetch(
+                        "variants",
+                        queryset=sellable_variants_qs,
+                        to_attr="sellable_variants",
+                    )
+                )
+                .order_by("min_price", "-created_at")
+                .distinct()
+            )
+            context["budget_products"] = _build_product_cards(budget_qs, 8)
+
+            # --- Featured Collection ---
+            featured_qs = base_products_qs.filter(is_featured=True).order_by(
+                "-created_at"
+            )
+            context["featured_products"] = _build_product_cards(featured_qs, 8)
 
             active_banners = list(
                 Banner.objects.filter(is_active=True).order_by("display_order", "created_at")
