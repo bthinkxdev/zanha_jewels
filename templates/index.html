@@ -2,10 +2,6 @@
 {% load static %}{% load product_filters %}
 {% block title %}Zanha Jewels — Premium Jewellery{% endblock %}
 {% block meta_description %}Shop premium anti-tarnish jewellery — necklaces, bracelets, rings and more.{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/storefront-cards.css' %}">
-<link rel="stylesheet" href="{% static 'css/home-sections.css' %}">
-{% endblock %}
 {% block content %}
 <section class="hero-section">
     <div class="header-carousel owl-carousel">
@@ -86,74 +82,63 @@
 </section>
 {% endif %}
 
-<!-- Fast home: load sections via JS (markup matches existing home CSS) -->
-<section class="section section-new-arrivals js-home-ajax-section" data-section-type="new-arrivals" data-api-url="{% url 'store:api_new_arrivals' %}">
+
+
+{% if HOME_DEAL_OF_DAY_ENABLED %}
+<!-- Deals of the Day -->
+<section class="tpc-section js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_home_deal_of_day' %}">
     <div class="container">
-        <div class="section-header d-flex align-items-end justify-content-between mb-4">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Deals of the Day</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid js-home-ajax-products"></div>
+    </div>
+</section>
+{% endif %}
+
+{% if HOME_FEATURED_ENABLED %}
+<!-- Featured Collection -->
+<section class="tpc-section js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_home_featured' %}">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Featured</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid js-home-ajax-products"></div>
+    </div>
+</section>
+{% endif %}
+
+{% if HOME_BESTSELLER_ENABLED %}
+<!-- Best Sellers -->
+<section class="tpc-section js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_home_bestsellers' %}">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Best Sellers</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid js-home-ajax-products"></div>
+    </div>
+</section>
+{% endif %}
+
+{% if HOME_RECENTLY_ADDED_ENABLED %}
+<!-- Recently Added -->
+<section class="section-pad bg-bw-1 js-home-ajax-section" data-section-type="new-arrivals" data-api-url="{% url 'store:api_new_arrivals' %}">
+    <div class="container">
+        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
             <div>
                 <span class="section-label">Just In</span>
-                <h2 class="section-title mb-0">New Arrivals</h2>
+                <h2 class="section-title mb-0">Recently Added</h2>
                 <div class="section-divider"></div>
             </div>
             <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="new-arrivals-grid js-home-ajax-products" aria-live="polite"></div>
+        <div class="tpc-grid wow fadeInUp js-home-ajax-products" data-wow-delay="0.2s"></div>
     </div>
 </section>
-
-<section class="section section-top-selling js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_top_selling' %}">
-    <div class="container">
-        <div class="section-header d-flex align-items-end justify-content-between mb-4">
-            <div>
-                <span class="section-label">Popular</span>
-                <h2 class="section-title mb-0">Top Selling</h2>
-                <div class="section-divider"></div>
-            </div>
-            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
-        </div>
-        <div class="scroll-section-wrapper js-scroll-shadow">
-            <div class="scroll-section">
-                <div class="scroll-section-inner js-home-ajax-products" aria-live="polite"></div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section section-you-may-like js-home-ajax-section" data-section-type="you-may-like" data-api-url="{% url 'store:api_you_may_like' %}">
-    <div class="container">
-        <div class="section-header d-flex align-items-end justify-content-between mb-4">
-            <div>
-                <span class="section-label">Recommended</span>
-                <h2 class="section-title mb-0">You May Like</h2>
-                <div class="section-divider"></div>
-            </div>
-            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
-        </div>
-        <div class="scroll-section-wrapper js-scroll-shadow">
-            <div class="scroll-section">
-                <div class="scroll-section-inner js-home-ajax-products" aria-live="polite"></div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section section-recently-viewed js-home-ajax-section" data-section-type="recently-viewed" data-api-url="{% url 'store:api_recently_viewed' %}">
-    <div class="container">
-        <div class="section-header d-flex align-items-end justify-content-between mb-4">
-            <div>
-                <span class="section-label">For You</span>
-                <h2 class="section-title mb-0">Recently Viewed</h2>
-                <div class="section-divider"></div>
-            </div>
-            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
-        </div>
-        <div class="scroll-section-wrapper js-scroll-shadow">
-            <div class="scroll-section">
-                <div class="scroll-section-inner js-home-ajax-products" aria-live="polite"></div>
-            </div>
-        </div>
-    </div>
-</section>
+{% endif %}
 
 {% comment %} {% if top_rated_products %}
 <!-- Top Rated -->

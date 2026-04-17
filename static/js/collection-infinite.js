@@ -6,6 +6,7 @@
 (function () {
     "use strict";
 
+    // Supports both collection page (#product-container) and shop page (#shopProductGrid)
     var container = document.getElementById("product-container") || document.getElementById("shopProductGrid");
     var sentinel = document.getElementById("scroll-sentinel");
     var loadingEl = document.getElementById("collection-loading");

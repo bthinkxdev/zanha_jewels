@@ -123,58 +123,6 @@ def _collection_card_items(request, paginate_by=12):
     return cards
 
 
-def _collection_all_card_items(request, paginate_by=12):
-    """
-    Return list of (item, is_jewellery) for the collection/listing page.
-
-    - Variant-based products are represented as (Variant, False), one card per Product.
-    - Simple products (no variants) are represented as (Product, True).
-
-    NOTE: This returns a Python list so Django's ListView can paginate it.
-    """
-    # Variant cards (deduped per product)
-    cards = _collection_card_items(request, paginate_by=paginate_by)
-
-    category = request.GET.get("category")
-    min_price = request.GET.get("min_price")
-    max_price = request.GET.get("max_price")
-    query = request.GET.get("q")
-    sort = (request.GET.get("sort") or "").strip().lower()
-
-    # Simple products (no variants) that are sellable
-    simple_qs = (
-        Product.objects.active()
-        .filter(variants__isnull=True, base_stock__gt=0)
-        .select_related("category")
-        .prefetch_related("images")
-    )
-    if category and category != "all":
-        simple_qs = simple_qs.filter(category__slug=category)
-    if min_price:
-        simple_qs = simple_qs.filter(base_price__gte=min_price)
-    if max_price:
-        simple_qs = simple_qs.filter(base_price__lte=max_price)
-    if query:
-        simple_qs = simple_qs.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(category__name__icontains=query)
-        )
-    if sort == "price_asc":
-        simple_qs = simple_qs.order_by("base_price", "created_at")
-    elif sort == "price_desc":
-        simple_qs = simple_qs.order_by("-base_price", "-created_at")
-    else:
-        simple_qs = simple_qs.order_by("-created_at", "name", "id")
-
-    # Append simple products after variants for now (keeps existing behaviour stable).
-    # If you want a single fully-sorted stream across both types, we can implement a unified sort key.
-    for p in simple_qs:
-        cards.append((p, True))
-
-    return cards
-
-
 class ProductListView(ListView):
     """Collection page. One card per product (first in-stock variant)."""
 
@@ -184,7 +132,7 @@ class ProductListView(ListView):
 
     def get_queryset(self):
         try:
-            return _collection_all_card_items(self.request, self.paginate_by)
+            return _collection_card_items(self.request, self.paginate_by)
         except Exception as e:
             logger.error(f"Error in ProductListView.get_queryset: {str(e)}", exc_info=True)
             return []
@@ -218,7 +166,35 @@ class ProductListView(ListView):
             ("price_desc", "Price: High to Low"),
         ]
 
-        context["total_product_count"] = len(context.get("card_items", []))
+        # Simple products (no variants) with sellable stock for the collection page.
+        # These are listed alongside variant-based products but use base_price/base_stock.
+        simple_qs = (
+            Product.objects.active()
+            .filter(variants__isnull=True, base_stock__gt=0)
+            .select_related("category")
+            .prefetch_related("images")
+        )
+        if category_slug and category_slug != "all":
+            simple_qs = simple_qs.filter(category__slug=category_slug)
+        if min_price:
+            simple_qs = simple_qs.filter(base_price__gte=min_price)
+        if max_price:
+            simple_qs = simple_qs.filter(base_price__lte=max_price)
+        if query:
+            simple_qs = simple_qs.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(category__name__icontains=query)
+            )
+        if sort == "price_asc":
+            simple_qs = simple_qs.order_by("base_price", "created_at")
+        elif sort == "price_desc":
+            simple_qs = simple_qs.order_by("-base_price", "-created_at")
+        else:
+            simple_qs = simple_qs.order_by("-created_at", "name", "id")
+
+        context["simple_products"] = list(simple_qs)
+        context["total_product_count"] = len(context.get("card_items", [])) + len(context["simple_products"])
         try:
             cart = CartService.get_or_create_cart(self.request)
             cart_items = list(cart.items.values("product_id", "selected_variant_id"))
@@ -241,7 +217,8 @@ class ProductListView(ListView):
         self.object_list = self.get_queryset()
         context = self.get_context_data()
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return render(request, "partials/product_cards_gadget.html", context)
+            # Return only the next-page card fragment for infinite scroll append.
+            return render(request, "partials/product_cards_shop_fragment.html", context)
         return self.render_to_response(context)
 
 
@@ -251,9 +228,11 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            # Keep home page light: render minimal HTML and load product sections via JS
-            # from existing JSON APIs (api/new-arrivals, api/top-selling, etc.).
 
+            # --- Shop by Category (only categories with at least one sellable product) ---
+            # A category is considered "shop-able" if it has:
+            # - at least one product with a sellable variant, OR
+            # - at least one simple product (no variants) with base_stock > 0
             shop_categories_qs = (
                 Category.objects.filter(is_active=True)
                 .filter(
@@ -273,11 +252,81 @@ class HomeView(TemplateView):
             )
             context["shop_categories"] = list(shop_categories_qs)
 
+            # Home page product sections are loaded via JS (see static/js/home-ajax-sections.js),
+            # so avoid heavy server-side product queries here.
+            context["deal_of_day_products"] = []
+            context["deal_products"] = []
+            context["bestseller_products"] = []
+            context["new_arrival_products"] = []
+            context["top_rated_products"] = []
+            context["budget_products"] = []
+            context["featured_products"] = []
+
             active_banners = list(
                 Banner.objects.filter(is_active=True).order_by("display_order", "created_at")
             )
             context["banners"] = [b for b in active_banners if b.image]
             context["active_page"] = "home"
+
+            # --- Cart preview (home page) ---
+            try:
+                cart = CartService.get_or_create_cart(self.request)
+                items_qs = cart.items.select_related(
+                    "product",
+                    "selected_variant",
+                ).prefetch_related(
+                    "selected_variant__images",
+                )
+                home_cart_items = list(items_qs)
+                if home_cart_items:
+                    totals = CartService.compute_totals(cart)
+                    context["home_cart"] = cart
+                    context["home_cart_items"] = home_cart_items
+                    context["home_cart_totals"] = totals
+                else:
+                    context["home_cart_items"] = []
+            except Exception as cart_exc:
+                logger.error(f"Error building home cart preview: {cart_exc}", exc_info=True)
+                context["home_cart_items"] = []
+
+            # --- Wishlist: selected variants for Your Favorites ---
+            home_wishlist_variants = []
+            home_wishlist_products = []
+            user = getattr(self.request, "user", None)
+            if user and user.is_authenticated:
+                try:
+                    wishlist_items = list(
+                        Wishlist.objects.filter(user=user)
+                        .filter(
+                            selected_variant__is_active=True,
+                            selected_variant__product__is_active=True,
+                        )
+                        .select_related("selected_variant", "selected_variant__product", "selected_variant__product__category")
+                        .prefetch_related("selected_variant__images")
+                        .order_by("-created_at")[:12]
+                    )
+                    home_wishlist_variants = [wl.selected_variant for wl in wishlist_items if wl.selected_variant]
+                except Exception as wl_exc:
+                    logger.error(f"Error building home wishlist: {wl_exc}", exc_info=True)
+            context["home_wishlist_variants"] = home_wishlist_variants
+            context["home_wishlist_products"] = home_wishlist_products
+            
+            try:
+                cart = CartService.get_or_create_cart(self.request)
+                cart_items = list(cart.items.values("product_id", "selected_variant_id"))
+                context["cart_variant_ids"] = set(
+                    item["selected_variant_id"] for item in cart_items if item["selected_variant_id"]
+                )
+                context["cart_product_ids"] = set(
+                    item["product_id"] for item in cart_items
+                )
+                context["cart_simple_product_ids"] = set(
+                    item["product_id"] for item in cart_items if not item["selected_variant_id"]
+                )
+            except Exception:
+                context["cart_variant_ids"] = set()
+                context["cart_product_ids"] = set()
+                context["cart_simple_product_ids"] = set()
 
             return context
         except Exception as e:
@@ -285,7 +334,16 @@ class HomeView(TemplateView):
             context = super().get_context_data(**kwargs)
             context["active_page"] = "home"
             context["shop_categories"] = []
+            context["featured_products"] = []
+            context["deal_of_day_products"] = []
+            context["deal_products"] = []
+            context["bestseller_products"] = []
+            context["new_arrival_products"] = []
+            context["top_rated_products"] = []
+            context["budget_products"] = []
             context["banners"] = []
+            context["home_wishlist_variants"] = []
+            context["home_wishlist_products"] = []
             return context
 
 
@@ -877,6 +935,8 @@ def _serialize_variant_for_json(variant, detail_url=None):
         "slug": product.slug or "",
         "variant_display": variant.get_attribute_values_display(),
         "price": str(variant.price),
+        "original_price": str(variant.original_price) if getattr(variant, "original_price", None) else "",
+        "discount_percent": int(getattr(variant, "discount_percent", 0) or 0),
         "url": detail_url,
         "image_url": image_url,
         "card_images": card_images,
@@ -887,8 +947,93 @@ def _serialize_variant_for_json(variant, detail_url=None):
         "total_reviews": total_reviews,
         "is_featured": getattr(product, "is_featured", False),
         "is_active": getattr(product, "is_active", True),
+        "is_jewellery": False,
         "description": getattr(product, "description", "") or "",
     }
+
+
+class HomeFeaturedView(View):
+    """JSON API: featured products (is_featured=True). One card per product (first in-stock variant)."""
+
+    def get(self, request):
+        try:
+            limit = request.GET.get("limit", "8")
+            try:
+                limit = min(max(int(limit), 1), 24)
+            except (TypeError, ValueError):
+                limit = 8
+            qs = _active_variant_qs().filter(product__is_featured=True).order_by("-product__created_at", "display_order", "id")
+            seen_products = set()
+            variants = []
+            for v in qs:
+                if v.product_id in seen_products:
+                    continue
+                seen_products.add(v.product_id)
+                variants.append(v)
+                if len(variants) >= limit:
+                    break
+            return JsonResponse({"products": [_serialize_variant_for_json(v) for v in variants]})
+        except Exception as e:
+            logger.exception("HomeFeaturedView: %s", e)
+            return JsonResponse({"products": []})
+
+
+class HomeBestsellersView(View):
+    """JSON API: bestseller products (is_bestseller=True). One card per product (first in-stock variant)."""
+
+    def get(self, request):
+        try:
+            limit = request.GET.get("limit", "8")
+            try:
+                limit = min(max(int(limit), 1), 24)
+            except (TypeError, ValueError):
+                limit = 8
+            qs = _active_variant_qs().filter(product__is_bestseller=True).order_by("-product__created_at", "display_order", "id")
+            seen_products = set()
+            variants = []
+            for v in qs:
+                if v.product_id in seen_products:
+                    continue
+                seen_products.add(v.product_id)
+                variants.append(v)
+                if len(variants) >= limit:
+                    break
+            return JsonResponse({"products": [_serialize_variant_for_json(v) for v in variants]})
+        except Exception as e:
+            logger.exception("HomeBestsellersView: %s", e)
+            return JsonResponse({"products": []})
+
+
+class HomeDealOfDayView(View):
+    """JSON API: deal-of-the-day products (is_deal_of_day=True, within date window). One card per product."""
+
+    def get(self, request):
+        try:
+            limit = request.GET.get("limit", "8")
+            try:
+                limit = min(max(int(limit), 1), 24)
+            except (TypeError, ValueError):
+                limit = 8
+            today = timezone.now().date()
+            qs = _active_variant_qs().filter(
+                product__is_deal_of_day=True
+            ).filter(
+                Q(product__deal_of_day_start__isnull=True) | Q(product__deal_of_day_start__lte=today),
+                Q(product__deal_of_day_end__isnull=True) | Q(product__deal_of_day_end__gte=today),
+            ).order_by("-product__created_at", "display_order", "id")
+            seen_products = set()
+            variants = []
+            for v in qs:
+                if v.product_id in seen_products:
+                    continue
+                seen_products.add(v.product_id)
+                variants.append(v)
+                if len(variants) >= limit:
+                    break
+            return JsonResponse({"products": [_serialize_variant_for_json(v) for v in variants]})
+        except Exception as e:
+            logger.exception("HomeDealOfDayView: %s", e)
+            return JsonResponse({"products": []})
 
 
 class NewArrivalsView(View):

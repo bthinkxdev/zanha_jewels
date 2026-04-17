@@ -379,14 +379,8 @@
         var s = document.getElementById('page-loader-hello');
         if (s) s.classList.add('hidden');
     }
-    // Show the page as soon as the DOM is ready (don't wait for images/AJAX).
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
-        requestAnimationFrame(hideLoader);
-    } else {
-        document.addEventListener('DOMContentLoaded', function(){ requestAnimationFrame(hideLoader); }, { once: true });
-    }
-    // Safety: never block longer than 1.5s.
-    setTimeout(hideLoader, 1500);
+    if (document.readyState === 'complete') hideLoader();
+    else window.addEventListener('load', hideLoader);
 })();
 
 // ── Search (desktop expand + mobile overlay) ─────────────
