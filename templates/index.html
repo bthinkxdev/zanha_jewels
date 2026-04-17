@@ -2,6 +2,10 @@
 {% load static %}{% load product_filters %}
 {% block title %}Zanha Jewels — Premium Jewellery{% endblock %}
 {% block meta_description %}Shop premium anti-tarnish jewellery — necklaces, bracelets, rings and more.{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/storefront-cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/home-sections.css' %}">
+{% endblock %}
 {% block content %}
 <section class="hero-section">
     <div class="header-carousel owl-carousel">
