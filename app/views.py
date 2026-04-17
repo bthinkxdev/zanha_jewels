@@ -166,6 +166,19 @@ class ProductListView(ListView):
             ("price_desc", "Price: High to Low"),
         ]
 
+        # Querystring for pagination/infinite scroll: keep all active filters, drop page.
+        # (Fixes min_price/max_price being lost in pagination links.)
+        try:
+            params = request.GET.copy()
+            params.pop("page", None)
+            for k in list(params.keys()):
+                v = params.get(k)
+                if v is None or str(v).strip() == "":
+                    params.pop(k, None)
+            context["shop_querystring"] = params.urlencode()
+        except Exception:
+            context["shop_querystring"] = ""
+
         # Simple products (no variants) with sellable stock for the collection page.
         # These are listed alongside variant-based products but use base_price/base_stock.
         simple_qs = (
@@ -314,14 +327,13 @@ class HomeView(TemplateView):
             bestseller_qs = base_products_qs.filter(is_bestseller=True).order_by(
                 "-created_at"
             )
-            context["bestseller_products"] = _build_product_cards(bestseller_qs, 8)
+            # Keep a small server-rendered fallback; full list loads via /api/top-selling/ after render.
+            context["bestseller_products"] = _build_product_cards(bestseller_qs, 4)
 
             # --- Recently Added (New Arrivals) ---
             new_arrivals_qs = base_products_qs.order_by("-created_at")
-            # Show up to 26 products on the homepage
-            context["new_arrival_products"] = _build_product_cards(
-                new_arrivals_qs, 26
-            )
+            # Keep a small server-rendered fallback; full list loads via /api/new-arrivals/ after render.
+            context["new_arrival_products"] = _build_product_cards(new_arrivals_qs, 4)
 
             # --- Top Rated ---
             top_rated_qs = base_products_qs.filter(

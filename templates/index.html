@@ -118,15 +118,15 @@
 </section>
 {% endif %}
 
-{% if HOME_BESTSELLER_ENABLED and bestseller_products %}
+{% if HOME_BESTSELLER_ENABLED %}
 <!-- Best Sellers -->
-<section class="tpc-section">
+<section class="tpc-section js-home-ajax-section" data-api-url="/api/top-selling/" data-section-type="top-selling">
     <div class="container">
         <div class="tpc-section-header">
             <h2 class="tpc-section-title">Best Sellers</h2>
             <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
         </div>
-        <div class="tpc-grid">
+        <div class="tpc-grid js-home-ajax-products">
             {% for product in bestseller_products %}
                 {% include "partials/_product_card.html" with product=product %}
             {% endfor %}
@@ -135,9 +135,9 @@
 </section>
 {% endif %}
 
-{% if HOME_RECENTLY_ADDED_ENABLED and new_arrival_products %}
+{% if HOME_RECENTLY_ADDED_ENABLED %}
 <!-- Recently Added -->
-<section class="section-pad bg-bw-1">
+<section class="section-pad bg-bw-1 js-home-ajax-section" data-api-url="/api/new-arrivals/" data-section-type="new-arrivals">
     <div class="container">
         <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
             <div>
@@ -147,7 +147,7 @@
             </div>
             <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="tpc-grid wow fadeInUp" data-wow-delay="0.2s">
+        <div class="tpc-grid wow fadeInUp js-home-ajax-products" data-wow-delay="0.2s">
             {% for product in new_arrival_products %}
                 {% include "partials/_product_card.html" with product=product %}
             {% endfor %}
@@ -211,4 +211,8 @@
 </section> {% endcomment %}
 
 {% comment %} Legacy featured section (replaced by tpc-section Featured above) {% endcomment %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/home-ajax-sections.js' %}" defer></script>
 {% endblock %}
