@@ -82,8 +82,8 @@
 </section>
 {% endif %}
 
-<!-- Fast home: load sections via JS -->
-<section class="section-pad bg-bw-1 js-home-ajax-section" data-section-type="new-arrivals" data-api-url="{% url 'store:api_new_arrivals' %}">
+<!-- Fast home: load sections via JS (markup matches existing home CSS) -->
+<section class="section section-new-arrivals js-home-ajax-section" data-section-type="new-arrivals" data-api-url="{% url 'store:api_new_arrivals' %}">
     <div class="container">
         <div class="section-header d-flex align-items-end justify-content-between mb-4">
             <div>
@@ -93,37 +93,61 @@
             </div>
             <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+        <div class="new-arrivals-grid js-home-ajax-products" aria-live="polite"></div>
     </div>
 </section>
 
-<section class="tpc-section js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_top_selling' %}">
+<section class="section section-top-selling js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_top_selling' %}">
     <div class="container">
-        <div class="tpc-section-header">
-            <h2 class="tpc-section-title">Top Selling</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        <div class="section-header d-flex align-items-end justify-content-between mb-4">
+            <div>
+                <span class="section-label">Popular</span>
+                <h2 class="section-title mb-0">Top Selling</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+        <div class="scroll-section-wrapper js-scroll-shadow">
+            <div class="scroll-section">
+                <div class="scroll-section-inner js-home-ajax-products" aria-live="polite"></div>
+            </div>
+        </div>
     </div>
 </section>
 
-<section class="tpc-section js-home-ajax-section" data-section-type="you-may-like" data-api-url="{% url 'store:api_you_may_like' %}">
+<section class="section section-you-may-like js-home-ajax-section" data-section-type="you-may-like" data-api-url="{% url 'store:api_you_may_like' %}">
     <div class="container">
-        <div class="tpc-section-header">
-            <h2 class="tpc-section-title">You May Like</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        <div class="section-header d-flex align-items-end justify-content-between mb-4">
+            <div>
+                <span class="section-label">Recommended</span>
+                <h2 class="section-title mb-0">You May Like</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+        <div class="scroll-section-wrapper js-scroll-shadow">
+            <div class="scroll-section">
+                <div class="scroll-section-inner js-home-ajax-products" aria-live="polite"></div>
+            </div>
+        </div>
     </div>
 </section>
 
-<section class="tpc-section js-home-ajax-section" data-section-type="recently-viewed" data-api-url="{% url 'store:api_recently_viewed' %}">
+<section class="section section-recently-viewed js-home-ajax-section" data-section-type="recently-viewed" data-api-url="{% url 'store:api_recently_viewed' %}">
     <div class="container">
-        <div class="tpc-section-header">
-            <h2 class="tpc-section-title">Recently Viewed</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        <div class="section-header d-flex align-items-end justify-content-between mb-4">
+            <div>
+                <span class="section-label">For You</span>
+                <h2 class="section-title mb-0">Recently Viewed</h2>
+                <div class="section-divider"></div>
+            </div>
+            <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+        <div class="scroll-section-wrapper js-scroll-shadow">
+            <div class="scroll-section">
+                <div class="scroll-section-inner js-home-ajax-products" aria-live="polite"></div>
+            </div>
+        </div>
     </div>
 </section>
 

@@ -294,10 +294,12 @@
     }
 
     function loadSection(section) {
+        if (!section || section.getAttribute("data-loaded") === "true") return;
         var apiUrl = section.getAttribute("data-api-url");
         var sectionType = section.getAttribute("data-section-type") || "new-arrivals";
         var container = section.querySelector(".js-home-ajax-products");
         if (!apiUrl || !container) return;
+        section.setAttribute("data-loaded", "true");
 
         // New Arrivals: explicitly request up to 30 items
         if (sectionType === "new-arrivals") {
@@ -480,7 +482,28 @@
     }
 
     function init() {
-        document.querySelectorAll(".js-home-ajax-section").forEach(loadSection);
+        var sections = Array.prototype.slice.call(document.querySelectorAll(".js-home-ajax-section"));
+
+        // Lazy-load sections only when user scrolls near them.
+        if ("IntersectionObserver" in window) {
+            var io = new IntersectionObserver(
+                function (entries) {
+                    entries.forEach(function (entry) {
+                        if (!entry || !entry.isIntersecting) return;
+                        var sec = entry.target;
+                        if (!sec) return;
+                        io.unobserve(sec);
+                        loadSection(sec);
+                    });
+                },
+                { root: null, rootMargin: "250px 0px", threshold: 0 }
+            );
+            sections.forEach(function (s) { io.observe(s); });
+        } else {
+            // Fallback: old browsers load everything immediately.
+            sections.forEach(loadSection);
+        }
+
         // Load wishlist product IDs once and apply prefilled heart state where relevant.
         fetchWishlistIds();
         initScrollShadows();
