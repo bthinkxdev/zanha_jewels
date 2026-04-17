@@ -4,6 +4,18 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/shop.css' %}">
+<style>
+.shop-spinner {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid rgba(0,0,0,.12);
+    border-top-color: #222;
+    border-radius: 50%;
+    animation: shop-spin .7s linear infinite;
+}
+@keyframes shop-spin { to { transform: rotate(360deg); } }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -82,15 +94,14 @@
 
         <!-- Products Grid -->
         <div class="wow fadeInUp" data-wow-delay="0.2s" id="shopProductGrid">
-            {% for card in card_items %}
-            {% with variant=card.0 is_jewellery=card.1 %}
-            {% if not is_jewellery %}
+            {% for item in card_items %}
+            {% if item.type == "variant" %}
+            {% with variant=item.obj %}
             <div class="product-card">
                 <div class="product-img-wrap">
                     {% if variant.original_price and variant.original_price > variant.price %}
-<span class="product-badge badge-sale">−{{ variant.discount_percent }}%</span>
-{% endif %}
-                    {% comment %} {% if variant.product.is_bestseller %}<span class="product-badge badge-new">Bestseller</span>{% endif %} {% endcomment %}
+                    <span class="product-badge badge-sale">−{{ variant.discount_percent }}%</span>
+                    {% endif %}
                     <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}">
                         {% with imgs=variant.images.all %}
                         {% if imgs %}
@@ -107,12 +118,8 @@
                         <i class="far fa-heart"></i>
                     </button>
                     {% endif %}
-                    {% comment %} <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="product-quick-add">
-                        View Detail <i class="fas fa-arrow-right ms-1"></i>
-                    </a> {% endcomment %}
                 </div>
                 <div class="product-body">
-                    {% comment %} <div class="product-category">{{ variant.product.category.name|default:"" }}</div> {% endcomment %}
                     <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="text-decoration-none">
                         <h3 class="product-name">{{ variant.product.name }}</h3>
                     </a>
@@ -135,12 +142,9 @@
                     {% endif %}
                 </div>
             </div>
-            {% endif %}
             {% endwith %}
-            {% endfor %}
-
-            {# Simple products (no variants): use base images/price and no wishlist (wishlist is variant-based) #}
-            {% for product in simple_products %}
+            {% elif item.type == "simple" %}
+            {% with product=item.obj %}
             <div class="product-card">
                 <div class="product-img-wrap">
                     {% if product.discount_percent %}<span class="product-badge badge-sale">−{{ product.discount_percent }}%</span>{% endif %}
@@ -159,15 +163,15 @@
                         <h3 class="product-name">{{ product.name }}</h3>
                     </a>
                     <div class="product-price">
-    {% if product.base_price %}
-    <span class="price-current">₹{{ product.base_price|floatformat:0 }}</span>
-    {% else %}
-    <span class="price-current">Price on request</span>
-    {% endif %}
-    {% if product.base_original_price and product.base_original_price > product.base_price %}
-    <span class="price-old">₹{{ product.base_original_price|floatformat:0 }}</span>
-    {% endif %}
-</div>
+                        {% if product.base_price %}
+                        <span class="price-current">₹{{ product.base_price|floatformat:0 }}</span>
+                        {% else %}
+                        <span class="price-current">Price on request</span>
+                        {% endif %}
+                        {% if product.base_original_price and product.base_original_price > product.base_price %}
+                        <span class="price-old">₹{{ product.base_original_price|floatformat:0 }}</span>
+                        {% endif %}
+                    </div>
                     {% if product.id in cart_simple_product_ids %}
                     <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
                     {% else %}
@@ -182,36 +186,31 @@
                     {% endif %}
                 </div>
             </div>
+            {% endwith %}
+            {% endif %}
             {% endfor %}
 
-            {% if not card_items and not simple_products %}
+            {% if not card_items %}
             <div class="col-12 text-center py-5">
                 <p class="text-muted">No products found. Try adjusting filters.</p>
                 <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark">Clear filters</a>
             </div>
             {% endif %}
+
+            <!-- Infinite scroll sentinel — stays at the bottom of the grid -->
+            <div id="shopScrollSentinel"
+                 data-api-url="{% url 'store:shop_infinite' %}"
+                 data-has-next="{{ has_next_page|yesno:'true,false' }}"
+                 data-next-page="{{ next_page_num|default:'' }}"
+                 style="grid-column: 1 / -1; height: 1px;"></div>
         </div>
 
-        <!-- Pagination -->
-        {% if page_obj and page_obj.paginator.num_pages > 1 %}
-        <nav class="mt-5 d-flex justify-content-center" aria-label="Shop pagination">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">Previous</a></li>
-                {% endif %}
-                {% for p in page_obj.paginator.page_range %}
-                {% if p == page_obj.number %}
-                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
-                {% else %}
-                <li class="page-item"><a class="page-link" href="?page={{ p }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">{{ p }}</a></li>
-                {% endif %}
-                {% endfor %}
-                {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ filters.category }}&sort={{ filters.sort }}&q={{ filters.q }}">Next</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+        <!-- Loading spinner -->
+        <div id="shopLoadingSpinner" class="text-center py-4" hidden>
+            <span class="shop-spinner" aria-label="Loading more products…"></span>
+        </div>
+        <!-- End-of-results message -->
+        <p id="shopEndMessage" class="text-center text-muted py-3" hidden>You've seen all products.</p>
 
     </div>
 </section>
@@ -246,6 +245,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/shop-infinite.js' %}"></script>
 <script>
 (function(){
     /* ── Filter offcanvas ── */

@@ -374,13 +374,15 @@
 <script>
 // ── Page loader ──────────────────────────────────────────
 (function(){
-    var start = Date.now();
     function hideLoader(){
         var s = document.getElementById('page-loader-hello');
         if (s) s.classList.add('hidden');
     }
-    if (document.readyState === 'complete') hideLoader();
-    else window.addEventListener('load', hideLoader);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideLoader);
+    } else {
+        hideLoader();
+    }
 })();
 
 // ── Search (desktop expand + mobile overlay) ─────────────

@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import EmptyPage, Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q, F, Sum, Count, Min
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from django.utils import timezone
@@ -82,7 +84,10 @@ def _active_variant_qs():
     )
 
 
-def _collection_card_items(request, paginate_by=12):
+SHOP_PAGE_SIZE = 15
+
+
+def _collection_card_items(request, paginate_by=15):
     """
     Return list of (variant, False) for collection. One card per product: first in-stock Variant per product.
     """
@@ -110,7 +115,6 @@ def _collection_card_items(request, paginate_by=12):
     elif sort == "price_desc":
         qs = qs.order_by("-price", "-product__created_at")
     else:
-        # Newest products first on the shop page
         qs = qs.order_by("-product__created_at", "-product__id")
 
     seen_products = set()
@@ -123,16 +127,70 @@ def _collection_card_items(request, paginate_by=12):
     return cards
 
 
+def _get_simple_products(request):
+    """Return filtered simple products (no variants) for the shop page."""
+    category_slug = request.GET.get("category")
+    min_price = request.GET.get("min_price")
+    max_price = request.GET.get("max_price")
+    query = request.GET.get("q")
+    sort = (request.GET.get("sort") or "").strip().lower()
+
+    qs = (
+        Product.objects.active()
+        .filter(variants__isnull=True, base_stock__gt=0)
+        .select_related("category")
+        .prefetch_related("images")
+    )
+    if category_slug and category_slug != "all":
+        qs = qs.filter(category__slug=category_slug)
+    if min_price:
+        qs = qs.filter(base_price__gte=min_price)
+    if max_price:
+        qs = qs.filter(base_price__lte=max_price)
+    if query:
+        qs = qs.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(category__name__icontains=query)
+        )
+    if sort == "price_asc":
+        qs = qs.order_by("base_price", "created_at")
+    elif sort == "price_desc":
+        qs = qs.order_by("-base_price", "-created_at")
+    else:
+        qs = qs.order_by("-created_at", "name", "id")
+
+    return list(qs)
+
+
+def _get_combined_shop_items(request):
+    """
+    Combine variant-based and simple products into a unified list of dicts
+    for consistent pagination across the shop page.
+    Each item: {"type": "variant"|"simple", "obj": <Variant|Product>}
+    """
+    variant_cards = _collection_card_items(request)
+    simple_products = _get_simple_products(request)
+
+    items = []
+    for variant, is_jewellery in variant_cards:
+        if not is_jewellery:
+            items.append({"type": "variant", "obj": variant})
+    for product in simple_products:
+        items.append({"type": "simple", "obj": product})
+    return items
+
+
 class ProductListView(ListView):
-    """Collection page. One card per product (first in-stock variant)."""
+    """Collection page — variant + simple products, 15 per page with infinite scroll."""
 
     template_name = "shop.html"
     context_object_name = "card_items"
-    paginate_by = 12
+    paginate_by = SHOP_PAGE_SIZE
 
     def get_queryset(self):
         try:
-            return _collection_card_items(self.request, self.paginate_by)
+            return _get_combined_shop_items(self.request)
         except Exception as e:
             logger.error(f"Error in ProductListView.get_queryset: {str(e)}", exc_info=True)
             return []
@@ -141,7 +199,6 @@ class ProductListView(ListView):
         context = super().get_context_data(**kwargs)
         request = self.request
         context["categories"] = Category.objects.filter(is_active=True)
-        context["products"] = context.get("card_items", [])
         context["page_title"] = "Shop All Products"
         context["active_page"] = "collection"
         category_slug = request.GET.get("category")
@@ -165,45 +222,20 @@ class ProductListView(ListView):
             ("price_asc", "Price: Low to High"),
             ("price_desc", "Price: High to Low"),
         ]
-
-        # Simple products (no variants) with sellable stock for the collection page.
-        # These are listed alongside variant-based products but use base_price/base_stock.
-        simple_qs = (
-            Product.objects.active()
-            .filter(variants__isnull=True, base_stock__gt=0)
-            .select_related("category")
-            .prefetch_related("images")
+        paginator = context.get("paginator")
+        page_obj = context.get("page_obj")
+        context["total_product_count"] = paginator.count if paginator else 0
+        context["has_next_page"] = page_obj.has_next() if page_obj else False
+        context["next_page_num"] = (
+            page_obj.next_page_number() if (page_obj and page_obj.has_next()) else None
         )
-        if category_slug and category_slug != "all":
-            simple_qs = simple_qs.filter(category__slug=category_slug)
-        if min_price:
-            simple_qs = simple_qs.filter(base_price__gte=min_price)
-        if max_price:
-            simple_qs = simple_qs.filter(base_price__lte=max_price)
-        if query:
-            simple_qs = simple_qs.filter(
-                Q(name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(category__name__icontains=query)
-            )
-        if sort == "price_asc":
-            simple_qs = simple_qs.order_by("base_price", "created_at")
-        elif sort == "price_desc":
-            simple_qs = simple_qs.order_by("-base_price", "-created_at")
-        else:
-            simple_qs = simple_qs.order_by("-created_at", "name", "id")
-
-        context["simple_products"] = list(simple_qs)
-        context["total_product_count"] = len(context.get("card_items", [])) + len(context["simple_products"])
         try:
             cart = CartService.get_or_create_cart(self.request)
             cart_items = list(cart.items.values("product_id", "selected_variant_id"))
             context["cart_variant_ids"] = set(
                 item["selected_variant_id"] for item in cart_items if item["selected_variant_id"]
             )
-            context["cart_product_ids"] = set(
-                item["product_id"] for item in cart_items
-            )
+            context["cart_product_ids"] = set(item["product_id"] for item in cart_items)
             context["cart_simple_product_ids"] = set(
                 item["product_id"] for item in cart_items if not item["selected_variant_id"]
             )
@@ -219,6 +251,58 @@ class ProductListView(ListView):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return render(request, "partials/product_cards_gadget.html", context)
         return self.render_to_response(context)
+
+
+class ShopInfiniteAPIView(View):
+    """AJAX endpoint that returns the next page of shop products as rendered HTML."""
+
+    def get(self, request):
+        try:
+            page = max(1, int(request.GET.get("page", 1)))
+        except (TypeError, ValueError):
+            page = 1
+
+        try:
+            all_items = _get_combined_shop_items(request)
+        except Exception as e:
+            logger.error(f"ShopInfiniteAPIView error: {e}", exc_info=True)
+            return JsonResponse({"html": "", "has_next": False, "next_page": None})
+
+        paginator = Paginator(all_items, SHOP_PAGE_SIZE)
+        try:
+            page_obj = paginator.page(page)
+        except EmptyPage:
+            return JsonResponse({"html": "", "has_next": False, "next_page": None})
+
+        try:
+            cart = CartService.get_or_create_cart(request)
+            cart_items_qs = list(cart.items.values("product_id", "selected_variant_id"))
+            cart_variant_ids = set(
+                i["selected_variant_id"] for i in cart_items_qs if i["selected_variant_id"]
+            )
+            cart_product_ids = set(i["product_id"] for i in cart_items_qs)
+            cart_simple_product_ids = set(
+                i["product_id"] for i in cart_items_qs if not i["selected_variant_id"]
+            )
+        except Exception:
+            cart_variant_ids = set()
+            cart_product_ids = set()
+            cart_simple_product_ids = set()
+
+        ctx = {
+            "page_items": list(page_obj.object_list),
+            "cart_variant_ids": cart_variant_ids,
+            "cart_product_ids": cart_product_ids,
+            "cart_simple_product_ids": cart_simple_product_ids,
+        }
+        html = render_to_string(
+            "partials/shop_cards_infinite.html", ctx, request=request
+        )
+        return JsonResponse({
+            "html": html,
+            "has_next": page_obj.has_next(),
+            "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+        })
 
 
 class HomeView(TemplateView):

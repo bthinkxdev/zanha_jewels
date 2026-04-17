@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/recently-viewed/", views.RecentlyViewedView.as_view(), name="api_recently_viewed"),
     path("api/you-may-like/", views.YouMayLikeView.as_view(), name="api_you_may_like"),
     path("products/", views.ProductListView.as_view(), name="product_list"),
+    path("api/shop/products/", views.ShopInfiniteAPIView.as_view(), name="shop_infinite"),
     path("products/<slug:slug>/", views.ProductDetailView.as_view(), name="product_detail"),
     path("api/products/<int:product_id>/reviews/", views.ProductReviewCreateView.as_view(), name="product_review_create"),
     path("products/color-images/", views.ProductColorImagesView.as_view(), name="product_color_images"),
