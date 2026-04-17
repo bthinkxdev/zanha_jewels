@@ -81,29 +81,32 @@
         </div>
 
         <!-- Products Grid -->
-        <div class="wow fadeInUp" data-wow-delay="0.2s" id="shopProductGrid">
+        <div class="wow fadeInUp" data-wow-delay="0.2s"
+             id="product-container"
+             data-next-page="{% if page_obj and page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}"
+             data-has-next="{% if page_obj and page_obj.has_next %}true{% else %}false{% endif %}">
             {% for card in card_items %}
-            {% with variant=card.0 is_jewellery=card.1 %}
+            {% with item=card.0 is_jewellery=card.1 %}
             {% if not is_jewellery %}
             <div class="product-card">
                 <div class="product-img-wrap">
-                    {% if variant.original_price and variant.original_price > variant.price %}
-<span class="product-badge badge-sale">−{{ variant.discount_percent }}%</span>
+                    {% if item.original_price and item.original_price > item.price %}
+<span class="product-badge badge-sale">−{{ item.discount_percent }}%</span>
 {% endif %}
                     {% comment %} {% if variant.product.is_bestseller %}<span class="product-badge badge-new">Bestseller</span>{% endif %} {% endcomment %}
-                    <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}">
-                        {% with imgs=variant.images.all %}
+                    <a href="{% url 'store:product_detail' item.product.slug %}?variant={{ item.id }}">
+                        {% with imgs=item.images.all %}
                         {% if imgs %}
-                        <img src="{{ imgs.0.image.url }}" alt="{{ variant.product.name }}" loading="lazy">
+                        <img src="{{ imgs.0.image.url }}" alt="{{ item.product.name }}" loading="lazy">
                         {% else %}
-                        <img src="{% static 'img/product-1.png' %}" alt="{{ variant.product.name }}" loading="lazy">
+                        <img src="{% static 'img/product-1.png' %}" alt="{{ item.product.name }}" loading="lazy">
                         {% endif %}
                         {% endwith %}
                     </a>
                     {% if WISHLIST_ENABLED %}
                     <button type="button"
-                            class="product-wishlist js-wishlist-toggle {% if variant.id in wishlist_variant_ids %}in-wishlist{% endif %}"
-                            data-variant-id="{{ variant.id }}" title="Wishlist" aria-label="Wishlist">
+                            class="product-wishlist js-wishlist-toggle {% if item.id in wishlist_variant_ids %}in-wishlist{% endif %}"
+                            data-variant-id="{{ item.id }}" title="Wishlist" aria-label="Wishlist">
                         <i class="far fa-heart"></i>
                     </button>
                     {% endif %}
@@ -113,22 +116,22 @@
                 </div>
                 <div class="product-body">
                     {% comment %} <div class="product-category">{{ variant.product.category.name|default:"" }}</div> {% endcomment %}
-                    <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}" class="text-decoration-none">
-                        <h3 class="product-name">{{ variant.product.name }}</h3>
+                    <a href="{% url 'store:product_detail' item.product.slug %}?variant={{ item.id }}" class="text-decoration-none">
+                        <h3 class="product-name">{{ item.product.name }}</h3>
                     </a>
                     <div class="product-price">
-                        <span class="price-current">₹{{ variant.price|floatformat:0 }}</span>
-                        {% if variant.original_price and variant.original_price > variant.price %}
-                        <span class="price-old">₹{{ variant.original_price|floatformat:0 }}</span>
+                        <span class="price-current">₹{{ item.price|floatformat:0 }}</span>
+                        {% if item.original_price and item.original_price > item.price %}
+                        <span class="price-old">₹{{ item.original_price|floatformat:0 }}</span>
                         {% endif %}
                     </div>
-                    {% if variant.id in cart_variant_ids or variant.product_id in cart_product_ids %}
+                    {% if item.id in cart_variant_ids or item.product_id in cart_product_ids %}
                     <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
                     {% else %}
                     <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form">
                         {% csrf_token %}
-                        <input type="hidden" name="product_id" value="{{ variant.product_id }}">
-                        <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                        <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                        <input type="hidden" name="variant_id" value="{{ item.id }}">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="product-cta border-0">Add to Cart</button>
                     </form>
@@ -139,52 +142,7 @@
             {% endwith %}
             {% endfor %}
 
-            {# Simple products (no variants): use base images/price and no wishlist (wishlist is variant-based) #}
-            {% for product in simple_products %}
-            <div class="product-card">
-                <div class="product-img-wrap">
-                    {% if product.discount_percent %}<span class="product-badge badge-sale">−{{ product.discount_percent }}%</span>{% endif %}
-                    <a href="{% url 'store:product_detail' product.slug %}">
-                        {% with imgs=product.images.all %}
-                        {% if imgs %}
-                        <img src="{{ imgs.0.image.url }}" alt="{{ product.name }}" loading="lazy">
-                        {% else %}
-                        <img src="{% static 'img/product-1.png' %}" alt="{{ product.name }}" loading="lazy">
-                        {% endif %}
-                        {% endwith %}
-                    </a>
-                </div>
-                <div class="product-body">
-                    <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none">
-                        <h3 class="product-name">{{ product.name }}</h3>
-                    </a>
-                    <div class="product-price">
-    {% if product.base_price %}
-    <span class="price-current">₹{{ product.base_price|floatformat:0 }}</span>
-    {% else %}
-    <span class="price-current">Price on request</span>
-    {% endif %}
-    {% if product.base_original_price and product.base_original_price > product.base_price %}
-    <span class="price-old">₹{{ product.base_original_price|floatformat:0 }}</span>
-    {% endif %}
-</div>
-                    {% if product.id in cart_simple_product_ids %}
-                    <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
-                    {% else %}
-                    <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="product_id" value="{{ product.id }}">
-                        <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="product-cta border-0" {% if not product.base_stock or product.base_stock <= 0 %}disabled{% endif %}>
-                            Add to Cart
-                        </button>
-                    </form>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-
-            {% if not card_items and not simple_products %}
+            {% if not card_items %}
             <div class="col-12 text-center py-5">
                 <p class="text-muted">No products found. Try adjusting filters.</p>
                 <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark">Clear filters</a>
@@ -192,7 +150,13 @@
             {% endif %}
         </div>
 
+        <div id="scroll-sentinel" style="height: 1px;"></div>
+        <div id="collection-loading" style="display:none;justify-content:center;align-items:center;padding:20px;">
+            <div class="spinner-border" role="status" aria-label="Loading more"></div>
+        </div>
+
         <!-- Pagination -->
+        <noscript>
         {% if page_obj and page_obj.paginator.num_pages > 1 %}
         <nav class="mt-5 d-flex justify-content-center" aria-label="Shop pagination">
             <ul class="pagination">
@@ -212,6 +176,7 @@
             </ul>
         </nav>
         {% endif %}
+        </noscript>
 
     </div>
 </section>
@@ -246,6 +211,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/collection-infinite.js' %}"></script>
 <script>
 (function(){
     /* ── Filter offcanvas ── */
@@ -262,7 +228,7 @@
     if(overlay)  overlay.addEventListener('click', closeFilter);
 
     /* ── Grid toggle ── */
-    var grid       = document.getElementById('shopProductGrid');
+    var grid       = document.getElementById('product-container');
     var btnGrid    = document.getElementById('btnGrid');
     var btnCompact = document.getElementById('btnCompact');
 

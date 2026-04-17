@@ -82,79 +82,50 @@
 </section>
 {% endif %}
 
-
-
-{% if HOME_DEAL_OF_DAY_ENABLED and deal_of_day_products %}
-<!-- Deals of the Day -->
-<section class="tpc-section">
+<!-- Fast home: load sections via JS -->
+<section class="section-pad bg-bw-1 js-home-ajax-section" data-section-type="new-arrivals" data-api-url="{% url 'store:api_new_arrivals' %}">
     <div class="container">
-        <div class="tpc-section-header">
-            <h2 class="tpc-section-title">Deals of the Day</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
-        </div>
-        <div class="tpc-grid">
-            {% for product in deal_of_day_products %}
-                {% include "partials/_product_card.html" with product=product %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-{% if HOME_FEATURED_ENABLED and featured_products %}
-<!-- Featured Collection -->
-<section class="tpc-section">
-    <div class="container">
-        <div class="tpc-section-header">
-            <h2 class="tpc-section-title">Featured</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
-        </div>
-        <div class="tpc-grid">
-            {% for product in featured_products %}
-                {% include "partials/_product_card.html" with product=product %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-{% if HOME_BESTSELLER_ENABLED and bestseller_products %}
-<!-- Best Sellers -->
-<section class="tpc-section">
-    <div class="container">
-        <div class="tpc-section-header">
-            <h2 class="tpc-section-title">Best Sellers</h2>
-            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
-        </div>
-        <div class="tpc-grid">
-            {% for product in bestseller_products %}
-                {% include "partials/_product_card.html" with product=product %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-{% if HOME_RECENTLY_ADDED_ENABLED and new_arrival_products %}
-<!-- Recently Added -->
-<section class="section-pad bg-bw-1">
-    <div class="container">
-        <div class="section-header d-flex align-items-end justify-content-between mb-4 wow fadeInUp" data-wow-delay="0.1s">
+        <div class="section-header d-flex align-items-end justify-content-between mb-4">
             <div>
                 <span class="section-label">Just In</span>
-                <h2 class="section-title mb-0">Recently Added</h2>
+                <h2 class="section-title mb-0">New Arrivals</h2>
                 <div class="section-divider"></div>
             </div>
             <a href="{% url 'store:product_list' %}" class="btn btn-outline-dark px-4 d-none d-md-inline-flex">View All</a>
         </div>
-        <div class="tpc-grid wow fadeInUp" data-wow-delay="0.2s">
-            {% for product in new_arrival_products %}
-                {% include "partials/_product_card.html" with product=product %}
-            {% endfor %}
-        </div>
+        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
     </div>
 </section>
-{% endif %}
+
+<section class="tpc-section js-home-ajax-section" data-section-type="top-selling" data-api-url="{% url 'store:api_top_selling' %}">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Top Selling</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+    </div>
+</section>
+
+<section class="tpc-section js-home-ajax-section" data-section-type="you-may-like" data-api-url="{% url 'store:api_you_may_like' %}">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">You May Like</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+    </div>
+</section>
+
+<section class="tpc-section js-home-ajax-section" data-section-type="recently-viewed" data-api-url="{% url 'store:api_recently_viewed' %}">
+    <div class="container">
+        <div class="tpc-section-header">
+            <h2 class="tpc-section-title">Recently Viewed</h2>
+            <a href="{% url 'store:product_list' %}" class="tpc-view-all">View All</a>
+        </div>
+        <div class="tpc-grid js-home-ajax-products" aria-live="polite"></div>
+    </div>
+</section>
 
 {% comment %} {% if top_rated_products %}
 <!-- Top Rated -->
@@ -211,4 +182,8 @@
 </section> {% endcomment %}
 
 {% comment %} Legacy featured section (replaced by tpc-section Featured above) {% endcomment %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/home-ajax-sections.js' %}"></script>
 {% endblock %}

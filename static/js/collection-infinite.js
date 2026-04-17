@@ -6,7 +6,7 @@
 (function () {
     "use strict";
 
-    var container = document.getElementById("product-container");
+    var container = document.getElementById("product-container") || document.getElementById("shopProductGrid");
     var sentinel = document.getElementById("scroll-sentinel");
     var loadingEl = document.getElementById("collection-loading");
     if (!container || !sentinel) return;
