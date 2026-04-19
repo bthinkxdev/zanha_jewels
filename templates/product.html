@@ -84,7 +84,16 @@
             <!-- Info -->
             <div class="col-lg-6 product-detail-info wow fadeInRight" data-wow-delay="0.1s">
                 <div class="pdp-details-inner">
-                <h1 class="product-detail-title">{{ product.name }}</h1>
+                <div class="pdp-title-row">
+                    <h1 class="product-detail-title">{{ product.name }}</h1>
+                    <button type="button"
+                            class="pdp-share-btn"
+                            id="pdpShareBtn"
+                            aria-label="Share this product"
+                            title="Share link">
+                        <i class="fas fa-share-alt" aria-hidden="true"></i>
+                    </button>
+                </div>
 
                 {% if REVIEW_ENABLED and average_rating is not None %}
                 <div class="product-detail-rating">
@@ -669,6 +678,53 @@
         });
     }
     {% endif %}
+})();
+</script>
+
+<script>
+(function () {
+    var btn = document.getElementById('pdpShareBtn');
+    if (!btn) return;
+    function shareTitle() {
+        var h = document.querySelector('.pdp-title-row .product-detail-title');
+        return (h && h.textContent ? h.textContent : document.title).trim() || 'Product';
+    }
+    function shareUrl() {
+        return window.location.href;
+    }
+    function pulseCopied() {
+        var prevTitle = btn.getAttribute('title') || 'Share link';
+        btn.classList.add('pdp-share-btn--copied');
+        btn.setAttribute('title', 'Link copied!');
+        setTimeout(function () {
+            btn.classList.remove('pdp-share-btn--copied');
+            btn.setAttribute('title', prevTitle);
+        }, 2000);
+    }
+    function copyLink(url) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(url).then(function () {
+                pulseCopied();
+            });
+        }
+        return Promise.reject();
+    }
+    btn.addEventListener('click', function () {
+        var url = shareUrl();
+        var title = shareTitle();
+        if (navigator.share) {
+            navigator.share({ title: title, text: title, url: url }).catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                copyLink(url).catch(function () {
+                    window.prompt('Copy this link:', url);
+                });
+            });
+        } else {
+            copyLink(url).catch(function () {
+                window.prompt('Copy this link:', url);
+            });
+        }
+    });
 })();
 </script>
 

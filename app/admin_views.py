@@ -731,7 +731,10 @@ class OrderDetailView(StaffRequiredMixin, DetailView):
     
     def get_queryset(self):
         return Order.objects.select_related("address", "payment").prefetch_related(
-            "items__product", "items__selected_variant"
+            "items__product",
+            "items__product__images",
+            "items__selected_variant",
+            "items__selected_variant__images",
         )
     
     def get_context_data(self, **kwargs):

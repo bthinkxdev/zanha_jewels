@@ -252,17 +252,31 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Product</th>
-                        <th>Variant</th>
-                        <th>Unit Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
+                        <th class="order-detail-items-th-image" scope="col">Image</th>
+                        <th scope="col">Product</th>
+                        <th scope="col">Variant</th>
+                        <th scope="col">Unit Price</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in order.items.all %}
                         <tr>
-                            <td style="font-weight: 500;">{{ item.product_name }}</td>
+                            <td class="order-detail-items-td-image">
+                                {% with img_url=item.get_display_image_url %}
+                                    {% if img_url %}
+                                        <img src="{{ img_url }}" alt="{{ item.product_name }}" class="order-detail-item-thumb" width="56" height="56" loading="lazy">
+                                    {% else %}
+                                        <div class="order-detail-item-thumb order-detail-item-thumb--placeholder" aria-hidden="true">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td style="font-weight: 500;">
+                                <a href="{% url 'store:product_detail' item.product.slug %}" target="_blank" rel="noopener noreferrer" class="order-detail-product-link">{{ item.product_name }}</a>
+                            </td>
                             <td>{{ item.variant_snapshot }}</td>
                             <td>₹{{ item.unit_price }}</td>
                             <td>{{ item.quantity }}</td>

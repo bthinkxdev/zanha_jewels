@@ -364,6 +364,34 @@
 .order-detail-page .card.mt-3 {
     margin-top: 1.5rem;
 }
+.order-detail-items-th-image,
+.order-detail-items-td-image {
+    width: 72px;
+    vertical-align: middle;
+}
+.order-detail-item-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+    display: block;
+}
+.order-detail-item-thumb--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-100);
+    color: var(--gray-400);
+    font-size: 1.1rem;
+}
+.order-detail-product-link {
+    color: var(--primary);
+    text-decoration: none;
+}
+.order-detail-product-link:hover {
+    text-decoration: underline;
+}
 .order-detail-info-row {
     display: block;
     margin-bottom: 1rem;

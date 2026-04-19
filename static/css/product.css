@@ -135,6 +135,63 @@
     display: block;
 }
 
+/* Title + share: one row, title wraps, icon stays top-aligned */
+.pdp-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: clamp(10px, 2.2vw, 18px);
+    margin-bottom: 16px;
+    min-width: 0;
+}
+.pdp-title-row .product-detail-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0 !important;
+}
+.pdp-share-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin-top: 0.2em;
+    border-radius: 50%;
+    border: 1px solid #e8e4df;
+    background: #ffffff;
+    color: #0d1a3c;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 1px 8px rgba(13, 26, 60, 0.08);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+        transform 0.18s ease, box-shadow 0.2s ease;
+}
+.pdp-share-btn i {
+    font-size: 0.95rem;
+    pointer-events: none;
+}
+.pdp-share-btn:hover {
+    background: #faf8f5;
+    border-color: #d9cfc3;
+    color: #0d1a3c;
+    box-shadow: 0 2px 12px rgba(13, 26, 60, 0.12);
+}
+.pdp-share-btn:focus-visible {
+    outline: 2px solid #0d1a3c;
+    outline-offset: 2px;
+}
+.pdp-share-btn:active {
+    transform: scale(0.96);
+}
+.pdp-share-btn.pdp-share-btn--copied {
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+    color: #1b5e20;
+}
+
 /* Product title — Instrument Sans, large, light weight */
 .product-detail-info .product-detail-title {
     font-family: 'Instrument Sans', sans-serif !important;
@@ -144,6 +201,9 @@
     letter-spacing: normal !important;
     color: #0d1a3c !important;
     margin-bottom: 16px !important;
+}
+.product-detail-info .pdp-title-row .product-detail-title {
+    margin-bottom: 0 !important;
 }
 
 /* Responsive title size */
@@ -253,8 +313,17 @@
         padding-top: 4px;
         padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
     }
+    .pdp-title-row {
+        margin-bottom: 1.25rem;
+    }
     .product-detail-info .product-detail-title {
         margin-bottom: 1.25rem !important;
+    }
+    .product-detail-info .pdp-title-row .product-detail-title {
+        margin-bottom: 0 !important;
+    }
+    .pdp-share-btn {
+        margin-top: 0.12em;
     }
     .product-detail-info .product-detail-rating {
         margin-bottom: 1.25rem !important;
@@ -869,6 +938,16 @@
 }
 
 @media (max-width: 575px) {
+    .pdp-share-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        margin-top: 0.08em;
+    }
+    .pdp-share-btn i {
+        font-size: 0.875rem;
+    }
     .product-cta-row {
         gap: 8px !important;
     }

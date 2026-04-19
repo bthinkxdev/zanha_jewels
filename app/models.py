@@ -625,6 +625,25 @@ class OrderItem(TimeStampedModel):
     def line_total(self):
         return self.unit_price * self.quantity
 
+    def get_display_image_url(self):
+        """
+        First image URL for this line (variant image, or product base image for simple products).
+        """
+        if self.selected_variant_id:
+            for img in self.selected_variant.images.filter(
+                image__isnull=False
+            ).exclude(image="").order_by("-is_primary", "display_order", "id")[:1]:
+                try:
+                    if img.image:
+                        return img.image.url
+                except Exception:
+                    pass
+            return None
+        if self.product_id:
+            urls = self.product.get_card_image_urls(limit=1)
+            return urls[0] if urls else None
+        return None
+
     def __str__(self):
         return f"{self.order.order_number} - {self.product_name}"
 
