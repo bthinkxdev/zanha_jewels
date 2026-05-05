@@ -2,9 +2,11 @@
 {% for item in page_items %}
 {% if item.type == "variant" %}
 {% with variant=item.obj %}
-<div class="product-card">
+<div class="product-card{% if not variant.stock_quantity or variant.stock_quantity <= 0 %} is-oos{% endif %}">
     <div class="product-img-wrap">
-        {% if variant.original_price and variant.original_price > variant.price %}
+        {% if not variant.stock_quantity or variant.stock_quantity <= 0 %}
+        <span class="product-badge badge-oos">Out of Stock</span>
+        {% elif variant.original_price and variant.original_price > variant.price %}
         <span class="product-badge badge-sale">−{{ variant.discount_percent }}%</span>
         {% endif %}
         <a href="{% url 'store:product_detail' variant.product.slug %}?variant={{ variant.id }}">
@@ -34,7 +36,10 @@
             <span class="price-old">₹{{ variant.original_price|floatformat:0 }}</span>
             {% endif %}
         </div>
-        {% if variant.id in cart_variant_ids or variant.product_id in cart_product_ids %}
+        {% if not variant.stock_quantity or variant.stock_quantity <= 0 %}
+        <span class="oos-label">Out of Stock</span>
+        <button type="button" class="product-cta border-0" disabled>Sold Out</button>
+        {% elif variant.id in cart_variant_ids or variant.product_id in cart_product_ids %}
         <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
         {% else %}
         <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form">
@@ -50,9 +55,13 @@
 {% endwith %}
 {% elif item.type == "simple" %}
 {% with product=item.obj %}
-<div class="product-card">
+<div class="product-card{% if not product.base_stock or product.base_stock <= 0 %} is-oos{% endif %}">
     <div class="product-img-wrap">
-        {% if product.discount_percent %}<span class="product-badge badge-sale">−{{ product.discount_percent }}%</span>{% endif %}
+        {% if not product.base_stock or product.base_stock <= 0 %}
+        <span class="product-badge badge-oos">Out of Stock</span>
+        {% elif product.discount_percent %}
+        <span class="product-badge badge-sale">−{{ product.discount_percent }}%</span>
+        {% endif %}
         <a href="{% url 'store:product_detail' product.slug %}">
             {% with imgs=product.images.all %}
             {% if imgs %}
@@ -77,16 +86,17 @@
             <span class="price-old">₹{{ product.base_original_price|floatformat:0 }}</span>
             {% endif %}
         </div>
-        {% if product.id in cart_simple_product_ids %}
+        {% if not product.base_stock or product.base_stock <= 0 %}
+        <span class="oos-label">Out of Stock</span>
+        <button type="button" class="product-cta border-0" disabled>Sold Out</button>
+        {% elif product.id in cart_simple_product_ids %}
         <a href="{% url 'store:cart' %}" class="product-cta border-0 d-inline-block text-center text-decoration-none">View Cart</a>
         {% else %}
         <form method="post" action="{% url 'store:cart_add' %}" class="product-add-form">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <input type="hidden" name="quantity" value="1">
-            <button type="submit" class="product-cta border-0" {% if not product.base_stock or product.base_stock <= 0 %}disabled{% endif %}>
-                Add to Cart
-            </button>
+            <button type="submit" class="product-cta border-0">Add to Cart</button>
         </form>
         {% endif %}
     </div>

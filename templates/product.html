@@ -194,6 +194,25 @@
                 </div>
                 {% endif %}
 
+                <!-- Stock status indicator -->
+                <div id="pdpStockStatus" class="mb-3" style="font-size:0.8125rem;">
+                    {% if product.is_simple_product %}
+                        {% if not product.base_stock or product.base_stock <= 0 %}
+                        <span style="color:#b00020;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;">
+                            <i class="fas fa-times-circle me-1"></i> Out of Stock
+                        </span>
+                        {% endif %}
+                    {% else %}
+                        {% if selected_variant %}
+                            {% if not selected_variant.stock_quantity or selected_variant.stock_quantity <= 0 %}
+                            <span style="color:#b00020;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;">
+                                <i class="fas fa-times-circle me-1"></i> Out of Stock
+                            </span>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+
                 <!-- Add to cart form (AJAX via add-to-cart.js; no redirect) -->
                 <form method="post" action="{% url 'store:cart_add' %}" id="addToCartForm" class="product-add-form mb-3" data-simple-product="{{ product.is_simple_product|yesno:'true,false' }}" data-cart-url="{% url 'store:cart' %}">
                     {% csrf_token %}
@@ -506,6 +525,11 @@
             if (stockEl) {
                 stockEl.innerHTML = '<i class="fas fa-times-circle me-1" style="color:#c00;"></i> Not available in this combination';
             }
+            var pdpStock = document.getElementById('pdpStockStatus');
+            if (pdpStock) {
+                pdpStock.innerHTML = '<span style="color:#b00020;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;">' +
+                    '<i class="fas fa-times-circle me-1"></i> Out of Stock</span>';
+            }
             var addBtn = document.querySelector('.btn-add-cart');
             if (addBtn) addBtn.disabled = true;
             var buyNowBtn = document.getElementById('buyNowBtn');
@@ -524,6 +548,12 @@
             if (addBtn) addBtn.disabled = !v.in_stock;
             var buyNowBtn = document.getElementById('buyNowBtn');
             if (buyNowBtn) buyNowBtn.disabled = !v.in_stock;
+            var pdpStock = document.getElementById('pdpStockStatus');
+            if (pdpStock) {
+                pdpStock.innerHTML = v.in_stock ? '' :
+                    '<span style="color:#b00020;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;">' +
+                    '<i class="fas fa-times-circle me-1"></i> Out of Stock</span>';
+            }
             var wishBtn = document.getElementById('productWishlistBtn');
             if (wishBtn) wishBtn.setAttribute('data-variant-id', v.id);
             if (mainImg && v.image_urls && v.image_urls[0]) mainImg.src = v.image_urls[0];

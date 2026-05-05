@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import EmptyPage, Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch, Q, F, Sum, Count, Min
+from django.db.models import Prefetch, Q, F, Sum, Count, Min, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -72,12 +72,11 @@ def _set_guest_wishlist_ids(request, ids):
 
 
 def _active_variant_qs():
-    """Base queryset for Variant with product and images."""
+    """Base queryset for Variant with product and images (includes out-of-stock)."""
     return (
         Variant.objects.filter(
             is_active=True,
             product__is_active=True,
-            stock_quantity__gt=0,
         )
         .select_related("product", "product__category")
         .prefetch_related("images")
@@ -117,14 +116,15 @@ def _collection_card_items(request, paginate_by=15):
     else:
         qs = qs.order_by("-product__created_at", "-product__id")
 
-    seen_products = set()
-    cards = []
+    # One card per product: prefer an in-stock variant, fall back to OOS variant.
+    seen_products = {}
     for v in qs:
-        if v.product_id in seen_products:
-            continue
-        seen_products.add(v.product_id)
-        cards.append((v, False))
-    return cards
+        pid = v.product_id
+        if pid not in seen_products:
+            seen_products[pid] = v
+        elif (v.stock_quantity or 0) > 0 and (seen_products[pid].stock_quantity or 0) <= 0:
+            seen_products[pid] = v
+    return [(v, False) for v in seen_products.values()]
 
 
 def _get_simple_products(request):
@@ -137,7 +137,7 @@ def _get_simple_products(request):
 
     qs = (
         Product.objects.active()
-        .filter(variants__isnull=True, base_stock__gt=0)
+        .filter(variants__isnull=True)
         .select_related("category")
         .prefetch_related("images")
     )
